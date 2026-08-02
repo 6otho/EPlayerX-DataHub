@@ -334,9 +334,9 @@ const FRONTEND_HTML_P1 = `
         }
 
         const CATEGORIES = [
-            { id: 'weekly_anime_collection', titleKey: 'home.weekly_anime', name: '📅 动漫新番周更表 (合集)', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', preset: 'collection-list', type: 'tv', isCollection: true },
-            { id: 'weekly_drama_collection', titleKey: 'home.weekly_drama', name: '📅 国产追剧周更表 (合集)', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'collection-list', type: 'tv', isCollection: true },
+            { id: 'weekly_drama_collection', titleKey: 'home.weekly_drama', name: '🇨🇳 国产追剧周更表 (合集)', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'collection-list', type: 'tv', isCollection: true },
             { id: 'weekly_guoman_collection', titleKey: 'home.weekly_guoman', name: '🇨🇳 国漫追番周历表 (合集)', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z', preset: 'collection-list', type: 'tv', isCollection: true },
+            { id: 'weekly_anime_collection', titleKey: 'home.weekly_anime', name: '🇯🇵 动漫新番周更表 (合集)', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', preset: 'collection-list', type: 'tv', isCollection: true },
             { id: 'weekly_korean_drama_collection', titleKey: 'home.weekly_korean_drama', name: '🇰🇷 韩剧追剧周更表 (合集)', icon: 'M4 6h16M4 12h16M4 18h7', preset: 'collection-list', type: 'tv', isCollection: true },
             { id: 'weekly_japanese_drama_collection', titleKey: 'home.weekly_japanese_drama', name: '🇯🇵 日剧追剧周更表 (合集)', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1v4a1 1 0 001 1m-6 0h6', preset: 'collection-list', type: 'tv', isCollection: true },
             { id: 'weekly_sea_drama_collection', titleKey: 'home.weekly_sea_drama', name: '🇹🇭 东南亚剧周更表 (合集)', icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9', preset: 'collection-list', type: 'tv', isCollection: true },
