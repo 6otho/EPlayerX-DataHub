@@ -772,14 +772,14 @@ const FRONTEND_HTML_P1 = `
                 <div class="flex gap-2 w-full md:w-auto justify-end">
                     <button onclick="document.querySelectorAll('.logo-checkbox').forEach(c => c.checked=true); updateLogoToolbar()" class="px-3 py-1.5 text-[11px] font-bold text-indigo-600 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition-colors shadow-sm">全选</button>
                     <button onclick="document.querySelectorAll('.logo-checkbox').forEach(c => c.checked=false); updateLogoToolbar()" class="px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors shadow-sm">清空</button>
-                    <button onclick="batchDeleteItems()" class="px-3 py-1.5 text-[11px] font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm">🗑️ 批量删除</button>
+                    <button onclick="batchDeleteItems()" class="px-3 py-1.5 text-[11px] font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm">🗑️ 批量删除(入黑名单)</button>
                 </div>
             \`;
         }
 
         async function deleteItem(e, tmdbId) {
             e.stopPropagation();
-            showToast("🗑️ 正在删除数据...");
+            showToast("🗑️ 正在删除并写入永久黑名单...");
             try {
                 const res = await fetch(ACTION_BASE + '/delete_item', {
                     method: 'POST', 
@@ -787,7 +787,7 @@ const FRONTEND_HTML_P1 = `
                     body: JSON.stringify({ tmdbId, category: currentCategory, weekday: currentWeekday })
                 });
                 const data = await res.json();
-                if (data.success) { showToast("✅ 已成功抹除！"); loadData(currentCategory); } else showToast("❌ 删除失败: " + data.error, true);
+                if (data.success) { showToast("✅ 已成功彻底抹除（以后同步不会再爬取）！"); loadData(currentCategory); } else showToast("❌ 删除失败: " + data.error, true);
             } catch(err) { showToast("❌ 网络异常", true); }
         }
 
@@ -796,7 +796,7 @@ const FRONTEND_HTML_P1 = `
             if (checkedBoxes.length === 0) return showToast("⚠️ 请至少勾选一部影片！", true);
             
             const ids = Array.from(checkedBoxes).map(cb => cb.value);
-            showToast("🗑️ 正在批量抹除数据...");
+            showToast("🗑️ 正在批量抹除并写入永久黑名单...");
             try {
                 const res = await fetch(\`\${ACTION_BASE}/batch_delete\`, {
                     method: 'POST',
@@ -805,7 +805,7 @@ const FRONTEND_HTML_P1 = `
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showToast(\`✅ 成功删除 \${ids.length} 部影片！剩余 \${data.count} 部。\`);
+                    showToast(\`✅ 成功删除 \${ids.length} 部影片并永久拦截！\`);
                     loadData(currentCategory);
                 } else {
                     showToast("❌ 删除失败: " + data.error, true);
@@ -946,7 +946,7 @@ const FRONTEND_HTML_P1 = `
                 const checkboxHtml = \`<label class="absolute top-2.5 left-2.5 z-30 cursor-pointer bg-black/50 backdrop-blur-md rounded-md p-1 shadow-sm border border-white/20 flex items-center justify-center transition-all hover:scale-110" onclick="event.stopPropagation()">
                     <input type="checkbox" value="\${item.tmdbId}" data-type="\${mType}" class="logo-checkbox w-3.5 h-3.5 accent-purple-600 rounded cursor-pointer border-none" onchange="updateLogoToolbar()">
                 </label>\`;
-                const deleteBtn = \`<button onclick="deleteItem(event, '\${item.tmdbId}')" class="absolute top-2.5 left-11 bg-red-600/90 hover:bg-red-500 text-white p-1 rounded-md shadow-sm border border-white/20 z-30 transition-all transform hover:scale-110 flex items-center justify-center" title="彻底删除"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>\`;
+                const deleteBtn = \`<button onclick="deleteItem(event, '\${item.tmdbId}')" class="absolute top-2.5 left-11 bg-red-600/90 hover:bg-red-500 text-white p-1 rounded-md shadow-sm border border-white/20 z-30 transition-all transform hover:scale-110 flex items-center justify-center" title="彻底删除并写入永久黑名单"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>\`;
                 const ratingBadge = item.vote_average ? \`<div class="absolute top-2.5 right-2.5 bg-black/80 text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 z-20 shadow-sm border border-white/20"><span class="text-yellow-400 text-[10px]">★</span>\${item.vote_average.toFixed(1)}</div>\` : '';
                 const yearStr = (item.release_date || item.first_air_date || '').substring(0, 4);
                 const yearBadge = yearStr ? \`<div class="absolute bottom-2.5 left-2.5 bg-blue-600/90 text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center z-20 shadow-sm border border-white/20">\${yearStr}</div>\` : '';
@@ -1022,7 +1022,6 @@ const FRONTEND_HTML_P1 = `
             });
         }
 
-        // 🌟 重新拼装标准原生 config.ts 代码（每一行都加了尾部逗号，绝不漏逗号）
         function generateTSCode() {
             localStorage.setItem('saved_layout_v2', JSON.stringify(modalLayoutState));
             const selectedCats = [];
@@ -1217,7 +1216,7 @@ const TITLE_TRANSLATIONS: Record<HomeTitleKey, Record<Locale, string>> = {
   "home.tmdb_discover_languages": { en: "Browse By Language", zh: "按语言浏览", "zh-Hant": "按語言瀏覽", ja: "言語で探す", es: "Explorar por Idioma", ar: "حسب اللغة" },
   "home.tmdb_discover_networks": { en: "Browse By Network", zh: "按平台浏览", "zh-Hant": "按平台瀏覽", ja: "配信サービスで探す", es: "Explorar por Plataforma", ar: "حسب الشبكة" },
   "home.tmdb_top_rated_movies": { en: "Top Rated Movies", zh: "高分电影", "zh-Hant": "高分電影", ja: "高評価映画", es: "Películas Mejor Valoradas", ar: "الأعلى تقييماً" },
-  "home.tmdb_top_rated_tv_shows": { en: "Top Rated TV Shows", zh: "高分电视剧", "zh-Hant": "高分電視劇", ja: "高評価テレビ番組", es: "Series Mejor Valoradas", ar: "المスلسلات الأعلى تقييماً" },
+  "home.tmdb_top_rated_tv_shows": { en: "Top Rated TV Shows", zh: "高分电视剧", "zh-Hant": "高分電視劇", ja: "高評価テレビ番組", es: "Series Mejor Valoradas", ar: "المسلسلات الأعلى تقييماً" },
   "home.weekly_anime": { en: "Weekly Anime Updates", zh: "动漫新番周更表", "zh-Hant": "動漫新番周更表", ja: "週間アニメ更新", es: "Anime Semanal", ar: "تحديثات الأنم" },
   "home.weekly_drama": { en: "Weekly Chinese Drama", zh: "国产追剧周更表", "zh-Hant": "國產追劇周更表", ja: "中国ドラマ週間更新", es: "Drama Chino Semanal", ar: "دراما صينية أ週間" },
   "home.weekly_guoman": { en: "Weekly Guoman Updates", zh: "国漫追番周历表", "zh-Hant": "國漫追番周歷表", ja: "中国アニメ週間更新", es: "Anime Chino Semanal", ar: "أنمي" },
@@ -1535,8 +1534,9 @@ export function createDefaultHomeConfig(options: DefaultHomeConfigOptions): Defa
 const FRONTEND_HTML_P2 = `</html>
 `;
 const FRONTEND_HTML = FRONTEND_HTML_P1 + FRONTEND_HTML_P2;
+
 // ==========================================
-// 2. 爬虫核心与全局分类字典 (Part 2 - 完美防语法错误 + 智能增删 + 自动版本号)
+// 2. 爬虫核心与全局分类字典 (Part 1 引擎配置)
 // ==========================================
 const CATEGORY_CONFIGS = [
   // === 👇 动态爬虫合集 (包含六大周更表合集) 👇 ===
@@ -1546,7 +1546,7 @@ const CATEGORY_CONFIGS = [
   { id: "weekly_korean_drama_collection", fileName: "weekly_korean_drama_collection.json", type: "tv_series", platform: "tmdb", name: "韩剧追剧周更表" },
   { id: "weekly_japanese_drama_collection", fileName: "weekly_japanese_drama_collection.json", type: "tv_series", platform: "tmdb", name: "日剧追剧周更表" },
   { id: "weekly_sea_drama_collection", fileName: "weekly_sea_drama_collection.json", type: "tv_series", platform: "tmdb", name: "东南亚剧周更表" },
-  // === 👇 原有的单项分类 👇 ===
+  // === 👇 单项分类 👇 ===
   { id: "tmdb_popular_movies", fileName: "tmdb-popular-movies.json", type: "movie", platform: "tmdb", name: "今日热门电影" },
   { id: "tmdb_popular_tv", fileName: "tmdb-popular-tv.json", type: "tv_series", platform: "tmdb", name: "今日热门电视剧" },
   { id: "bangumi_airing", fileName: "bangumi-airing.json", type: "animation", platform: "bangumi", name: "今日热门番剧" },
@@ -1595,6 +1595,64 @@ function escapeHTML(str) {
   return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
 }
 
+// ==========================================
+// 3. 永久黑名单（一次删除，永久拦截）核心逻辑
+// ==========================================
+async function addToBlacklist(env, items) {
+  if (!env.R2_BUCKET || !items || items.length === 0) return;
+  let blacklist = { ids: [], titles: [] };
+  try {
+    const obj = await env.R2_BUCKET.get("blacklist.json");
+    if (obj) blacklist = await obj.json();
+  } catch (e) {}
+
+  let idSet = new Set((blacklist.ids || []).map(String));
+  let titleSet = new Set((blacklist.titles || []).map(t => String(t).trim().toLowerCase()));
+
+  items.forEach(item => {
+    if (item.tmdbId) idSet.add(String(item.tmdbId));
+    if (item.title) {
+      const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
+      if (cleanT) titleSet.add(cleanT);
+    }
+  });
+
+  blacklist.ids = Array.from(idSet);
+  blacklist.titles = Array.from(titleSet);
+
+  await env.R2_BUCKET.put("blacklist.json", JSON.stringify(blacklist, null, 2), {
+    httpMetadata: { contentType: "application/json" }
+  });
+}
+
+async function getBlacklist(env) {
+  if (!env.R2_BUCKET) return { ids: new Set(), titles: new Set() };
+  try {
+    const obj = await env.R2_BUCKET.get("blacklist.json");
+    if (obj) {
+      const data = await obj.json();
+      return {
+        ids: new Set((data.ids || []).map(String)),
+        titles: new Set((data.titles || []).map(t => String(t).replace(/[\s·《》\-_]/g, "").toLowerCase()))
+      };
+    }
+  } catch (e) {}
+  return { ids: new Set(), titles: new Set() };
+}
+
+function isItemBlacklisted(item, blacklist) {
+  if (!item || !blacklist) return false;
+  if (item.tmdbId && blacklist.ids.has(String(item.tmdbId))) return true;
+  if (item.title) {
+    const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
+    if (cleanT && blacklist.titles.has(cleanT)) return true;
+  }
+  return false;
+}
+
+// ==========================================
+// 4. 网络请求与 Telegram 消息辅助函数
+// ==========================================
 async function safeFetch(url, options, reqCtx) {
   if (reqCtx) {
     if (reqCtx.subreqs >= reqCtx.maxSubreqs) throw new Error("CF_LIMIT");
@@ -1621,6 +1679,9 @@ async function editTgMessage(env, chatId, msgId, text, reqCtx, replyMarkup) {
   } catch (e) {}
 }
 
+// ==========================================
+// 5. 各第三方平台 API 抓取适配器
+// ==========================================
 async function fetchBangumiCalendar(limit = 100, reqCtx) {
   try {
     const res = await safeFetch('https://api.bgm.tv/calendar', { headers: { 'User-Agent': 'EPlayerX/1.0' } }, reqCtx);
@@ -1647,7 +1708,7 @@ async function fetchTMDBTrending(type, env, limit = 100, reqCtx) {
       if (res.ok) { const data = await res.json(); results.push(...(data.results || [])); }
     } catch (e) { break; }
   }
-  return results.slice(0, limit).map(item => ({ title: item.title || item.name, tmdbId: item.id, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, original_language: item.original_language }));
+  return results.slice(0, limit).map(item => ({ title: item.title || item.name, tmdbId: item.id, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, original_language: item.original_language, origin_country: item.origin_country || [] }));
 }
 
 async function fetchTMDBDiscoverList(type, paramsObj, env, limit = 100, reqCtx) {
@@ -1735,6 +1796,9 @@ async function tmdbFetch(path, paramsObj, env, reqCtx) {
   return await res.json();
 }
 
+// ==========================================
+// 6. 图片清洗与去重辅助函数
+// ==========================================
 function extractImages(images, backdropPath, posterPath, origLang) {
   const backdrops = (images && images.backdrops) ? images.backdrops : [];
   const logos = (images && images.logos) ? images.logos : [];
@@ -1814,6 +1878,9 @@ function deduplicateRawList(items) {
     return result;
 }
 
+// ==========================================
+// 7. TMDB 详细数据加工处理（带日漫独家隔离）
+// ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
   const limitedItems = items;
@@ -1839,7 +1906,16 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
       if (tmdbId) {
         let origLang = basicData.original_language || item.original_language || (options.oldDataMap && options.oldDataMap.get(tmdbId)?.original_language) || "";
-        
+        let originCountries = basicData.origin_country || item.origin_country || [];
+
+        // 🌟【核心隔离1】：若指定只收录日漫，但 TMDB 显示非日本（如 'zh', 'cn', 'kr' 等），强行关门丢弃！
+        if (options.isJapaneseAnimeOnly) {
+            if (origLang && origLang !== 'ja') return null;
+            if (Array.isArray(originCountries) && (originCountries.includes('CN') || originCountries.includes('TW') || originCountries.includes('HK'))) {
+                return null;
+            }
+        }
+
         let thumb = basicData.backdrop_path || basicData.poster_path || null;
         let poster_path = basicData.poster_path || null;
         let backdrop_path = basicData.backdrop_path || null;
@@ -1922,6 +1998,13 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
               { language: "zh-CN", append_to_response: "images", include_image_language: imgLangs },
               env, reqCtx
             );
+
+            // 🌟【核心隔离2】：在获取详情后二次确认，绝对防止国漫混入动漫新番表
+            if (options.isJapaneseAnimeOnly) {
+                const detailLang = detailsAndImages.original_language || origLang;
+                if (detailLang && detailLang !== 'ja') return null;
+            }
+
             poster_path = detailsAndImages.poster_path || poster_path;
             backdrop_path = detailsAndImages.backdrop_path || backdrop_path;
             
@@ -2071,6 +2154,9 @@ function determineDay(item, bgmCalendar, standardDays, overrides) {
     return 0;
 }
 
+// ==========================================
+// 8. 核心同步引擎 (带永久黑名单过滤 + 日漫严隔离)
+// ==========================================
 async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, reqCtx, originUrl, fetchLogo = true, fetchThumb = true) {
   let category = categoryInput;
   let targetDay = null;
@@ -2083,6 +2169,9 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   const config = CATEGORY_MAP[category]; if (!config) throw new Error("未定义的分类");
   let processedData = [];
+
+  // 🌟【永久黑名单读取】：加载全站通用黑名单，被删除的影片绝不能再次进入
+  const blacklist = await getBlacklist(env);
 
   let oldDataMap = new Map();
   try {
@@ -2137,6 +2226,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       }
   } catch (e) {}
 
+  // 🌟【动漫新番周更表】：严格限定只能是日本动漫（混入国漫一律过滤）
   if (category === "weekly_anime_collection") {
       const bgmRes = await safeFetch('https://api.bgm.tv/calendar', { headers: { 'User-Agent': 'EPlayerX/1.0' } }, reqCtx);
       const bgmData = bgmRes.ok ? await bgmRes.json() : [];
@@ -2160,14 +2250,28 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           for (const anime of rawItems) {
               const name = anime.name || "";
               const nameCn = anime.name_cn || "";
-              if (/(仙逆|吞噬星空|完美世界|斗罗大陆|斗破苍穹|神印王座|武神主宰|师兄|修仙|百炼|大主宰)/.test(name + nameCn)) continue; 
+              
+              // 1. 预过滤绝大多数国漫常见标题
+              if (/(仙逆|吞噬星空|完美世界|斗罗大陆|斗破苍穹|神印王座|武神主宰|师兄|修仙|百炼|大主宰|凡人修仙|遮天|沧元图|剑来|斩神)/.test(name + nameCn)) continue; 
+              
+              const checkItem = { title: nameCn || name };
+              // 2. 拦截被写入永久黑名单的剧
+              if (isItemBlacklisted(checkItem, blacklist)) continue;
+
               freshItems.push({ title: nameCn || name, searchQuery: name || nameCn, score: anime.rating?.score || 0 });
           }
 
-          const combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          // 3. 过滤黑名单
+          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist));
+
           if (combinedItems.length === 0) continue;
 
-          const processedDayData = await processItemsWithTMDB(combinedItems, "tv", env, 100, processOpts(), reqCtx);
+          // 4. processItemsWithTMDB 传入 isJapaneseAnimeOnly: true，绝对隔离非日漫
+          let processedDayData = await processItemsWithTMDB(combinedItems, "tv", env, 100, processOpts({ isJapaneseAnimeOnly: true }), reqCtx);
+          
+          // 5. 再次过滤黑名单，双重防线
+          processedDayData = processedDayData.filter(item => !isItemBlacklisted(item, blacklist));
           processedCount += processedDayData.length;
           
           const dayJson = { platform: "bangumi", type: "animation", count: processedDayData.length, lastUpdated: new Date().toISOString(), data: processedDayData };
@@ -2198,12 +2302,14 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               }
           } catch(e) {}
 
+          existingItems = existingItems.filter(item => !isItemBlacklisted(item, blacklist));
           if (existingItems.length === 0) {
               await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify({ platform: "tmdb", type: "tv_series", count: 0, lastUpdated: new Date().toISOString(), data: [] }, null, 2), { httpMetadata: { contentType: "application/json" } });
               continue; 
           }
 
-          const processed = await processItemsWithTMDB(existingItems, "tv", env, limit, processOpts(), reqCtx);
+          let processed = await processItemsWithTMDB(existingItems, "tv", env, limit, processOpts(), reqCtx);
+          processed = processed.filter(item => !isItemBlacklisted(item, blacklist));
           processedCount += processed.length;
           
           const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
@@ -2241,10 +2347,12 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               if (d === day) freshItems.push({ title: name });
           }
 
-          const combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist));
           if (combinedItems.length === 0) continue;
 
-          const processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
+          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
+          processed = processed.filter(item => !isItemBlacklisted(item, blacklist));
           processedCount += processed.length;
           
           const dayJson = { platform: "tmdb", type: "animation", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
@@ -2261,7 +2369,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, newLogos: [] };
   }
 
-  // 🌟 4. 韩剧追剧周更表（只抓最近60天内开播/热播韩剧，强行过滤韩综与新闻）
   else if (category === "weekly_korean_drama_collection") {
       const now = new Date();
       const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
@@ -2285,10 +2392,12 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           } catch(e) {}
 
           let freshItems = rawKr.filter(item => determineDay(item, null, null, overrides) === day);
-          const combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist));
           if (combinedItems.length === 0) continue;
 
-          const processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
+          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
+          processed = processed.filter(item => !isItemBlacklisted(item, blacklist));
           processedCount += processed.length;
           const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -2304,7 +2413,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, newLogos: [] };
   }
 
-  // 🌟 5. 日剧追剧周更表（只抓最近60天内开播/热播日剧，100% 过滤掉动漫）
   else if (category === "weekly_japanese_drama_collection") {
       const now = new Date();
       const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
@@ -2328,10 +2436,12 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           } catch(e) {}
 
           let freshItems = rawJa.filter(item => determineDay(item, null, null, overrides) === day);
-          const combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist));
           if (combinedItems.length === 0) continue;
 
-          const processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
+          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
+          processed = processed.filter(item => !isItemBlacklisted(item, blacklist));
           processedCount += processed.length;
           const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -2347,7 +2457,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, newLogos: [] };
   }
 
-  // 🌟 6. 东南亚剧追剧周更表（涵盖泰剧、越南、印尼、菲律宾新剧）
   else if (category === "weekly_sea_drama_collection") {
       const now = new Date();
       const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
@@ -2371,10 +2480,12 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           } catch(e) {}
 
           let freshItems = rawSea.filter(item => determineDay(item, null, null, overrides) === day);
-          const combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist));
           if (combinedItems.length === 0) continue;
 
-          const processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
+          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
+          processed = processed.filter(item => !isItemBlacklisted(item, blacklist));
           processedCount += processed.length;
           const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -2503,6 +2614,11 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
     processedData = await processItemsWithTMDB(pureList, "tv", env, limit, processOpts(), reqCtx);
   }
 
+  // 🌟【通用黑名单最后把关】：在所有非合集榜单落库前，再次过滤掉黑名单影片
+  if (Array.isArray(processedData)) {
+      processedData = processedData.filter(item => !isItemBlacklisted(item, blacklist));
+  }
+
   if (processedData.length === 0 && targetDay === null) throw new Error("TMDB未能匹配到任何符合条件的影视数据");
 
   if (!category.endsWith("_collection")) {
@@ -2540,15 +2656,13 @@ function isAdmin(request, env) {
   return (env.ADMIN_SECRET && token === env.ADMIN_SECRET) || (env.SYNC_SECRET && token === env.SYNC_SECRET);
 }
 
-// 🌟【防崩溃·自动提版本·杀双逗号·完美增量合并引擎】
+// 🌟 GitHub 智能增量合并代码生成器
 function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl, fallbackTsCode) {
   if (!existingText || !existingText.includes("createDefaultBlockTemplates")) {
     return fallbackTsCode;
   }
 
   let updatedText = existingText;
-
-  // 1. 🌟 自动锁定你的生产域名（优先继承原文件里的 https://homepage.eplayerx.cc.cd）
   let domainToUse = "https://homepage.eplayerx.cc.cd";
   if (existingText) {
     const domainMatch = existingText.match(/path:\s*["'](https?:\/\/[^\/\s"']+)/);
@@ -2559,7 +2673,6 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     }
   }
 
-  // 2. 🌟 自动递增版本号：使 EPlayerX 客户端意识到版本变化并强行清空本地旧布局缓存！
   const versionRegex = /(export\s+const\s+HOME_CONFIG_VERSION\s*=\s*)(\d+)(;)/;
   const matchVer = updatedText.match(versionRegex);
   if (matchVer) {
@@ -2567,7 +2680,6 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     updatedText = updatedText.replace(versionRegex, `$1${nextVer}$3`);
   }
 
-  // 3. 🌟 自动在 HomeTitleKey 类型联合里补充新 Key
   const newTitleKeys = ["home.weekly_korean_drama", "home.weekly_japanese_drama", "home.weekly_sea_drama"];
   newTitleKeys.forEach(key => {
     if (!updatedText.includes(`"${key}"`) && updatedText.includes("type HomeTitleKey =")) {
@@ -2576,7 +2688,6 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     }
   });
 
-  // 4. 🌟 追加译文并自动检查补齐句尾逗号（绝对避免遗漏逗号产生语法错误）
   const newTranslations = [
     { key: "home.weekly_korean_drama", val: '  "home.weekly_korean_drama": { en: "Weekly Korean Dramas", zh: "韩剧追剧周更表", "zh-Hant": "韓劇追劇周更表", ja: "韓国ドラマ週間更新", es: "Dramas Coreanos Semanales", ar: "دراما كورية أ週間" },' },
     { key: "home.weekly_japanese_drama", val: '  "home.weekly_japanese_drama": { en: "Weekly Japanese Dramas", zh: "日剧追剧周更表", "zh-Hant": "日劇追劇周更表", ja: "日本ドラマ週間更新", es: "Dramas Japoneses Semanales", ar: "دراما يابانية أ週間" },' },
@@ -2596,7 +2707,6 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     }
   });
 
-  // 5. 🌟 括号平衡定位函数：精准定位 Block 范围，100% 避免切断代码
   function findBlockBounds(text, blockId) {
     const idRegex = new RegExp(`id:\\s*["']${blockId}["']`);
     const match = idRegex.exec(text);
@@ -2629,7 +2739,6 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     return { start: openBracePos, end: closeBracePos + 1 };
   }
 
-  // 6. 🌟 精准切除在控制台中取消勾选的 CMS 托管分类
   const allCmsCatIds = CATEGORY_CONFIGS.map(c => c.id);
   const selectedCatIds = new Set(selectedCats.map(c => c.id));
   const unselectedCmsCatIds = allCmsCatIds.filter(id => !selectedCatIds.has(id));
@@ -2648,7 +2757,6 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     }
   }
 
-  // 7. 🌟 替换或追加当前勾选启用的分类
   for (const c of selectedCats) {
     let newBlockCode = "";
     if (c.isCollection) {
@@ -2674,7 +2782,6 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     }
   }
 
-  // 🧹 8. 🌟 全局最终语法大扫除：强力杀光所有双逗号 `,,` 和句末毛刺，确保 100% 格式合法！
   updatedText = updatedText.replace(/,\s*,/g, ',');
   updatedText = updatedText.replace(/\[\s*,/g, '[');
   updatedText = updatedText.replace(/,\s*\]/g, ']');
@@ -2682,12 +2789,14 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
   return updatedText;
 }
 
+// ==========================================
+// 9. Cloudflare Worker 主入口与路由响应
+// ==========================================
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === "/") return new Response(FRONTEND_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8" } });
 
-    // 🌟【协议级强打断反缓存】：不修改任何静态 R2 存储路径，在 HTTP Header 层面打断 iOS WKWebView 的本地强缓存
     const antiCacheHeaders = { 
       "Access-Control-Allow-Origin": "*", 
       "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS", 
@@ -2699,7 +2808,6 @@ export default {
 
     if (request.method === "OPTIONS") return new Response(null, { headers: antiCacheHeaders });
 
-    // 🌟 保留原样路径逻辑，加入通配匹配
     if (url.pathname.startsWith("/blocks/public/")) {
       if (!env.R2_BUCKET) return new Response(JSON.stringify({ error: "R2未绑定" }), { status: 500, headers: antiCacheHeaders });
       const fileName = url.pathname.substring("/blocks/public/".length); 
@@ -2952,7 +3060,6 @@ export default {
         }
     }
 
-    // 🌟 自动匹配所有周更表合集的子路径 (-1 至 -7)
     if (action === "api" && request.method === "GET") {
       if (!env.R2_BUCKET) return new Response(JSON.stringify({ error: "R2未绑定" }), { status: 500, headers: antiCacheHeaders });
       if (!category || category === 'login') return new Response("Not Found", { status: 404, headers: antiCacheHeaders });
@@ -3009,6 +3116,7 @@ export default {
       }
     }
 
+    // 🌟【彻底删除并入黑名单】：删除项自动追加到 blacklist.json，实现永久物理隔离！
     if (action === "action" && category === "delete_item" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
@@ -3028,6 +3136,10 @@ export default {
             if (oldObj) {
                 const oldJson = await oldObj.json();
                 if (oldJson && oldJson.data) {
+                    const targetItem = oldJson.data.find(item => item.tmdbId == tmdbId);
+                    if (targetItem) {
+                        await addToBlacklist(env, [targetItem]); 
+                    }
                     oldJson.data = oldJson.data.filter(item => item.tmdbId != tmdbId);
                     oldJson.count = oldJson.data.length;
                     await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -3041,6 +3153,7 @@ export default {
       }
     }
 
+    // 🌟【批量删除并入黑名单】
     if (action === "action" && category === "batch_delete" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
@@ -3062,6 +3175,10 @@ export default {
                 const oldJson = await oldObj.json();
                 if (oldJson && oldJson.data) {
                     const idsSet = new Set(tmdbIds.map(String));
+                    const itemsToDelete = oldJson.data.filter(item => idsSet.has(String(item.tmdbId)));
+                    if (itemsToDelete.length > 0) {
+                        await addToBlacklist(env, itemsToDelete);
+                    }
                     oldJson.data = oldJson.data.filter(item => !idsSet.has(String(item.tmdbId)));
                     oldJson.count = oldJson.data.length;
                     await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -3425,7 +3542,6 @@ export default {
       } catch (e) { return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders }); }
     }
 
-    // 🌟【GitHub 智能安全增量合并推送】：锁定生产域名 + 自动加版本号 + 彻底清除双逗号防语法崩坏
     if (action === "action" && category === "github" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       if (!env.GITHUB_TOKEN || !env.GITHUB_REPO || !env.GITHUB_PATH) return new Response(JSON.stringify({ success: false, error: "缺少 GitHub 环境变量" }), { status: 400, headers: antiCacheHeaders });
