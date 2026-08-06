@@ -1655,6 +1655,39 @@ function escapeHTML(str) {
   return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
 }
 
+// 🌟 强力旧数据匹配辅助函数（彻底解决 String/Number 类型不匹配及剧名缺失问题）
+function buildOldDataHelper(itemsArray) {
+    const mapById = new Map();
+    const mapByTitle = new Map();
+
+    if (Array.isArray(itemsArray)) {
+        itemsArray.forEach(item => {
+            if (item.tmdbId !== undefined && item.tmdbId !== null) {
+                mapById.set(String(item.tmdbId), item);
+                mapById.set(Number(item.tmdbId), item);
+            }
+            if (item.title) {
+                const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
+                if (cleanT) mapByTitle.set(cleanT, item);
+            }
+        });
+    }
+
+    return {
+        find(tmdbId, title) {
+            if (tmdbId !== undefined && tmdbId !== null) {
+                if (mapById.has(String(tmdbId))) return mapById.get(String(tmdbId));
+                if (mapById.has(Number(tmdbId))) return mapById.get(Number(tmdbId));
+            }
+            if (title) {
+                const cleanT = String(title).replace(/[\s·《》\-_]/g, "").toLowerCase();
+                if (cleanT && mapByTitle.has(cleanT)) return mapByTitle.get(cleanT);
+            }
+            return null;
+        }
+    };
+}
+
 // ==========================================
 // 3. 分类隔离黑名单 核心逻辑
 // ==========================================
@@ -1670,14 +1703,13 @@ async function addToBlacklist(env, items, categoryId) {
         if (!blacklist.categories) blacklist.categories = {};
         if (!blacklist.global) blacklist.global = { ids: [], titles: [] };
       } else {
-        // 旧版本兼容：原有的全局黑名单保留在 global 桶中
         blacklist.global = { ids: data.ids || [], titles: data.titles || [] };
         blacklist.categories = {};
       }
     }
   } catch (e) {}
 
-  const baseCatId = categoryId.split('-')[0]; // 如果是 weekly_anime_collection-1 格式，截取基础分类 ID
+  const baseCatId = categoryId.split('-')[0];
   if (!blacklist.categories[baseCatId]) {
     blacklist.categories[baseCatId] = { ids: [], titles: [] };
   }
@@ -1732,14 +1764,12 @@ async function getBlacklist(env) {
 function isItemBlacklisted(item, blacklist, categoryId) {
   if (!item || !blacklist) return false;
   
-  // 1. 先检查全局通用黑名单
   if (item.tmdbId && blacklist.global.ids.has(String(item.tmdbId))) return true;
   if (item.title) {
     const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
     if (cleanT && blacklist.global.titles.has(cleanT)) return true;
   }
 
-  // 2. 检查分类专属黑名单（实现分类强隔离）
   if (categoryId) {
     const baseCatId = categoryId.split('-')[0];
     const catBlacklist = blacklist.categories[baseCatId];
@@ -1984,7 +2014,7 @@ function deduplicateRawList(items) {
 }
 
 // ==========================================
-// 7. TMDB 详细数据加工处理（带锁死防护）
+// 7. TMDB 详细数据加工处理（彻底锁定旧数据逻辑）
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
@@ -2010,7 +2040,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
       }
 
       if (tmdbId) {
-        let origLang = basicData.original_language || item.original_language || (options.oldDataMap && options.oldDataMap.get(tmdbId)?.original_language) || "";
+        let origLang = basicData.original_language || item.original_language || "";
         let originCountries = basicData.origin_country || item.origin_country || [];
 
         if (options.isJapaneseAnimeOnly) {
@@ -2032,35 +2062,48 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         let actualMediaType = basicData.media_type || mediaType;
         if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
 
-        let originalLogoFromDB = null;
-        let originalThumbFromDB = null;
-        let originalLogoSourceFromDB = 'auto';  
-        let originalThumbSourceFromDB = 'auto'; 
-        let oldImageScanned = false; 
-
-        if (options.oldDataMap && options.oldDataMap.has(tmdbId)) {
-          const old = options.oldDataMap.get(tmdbId);
-          originalLogoFromDB = old.logo;
-          originalThumbFromDB = old.thumb;
-          originalLogoSourceFromDB = old.logo_source || (old.logo && !old.logo.includes('image.tmdb.org') && !old.logo.includes('text_logo.svg') ? 'manual' : 'auto');
-          originalThumbSourceFromDB = old.thumb_source || (old.thumb && !old.thumb.includes('image.tmdb.org') ? 'manual' : 'auto');
-          oldImageScanned = old.image_scanned === true;
-
-          thumb = old.thumb || thumb;
-          poster_path = old.poster_path || poster_path;
-          backdrop_path = old.backdrop_path || backdrop_path;
-          noLogoPoster = old.noLogoPoster || noLogoPoster;
-          overview = old.overview || overview;
-          release_date = old.release_date || release_date;
-          first_air_date = old.first_air_date || first_air_date;
+        // 🌟 核心修复1：通过 buildOldDataHelper 强力匹配旧数据（跨越数字/字符串及剧名）
+        let oldRecord = null;
+        if (options.oldDataHelper) {
+            oldRecord = options.oldDataHelper.find(tmdbId, item.title || basicData.title || basicData.name);
         }
 
-        // 🌟【Logo 防覆盖锁死判定】只要已有真实 Logo，跳过抓图，永不覆盖
+        // 🌟 核心修复2：多重融合已存在的数据（优先拿对象自身或旧库记录）
+        const mergedOld = {
+            logo: oldRecord?.logo || item.logo || null,
+            thumb: oldRecord?.thumb || item.thumb || null,
+            logo_source: oldRecord?.logo_source || item.logo_source || null,
+            thumb_source: oldRecord?.thumb_source || item.thumb_source || null,
+            image_scanned: oldRecord?.image_scanned || item.image_scanned || false,
+            poster_path: oldRecord?.poster_path || item.poster_path || null,
+            backdrop_path: oldRecord?.backdrop_path || item.backdrop_path || null,
+            overview: oldRecord?.overview || item.overview || null,
+            release_date: oldRecord?.release_date || item.release_date || null,
+            first_air_date: oldRecord?.first_air_date || item.first_air_date || null,
+            original_language: oldRecord?.original_language || origLang
+        };
+
+        if (mergedOld.original_language) origLang = mergedOld.original_language;
+
+        let originalLogoFromDB = mergedOld.logo;
+        let originalThumbFromDB = mergedOld.thumb;
+        let originalLogoSourceFromDB = mergedOld.logo_source || (originalLogoFromDB && !originalLogoFromDB.includes('image.tmdb.org') && !originalLogoFromDB.includes('text_logo.svg') ? 'manual' : 'auto');
+        let originalThumbSourceFromDB = mergedOld.thumb_source || (originalThumbFromDB && !originalThumbFromDB.includes('image.tmdb.org') ? 'manual' : 'auto');
+        let oldImageScanned = mergedOld.image_scanned === true;
+
+        if (mergedOld.poster_path) poster_path = mergedOld.poster_path;
+        if (mergedOld.backdrop_path) backdrop_path = mergedOld.backdrop_path;
+        if (mergedOld.overview) overview = mergedOld.overview;
+        if (mergedOld.release_date) release_date = mergedOld.release_date;
+        if (mergedOld.first_air_date) first_air_date = mergedOld.first_air_date;
+
+        // 🌟 核心修复3：校验已有 Logo 和剧照是否有效
         const hasValidLogoInDB = originalLogoFromDB && !originalLogoFromDB.includes("text_logo.svg");
         const hasValidThumbInDB = !!originalThumbFromDB;
 
         let needDetailFetch = false;
 
+        // 只有在没抓过且旧数据确实缺图时才抓取
         if (reqCtx.clearCooldown) {
             needDetailFetch = true;
         } else {
@@ -2134,7 +2177,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             return TMDB_IMG_LOGO + p;
         };
 
-        // 🌟 锁死原有真实 Logo
+        // 🌟 核心修复4：绝对锁死原有有效 Logo，即使二次更新也 100% 保持不动！
         let finalLogo = hasValidLogoInDB 
             ? originalLogoFromDB 
             : (newlyFoundLogoUrl ? toAbsLogo(newlyFoundLogoUrl) : originalLogoFromDB);
@@ -2250,7 +2293,7 @@ function determineDay(item, bgmCalendar, standardDays, overrides) {
 }
 
 // ==========================================
-// 8. 核心同步引擎 (基于当前分类隔离过筛)
+// 8. 核心同步引擎 (构建强索引助手)
 // ==========================================
 async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, reqCtx, originUrl, fetchLogo = true, fetchThumb = true) {
   let category = categoryInput;
@@ -2267,7 +2310,8 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   const blacklist = await getBlacklist(env);
 
-  let oldDataMap = new Map();
+  // 🌟 1. 全量收集旧数据列表
+  let oldItemsList = [];
   try {
       if (category.endsWith("_collection")) {
           const daysToLoad = targetDay !== null ? [targetDay] : [1,2,3,4,5,6,7];
@@ -2276,24 +2320,23 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               const oldObj = await env.R2_BUCKET.get(fileKey);
               if (oldObj !== null) {
                   const oldJson = await oldObj.json();
-                  if (oldJson && oldJson.data) {
-                      oldJson.data.forEach(item => { if (item.tmdbId) oldDataMap.set(item.tmdbId, item); });
-                  }
+                  if (oldJson && oldJson.data) oldItemsList.push(...oldJson.data);
               }
           }
       } else {
           const oldObj = await env.R2_BUCKET.get(config.fileName);
           if (oldObj !== null) {
               const oldJson = await oldObj.json();
-              if (oldJson && oldJson.data) {
-                  oldJson.data.forEach(item => { if (item.tmdbId) oldDataMap.set(item.tmdbId, item); });
-              }
+              if (oldJson && oldJson.data) oldItemsList.push(...oldJson.data);
           }
       }
   } catch (e) {}
   
+  // 🌟 2. 建立多维双向索引匹配器
+  const oldDataHelper = buildOldDataHelper(oldItemsList);
+
   let newLogosTracker = [];
-  const processOpts = (extra = {}) => ({ oldDataMap, newLogosTracker, originUrl, fetchLogo, fetchThumb, ...extra });
+  const processOpts = (extra = {}) => ({ oldDataHelper, newLogosTracker, originUrl, fetchLogo, fetchThumb, ...extra });
 
   let overrides = {};
   try {
@@ -2347,7 +2390,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               if (/(仙逆|吞噬星空|完美世界|斗罗大陆|斗破苍穹|神印王座|武神主宰|师兄|修仙|百炼|大主宰|凡人修仙|遮天|沧元图|剑来|斩神)/.test(name + nameCn)) continue; 
               
               const checkItem = { title: nameCn || name };
-              // 🌟 基于分类隔离的黑名单过滤
               if (isItemBlacklisted(checkItem, blacklist, category)) continue;
 
               freshItems.push({ title: nameCn || name, searchQuery: name || nameCn, score: anime.rating?.score || 0 });
@@ -3092,7 +3134,7 @@ export default {
             
             const fctx = { subreqs: 0, maxSubreqs: 9999, isSafeMode: false, clearCooldown: true };
             const currentOrigin = new URL(request.url).origin;
-            const processOpts = { oldDataMap: new Map(), newLogosTracker: [], originUrl: currentOrigin, fetchLogo: false, fetchThumb: false };
+            const processOpts = { oldDataHelper: buildOldDataHelper([]), newLogosTracker: [], originUrl: currentOrigin, fetchLogo: false, fetchThumb: false };
 
             let injectedCount = 0;
             const daysMap = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
@@ -3227,7 +3269,6 @@ export default {
                 if (oldJson && oldJson.data) {
                     const targetItem = oldJson.data.find(item => item.tmdbId == tmdbId);
                     
-                    // 只有当明确指定模式为 'blacklist' 时，才写入当前分类的黑名单
                     if (targetItem && mode === 'blacklist') {
                         await addToBlacklist(env, [targetItem], catId); 
                     }
@@ -3269,7 +3310,6 @@ export default {
                     const idsSet = new Set(tmdbIds.map(String));
                     const itemsToDelete = oldJson.data.filter(item => idsSet.has(String(item.tmdbId)));
                     
-                    // 只有当明确指定模式为 'blacklist' 时，才批量写入当前分类的黑名单
                     if (itemsToDelete.length > 0 && mode === 'blacklist') {
                         await addToBlacklist(env, itemsToDelete, catId);
                     }
