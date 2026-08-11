@@ -1695,7 +1695,6 @@ const CATEGORY_CONFIGS = [
   { id: "netflix_tv_minor", fileName: "netflix-tv-minor.json", type: "tv_series", platform: "tmdb", name: "Netflix 小语种神剧" },
   { id: "netflix_movie_minor", fileName: "netflix-movie-minor.json", type: "movie", platform: "tmdb", name: "冷门却惊艳的小语种电影" }
 ];
-
 const CATEGORY_MAP = {};
 CATEGORY_CONFIGS.forEach(c => CATEGORY_MAP[c.id] = c);
 
@@ -2024,7 +2023,6 @@ function extractImages(images, backdropPath, posterPath, origLang) {
 
   const logo = sortedLogos[0]?.file_path || null;
 
-  // 🌟【竖海报优选逻辑】：优先选择无字纯净海报（iso_639_1 为 null 或 'xx'）
   const posters = (images && images.posters) ? images.posters : [];
   const noLogoPoster = posters.filter(p => !p.iso_639_1 || p.iso_639_1 === 'xx' || p.iso_639_1 === null)
                               .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))[0]?.file_path || null;
@@ -2069,7 +2067,7 @@ function deduplicateRawList(items) {
 }
 
 // ==========================================
-// 7. TMDB 详细数据加工处理
+// 7. TMDB 详细数据加工处理（带智能增量记忆逻辑）
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
@@ -2079,13 +2077,28 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
     const chunk = limitedItems.slice(i, i + 5);
     const chunkPromises = chunk.map(async (item, idx) => {
       if (idx > 0) await delay(idx * 150);
-      let tmdbId = item.tmdbId; let basicData = item;
-      let initVote = item.score || item.vote_average || 0;
 
-      if (!tmdbId && reqCtx.subreqs < reqCtx.maxSubreqs) {
+      let titleToSearch = item.searchQuery || item.title || item.name || "";
+
+      // 🌟 核心升级：优先去旧数据库寻找匹配的“记忆记录”
+      let oldRecord = null;
+      if (options.oldDataHelper) {
+        oldRecord = options.oldDataHelper.find(item.tmdbId, titleToSearch);
+      }
+
+      let tmdbId = item.tmdbId || oldRecord?.tmdbId || null;
+      let basicData = item;
+
+      // 🌟【记忆判定】：如果原库里已经有该影片且图片已生成，直接锁定复用，跳过 TMDB 搜索！
+      const hasMemoryPoster = !!(oldRecord?.poster_path);
+      const hasMemoryThumb  = !!(oldRecord?.thumb || oldRecord?.backdrop_path);
+      const hasMemoryLogo   = !!(oldRecord?.logo && !oldRecord.logo.includes('text_logo.svg'));
+      const isFullyRemembered = oldRecord && (hasMemoryPoster || oldRecord.image_scanned) && !reqCtx.clearCooldown;
+
+      // 只有在既没有 tmdbId，也没有旧数据记忆时，才发起网络搜索
+      if (!tmdbId && !isFullyRemembered && reqCtx.subreqs < reqCtx.maxSubreqs) {
         try {
-          const searchTitle = item.searchQuery || item.title;
-          const searchParams = { query: searchTitle, language: "zh-CN" };
+          const searchParams = { query: titleToSearch, language: "zh-CN" };
           if (options.include_adult) searchParams.include_adult = "true";
           const data = await tmdbFetch(mediaType === "movie" ? "/search/movie" : "/search/multi", searchParams, env, reqCtx);
           let sr = data.results || [];
@@ -2094,8 +2107,13 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         } catch(e) {}
       }
 
-      if (tmdbId) {
-        let origLang = basicData.original_language || item.original_language || "";
+      // 如果搜索到了 tmdbId，再次尝试匹配旧数据（防因微小标题差异漏匹配）
+      if (tmdbId && !oldRecord && options.oldDataHelper) {
+        oldRecord = options.oldDataHelper.find(tmdbId, titleToSearch);
+      }
+
+      if (tmdbId || oldRecord) {
+        let origLang = basicData.original_language || item.original_language || oldRecord?.original_language || "";
         let originCountries = basicData.origin_country || item.origin_country || [];
 
         if (options.isJapaneseAnimeOnly) {
@@ -2106,135 +2124,12 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         }
 
         if (options.isDomesticDramaOnly) {
-            const genres = basicData.genre_ids || [];
+            const genres = basicData.genre_ids || oldRecord?.genre_ids || [];
             if (genres.some(g => [16, 10764, 10767, 99, 10763].includes(g))) {
                 return null;
             }
         }
 
-        let thumb = basicData.backdrop_path || basicData.poster_path || null;
-        let poster_path = basicData.poster_path || null;
-        let backdrop_path = basicData.backdrop_path || null;
-        let noLogoPoster = basicData.poster_path || null;
-        let release_date = basicData.release_date || null;
-        let first_air_date = basicData.first_air_date || null;
-        let overview = basicData.overview || null;
-        let vote_average = basicData.vote_average || initVote;
-
-        let actualMediaType = basicData.media_type || mediaType;
-        if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
-
-        let oldRecord = null;
-        if (options.oldDataHelper) {
-            oldRecord = options.oldDataHelper.find(tmdbId, item.title || basicData.title || basicData.name);
-        }
-
-        const mergedOld = {
-            logo: oldRecord?.logo || item.logo || null,
-            thumb: oldRecord?.thumb || item.thumb || null,
-            poster_path: oldRecord?.poster_path || item.poster_path || null,
-            noLogoPoster: oldRecord?.noLogoPoster || item.noLogoPoster || null,
-            logo_source: oldRecord?.logo_source || item.logo_source || null,
-            thumb_source: oldRecord?.thumb_source || item.thumb_source || null,
-            poster_source: oldRecord?.poster_source || item.poster_source || null,
-            image_scanned: oldRecord?.image_scanned || item.image_scanned || false,
-            backdrop_path: oldRecord?.backdrop_path || item.backdrop_path || null,
-            overview: oldRecord?.overview || item.overview || null,
-            release_date: oldRecord?.release_date || item.release_date || null,
-            first_air_date: oldRecord?.first_air_date || item.first_air_date || null,
-            original_language: oldRecord?.original_language || origLang
-        };
-
-        if (mergedOld.original_language) origLang = mergedOld.original_language;
-
-        let originalLogoFromDB = mergedOld.logo;
-        let originalThumbFromDB = mergedOld.thumb;
-        let originalPosterFromDB = mergedOld.poster_path;
-        let originalLogoSourceFromDB = mergedOld.logo_source || (originalLogoFromDB && !originalLogoFromDB.includes('image.tmdb.org') && !originalLogoFromDB.includes('text_logo.svg') ? 'manual' : 'auto');
-        let originalThumbSourceFromDB = mergedOld.thumb_source || (originalThumbFromDB && !originalThumbFromDB.includes('image.tmdb.org') ? 'manual' : 'auto');
-        let originalPosterSourceFromDB = mergedOld.poster_source || (originalPosterFromDB && !originalPosterFromDB.includes('image.tmdb.org') ? 'manual' : 'auto');
-        let oldImageScanned = mergedOld.image_scanned === true;
-
-        if (mergedOld.poster_path) poster_path = mergedOld.poster_path;
-        if (mergedOld.backdrop_path) backdrop_path = mergedOld.backdrop_path;
-        if (mergedOld.overview) overview = mergedOld.overview;
-        if (mergedOld.release_date) release_date = mergedOld.release_date;
-        if (mergedOld.first_air_date) first_air_date = mergedOld.first_air_date;
-
-        const hasValidLogoInDB = originalLogoFromDB && !originalLogoFromDB.includes("text_logo.svg");
-        const hasValidThumbInDB = !!originalThumbFromDB;
-        const hasValidPosterInDB = !!originalPosterFromDB && originalPosterSourceFromDB === 'manual';
-
-        let needDetailFetch = false;
-
-        if (reqCtx.clearCooldown) {
-            needDetailFetch = true;
-        } else {
-            if ((options.fetchLogo && !hasValidLogoInDB) || (options.fetchThumb && !hasValidThumbInDB)) {
-                if (!oldImageScanned) {
-                    needDetailFetch = true;
-                }
-            }
-        }
-
-        let safeMargin = reqCtx.isSafeMode ? 10 : 4;
-        if (needDetailFetch && reqCtx.subreqs >= (reqCtx.maxSubreqs - safeMargin)) {
-            needDetailFetch = false; 
-        }
-
-        let newlyFoundLogoUrl = null;
-        let newlyFoundThumbUrl = null;
-        let successfullyScannedNow = false;
-        let last_episode_air_date = null;
-        let next_episode_air_date = null;
-
-        if (needDetailFetch) {
-          try {
-            let imgLangs = origLang && !SAFE_LANGS.includes(origLang) ? SAFE_LANGS + "," + origLang : SAFE_LANGS;
-
-            const detailsAndImages = await tmdbFetch(
-              actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
-              { language: "zh-CN", append_to_response: "images", include_image_language: imgLangs },
-              env, reqCtx
-            );
-
-            if (options.isJapaneseAnimeOnly) {
-                const detailLang = detailsAndImages.original_language || origLang;
-                if (detailLang && detailLang !== 'ja') return null;
-            }
-
-            if (options.isDomesticDramaOnly) {
-                const genresArr = detailsAndImages.genres || [];
-                if (genresArr.some(g => [16, 10764, 10767, 99, 10763].includes(g.id))) {
-                    return null;
-                }
-            }
-
-            poster_path = detailsAndImages.poster_path || poster_path;
-            backdrop_path = detailsAndImages.backdrop_path || backdrop_path;
-            
-            const ext = extractImages(detailsAndImages.images, backdrop_path, poster_path, origLang);
-
-            if (options.fetchLogo && ext.logo) newlyFoundLogoUrl = ext.logo;
-            if (options.fetchThumb && ext.thumb) newlyFoundThumbUrl = ext.thumb;
-
-            last_episode_air_date = detailsAndImages.last_episode_to_air?.air_date || null;
-            next_episode_air_date = detailsAndImages.next_episode_to_air?.air_date || null;
-
-            thumb = ext.thumb || thumb;
-            noLogoPoster = ext.noLogoPoster || noLogoPoster;
-            poster_path = noLogoPoster || poster_path;
-
-            release_date = detailsAndImages.release_date || release_date;
-            first_air_date = detailsAndImages.first_air_date || first_air_date;
-            overview = detailsAndImages.overview || overview;
-            vote_average = detailsAndImages.vote_average || vote_average;
-            
-            successfullyScannedNow = true;
-          } catch(e) {}
-        }
-
-        // 🌟 统一转换为 TMDB 顶级 /original 高清规格！
         const TMDB_IMG = 'https://image.tmdb.org/t/p/original';
         const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/original';
         const toAbs = (p) => {
@@ -2250,59 +2145,87 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             return TMDB_IMG_LOGO + p;
         };
 
-        let finalLogo = hasValidLogoInDB 
-            ? originalLogoFromDB 
-            : (newlyFoundLogoUrl ? toAbsLogo(newlyFoundLogoUrl) : originalLogoFromDB);
+        // 🌟 记忆优先继承：存在旧数据时 100% 保持原有海报/剧照/Logo，绝对不去重新覆盖！
+        let finalPoster = oldRecord?.poster_path || toAbs(basicData.poster_path);
+        let finalThumb = oldRecord?.thumb || oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path);
+        let finalLogo = oldRecord?.logo || null;
+        let finalPosterSource = oldRecord?.poster_source || 'auto';
+        let finalThumbSource = oldRecord?.thumb_source || 'auto';
+        let finalLogoSource = oldRecord?.logo_source || 'auto';
 
-        let finalThumb = hasValidThumbInDB 
-            ? originalThumbFromDB 
-            : (newlyFoundThumbUrl ? toAbs(newlyFoundThumbUrl) : (originalThumbFromDB || toAbs(thumb)));
+        let needDetailFetch = false;
 
-        let finalPoster = hasValidPosterInDB
-            ? originalPosterFromDB
-            : toAbs(noLogoPoster || poster_path);
-
-        let finalLogoSource = hasValidLogoInDB ? originalLogoSourceFromDB : (newlyFoundLogoUrl ? 'auto' : originalLogoSourceFromDB);
-        let finalThumbSource = hasValidThumbInDB ? originalThumbSourceFromDB : (newlyFoundThumbUrl ? 'auto' : originalThumbSourceFromDB);
-        let finalPosterSource = hasValidPosterInDB ? 'manual' : 'auto';
-
-        if (newlyFoundLogoUrl && !hasValidLogoInDB && options.newLogosTracker) {
-            options.newLogosTracker.push(basicData.name || basicData.title || item.title);
+        // 只有全新未录入的影片，或者图片缺失且未扫描过时，才发起细节调取
+        if (reqCtx.clearCooldown) {
+            needDetailFetch = true;
+        } else if (!oldRecord || !oldRecord.image_scanned) {
+            if ((options.fetchLogo && !finalLogo) || (options.fetchThumb && !finalThumb)) {
+                needDetailFetch = true;
+            }
         }
 
-        const finalTitle = basicData.title || basicData.name || item.title || item.name || "未知";
+        let safeMargin = reqCtx.isSafeMode ? 10 : 4;
+        if (needDetailFetch && reqCtx.subreqs >= (reqCtx.maxSubreqs - safeMargin)) {
+            needDetailFetch = false; 
+        }
 
+        let actualMediaType = basicData.media_type || oldRecord?.media_type || mediaType;
+        if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
+
+        if (needDetailFetch && tmdbId) {
+          try {
+            let imgLangs = origLang && !SAFE_LANGS.includes(origLang) ? SAFE_LANGS + "," + origLang : SAFE_LANGS;
+
+            const detailsAndImages = await tmdbFetch(
+              actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
+              { language: "zh-CN", append_to_response: "images", include_image_language: imgLangs },
+              env, reqCtx
+            );
+
+            if (options.isDomesticDramaOnly) {
+                const genresArr = detailsAndImages.genres || [];
+                if (genresArr.some(g => [16, 10764, 10767, 99, 10763].includes(g.id))) {
+                    return null;
+                }
+            }
+
+            const ext = extractImages(detailsAndImages.images, detailsAndImages.backdrop_path, detailsAndImages.poster_path, origLang);
+
+            if (!finalLogo && ext.logo) finalLogo = toAbsLogo(ext.logo);
+            if (!finalThumb && ext.thumb) finalThumb = toAbs(ext.thumb);
+            if (!finalPoster && ext.noLogoPoster) finalPoster = toAbs(ext.noLogoPoster);
+
+          } catch(e) {}
+        }
+
+        const finalTitle = oldRecord?.title || basicData.title || basicData.name || item.title || "未知";
         const fallbackLogo = options.originUrl
           ? (options.originUrl + '/api/text_logo.svg?v=' + Date.now() + '&text=' + encodeURIComponent(finalTitle))
           : null;
 
-        const resultItem = {
+        return {
           title: finalTitle,
-          tmdbId: tmdbId,
+          tmdbId: tmdbId || oldRecord?.tmdbId,
           original_language: origLang,
-          vote_average: vote_average,
+          vote_average: basicData.vote_average || oldRecord?.vote_average || 0,
           poster_path: finalPoster,
-          // 🌟 强一致性锁定：确保 noLogoPoster 与 poster_path 完全保持高清一致！
-          noLogoPoster: finalPoster, 
+          noLogoPoster: finalPoster, // 强一致性锁定
           poster_source: finalPosterSource,
-          backdrop_path: toAbs(backdrop_path) || finalThumb || finalPoster,
-          genre_ids: basicData.genre_ids || [],
-          media_type: actualMediaType,
-          overview: overview,
+          backdrop_path: oldRecord?.backdrop_path || finalThumb || finalPoster,
+          genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
+          media_type: basicData.media_type || oldRecord?.media_type || mediaType,
+          overview: oldRecord?.overview || basicData.overview || null,
           thumb: finalThumb,
           thumb_source: finalThumbSource, 
           logo: finalLogo || fallbackLogo,
           logo_source: finalLogo ? finalLogoSource : 'auto', 
           verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
           logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
-          crawledAt: new Date().toISOString(),
-          image_scanned: oldImageScanned || successfullyScannedNow || hasValidLogoInDB,
-          last_episode_air_date: last_episode_air_date,
-          next_episode_air_date: next_episode_air_date
+          crawledAt: oldRecord?.crawledAt || new Date().toISOString(),
+          image_scanned: oldRecord?.image_scanned || true,
+          last_episode_air_date: oldRecord?.last_episode_air_date || null,
+          next_episode_air_date: oldRecord?.next_episode_air_date || null
         };
-        if (release_date) resultItem.release_date = release_date;
-        if (first_air_date) resultItem.first_air_date = first_air_date;
-        return resultItem;
       }
       return null;
     });
@@ -2713,7 +2636,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   else if (category === "tmdb_popular_movies") { processedData = await processItemsWithTMDB(await fetchTMDBTrending('movie', env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
   else if (category === "bangumi_airing") { let raw = await fetchBangumiCalendar(limit, reqCtx); processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx); }
   
-  // 🌟【防污染关卡】douban_tv 纯国产电视剧过滤 + TMDB补足
+  // 🌟 douban_tv 纯国产电视剧过滤 + TMDB补足
   else if (category === "douban_tv") { 
     let raw = await fetchDoubanSubjectCollection("tv_domestic", limit, reqCtx).catch(() => []); 
     if (!raw.length) raw = await fetchDoubanRecentHot("tv", { tag: "国产剧" }, limit, reqCtx).catch(() => []); 
@@ -2851,7 +2774,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   if (processedData.length === 0 && targetDay === null) throw new Error("TMDB未能匹配到任何符合条件的影视数据");
 
-  // 🌟 单榜落库时与历史数据融合去重
+  // 🌟 单榜落库时与历史数据融合去重，彻底保护手动注入与历史图源
   if (!category.endsWith("_collection")) {
       let combinedData = deduplicateByTmdbId([...processedData, ...oldItemsList]);
       combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
@@ -3483,7 +3406,6 @@ export default {
 
             posters.sort((a, b) => getPosterScore(b) - getPosterScore(a));
             
-            // 🌟 统一使用 /original 规格输出最高清画质！
             const TMDB_IMG_POSTER = 'https://image.tmdb.org/t/p/original';
             const posterUrls = posters.map(p => ({
                 url: TMDB_IMG_POSTER + p.file_path,
@@ -3598,7 +3520,7 @@ export default {
         }
     }
 
-    // 🌟【核心升级】：手动更新海报 API（自动将 /w500 强制升级为 /original 4K原图，并强一致性同步更新 noLogoPoster 字段）
+    // 🌟 手动更新海报 API（自动升级为 /original 4K原图，并同步更新 noLogoPoster 字段）
     if (action === "action" && category === "update_single_poster" && request.method === "POST") {
         if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
         try {
@@ -3608,7 +3530,6 @@ export default {
             const categoryName = body.category;
 
             if (categoryName && env.R2_BUCKET && posterUrl) {
-                // 🌟 分辨率提升补丁：如果传入的是 TMDB 压缩分辨率，强行补加提升为 /original 无损原图！
                 if (posterUrl.includes('image.tmdb.org')) {
                     posterUrl = posterUrl.replace(/\/w\d+/, '/original');
                 }
@@ -3629,7 +3550,6 @@ export default {
                         oldJson.data.forEach(item => {
                             if (item.tmdbId == tmdbId) {
                                 item.poster_path = posterUrl;
-                                // 🌟 同步更新客户端优先读取的 noLogoPoster 字段，双重保险！
                                 item.noLogoPoster = posterUrl;
                                 item.poster_source = 'manual'; 
                                 item.crawledAt = new Date().toISOString();
