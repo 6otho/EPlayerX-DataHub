@@ -1,5 +1,5 @@
 // ==========================================
-// 1. 前端 HTML 界面与拖拉拽系统 (Part 1 - 双层删除与分类黑名单版)
+// 1. 前端 HTML 界面与拖拉拽系统 (Part 1 - 包含海报/剧照/Logo三选一与分类黑名单)
 // ==========================================
 const FRONTEND_HTML_P1 = `
 <!DOCTYPE html>
@@ -113,8 +113,6 @@ const FRONTEND_HTML_P1 = `
 
                 <!-- 大盘数据监控 & 排序控制 -->
                 <div class="flex flex-col xl:flex-row w-full mb-8 gap-3 md:gap-5 justify-end items-center relative">
-                    
-                    <!-- 左侧：自定义排期 -->
                     <div id="custom-override-container" class="hidden mr-auto w-full xl:w-auto bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl p-3 md:p-4 shadow-sm border border-white dark:border-zinc-700/50 flex-col justify-center items-center xl:items-start transition-transform hover:scale-[1.02] cursor-pointer" onclick="openOverrideModal()">
                         <span class="text-[10px] md:text-xs text-purple-600 dark:text-purple-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
@@ -123,7 +121,6 @@ const FRONTEND_HTML_P1 = `
                         <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">点击此处添加遗漏新番，或修复星期几</div>
                     </div>
 
-                    <!-- 右侧：榜单排序和统计 -->
                     <div class="w-full xl:w-auto bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl p-3 md:p-4 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col justify-center items-center xl:items-start transition-transform hover:scale-[1.02]">
                         <span class="text-[10px] md:text-xs text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
@@ -151,6 +148,22 @@ const FRONTEND_HTML_P1 = `
             </div>
         </div>
         <div class="lg:hidden fixed bottom-0 left-0 w-full bg-white/70 dark:bg-zinc-900/80 backdrop-blur-2xl border-t border-white/50 dark:border-zinc-800/50 flex justify-start items-center p-2 z-50 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-10px_20px_rgba(0,0,0,0.02)] overflow-x-auto hide-scrollbar gap-2" id="mob-nav"></div>
+    </div>
+
+    <!-- 🌟 可视化选图弹窗 (新增：竖版海报选择器) -->
+    <div id="poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
+        <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
+            <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="poster-select-title">选择备用竖版海报</h3>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">✨ 系统已自动优先列出<span class="text-pink-600 dark:text-pink-400 font-bold">【纯净无字竖海报】</span>，搭配 Logo 叠加使用绝不重叠覆盖！</p>
+            <div class="flex items-center gap-2 mb-4 shrink-0">
+                <input type="text" id="custom-poster-url" placeholder="或者直接输入您自定义竖海报的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-pink-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
+                <button onclick="applyCustomPoster()" class="px-5 py-2.5 bg-pink-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-pink-700 transition-colors shrink-0">直接应用</button>
+            </div>
+            <div id="poster-select-grid" class="overflow-y-auto flex-1 hide-scrollbar grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-2 content-start auto-rows-max min-h-[30vh] border-y border-gray-100 dark:border-zinc-800 py-4 relative"></div>
+            <div class="flex flex-wrap gap-3 justify-end shrink-0 mt-5">
+                <button onclick="closeModal('poster-select-modal')" class="flex-1 md:flex-none py-3 px-6 rounded-xl font-bold text-xs md:text-sm text-white bg-gray-400 dark:bg-zinc-700 hover:bg-gray-500 dark:hover:bg-zinc-600 transition-colors shadow-md">关闭取消</button>
+            </div>
+        </div>
     </div>
 
     <!-- 可视化选图弹窗 (Logo) -->
@@ -793,7 +806,7 @@ const FRONTEND_HTML_P1 = `
             } catch(err) { showToast("❌ 网络异常", true); }
         }
 
-        // 🌟 分类黑名单封禁（单条，带二次确认防误触）
+        // 🌟 分类黑名单封禁
         async function blacklistItem(e, tmdbId, title) {
             e.stopPropagation();
             const catObj = CATEGORIES.find(c => c.id === currentCategory);
@@ -887,13 +900,51 @@ const FRONTEND_HTML_P1 = `
             } catch(e) { showToast("❌ 网络异常", true); }
         }
 
+        // 🌟 新增：竖海报可视化挑选控制逻辑
+        let activePosterSelectTmdbId = null, activePosterSelectTitle = "", activePosterCurrent = null, activePosterSource = 'auto';
+        async function openPosterSelector(e, tmdbId, title, currentPoster, source, mType) {
+            e.stopPropagation(); activePosterSelectTmdbId = tmdbId; activePosterSelectTitle = title; activePosterCurrent = currentPoster; activePosterSource = source || 'auto';
+            document.getElementById('poster-select-title').innerText = \`为《\${title}》选择备用竖版海报\`;
+            document.getElementById('poster-select-grid').innerHTML = \`<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-pink-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描海报（优先排位【纯净无字】海报）...</span></div>\`;
+            document.getElementById('custom-poster-url').value = ''; document.getElementById('poster-select-modal').classList.remove('hidden');
+            const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
+            try {
+                const res = await fetch(\`\${ACTION_BASE}/list_posters\`, { method: 'POST', headers: { 'Authorization': \`Bearer \${sysPwd}\`, 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId, type: mediaType }) });
+                const data = await res.json();
+                const grid = document.getElementById('poster-select-grid');
+                if (!data.success || !data.posters || data.posters.length === 0) { grid.innerHTML = \`<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何海报资源</div>\`; return; }
+                grid.innerHTML = '';
+                data.posters.forEach(obj => {
+                    let isCurrent = activePosterCurrent && activePosterCurrent.includes(obj.file_path); let tickColor = activePosterSource === 'manual' ? 'bg-emerald-500' : 'bg-pink-500';
+                    const div = document.createElement('div');
+                    div.className = "relative w-full pt-[150%] rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-pink-500 transition-all hover:-translate-y-1 hover:shadow-lg group bg-gray-200 dark:bg-zinc-800 transform-gpu";
+                    div.onclick = () => selectAndSavePoster(obj.url);
+                    div.innerHTML = \`<div class="absolute inset-0 flex items-center justify-center z-10"><img src="\${obj.url}" loading="lazy" class="w-full h-full object-cover" /></div><div class="absolute top-2 left-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded shadow-sm z-30">\${obj.isClean ? '✨ 纯净无字' : '带字海报 (' + obj.lang + ')'}</div>\${isCurrent ? '<div class="absolute top-2 right-2 ' + tickColor + ' text-white rounded-md p-1 shadow-sm border border-white/20 z-30"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>' : ''}<div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center z-20 transition-all"><span class="text-white font-black text-xs md:text-sm bg-pink-600 px-4 py-1.5 rounded-full shadow-lg transform transition-transform scale-90 group-hover:scale-100">使用此海报</span></div>\`;
+                    grid.appendChild(div);
+                });
+            } catch(e) { document.getElementById('poster-select-grid').innerHTML = \`<div class="col-span-full text-center py-10 text-red-500 font-bold text-sm">拉取失败</div>\`; }
+        }
+        async function applyCustomPoster() { const url = document.getElementById('custom-poster-url').value.trim(); if (!url) return showToast("请输入有效的图片链接", true); await selectAndSavePoster(url); }
+        async function selectAndSavePoster(posterUrl) {
+            showToast("⏳ 正在应用新海报并更新主库..."); closeModal('poster-select-modal');
+            try {
+                const res = await fetch(\`\${ACTION_BASE}/update_single_poster\`, { 
+                    method: 'POST', 
+                    headers: { 'Authorization': \`Bearer \${sysPwd}\`, 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ tmdbId: activePosterSelectTmdbId, poster: posterUrl, category: currentCategory, weekday: currentWeekday }) 
+                });
+                const data = await res.json();
+                if (data.success) { showToast("✅ 新竖海报更新成功！"); loadData(currentCategory); } else showToast("❌ 更新失败: " + data.error, true);
+            } catch(e) { showToast("❌ 请求异常", true); }
+        }
+
         let activeLogoSelectTmdbId = null, activeLogoSelectTitle = "", activeLogoCurrent = null, activeLogoSource = 'auto'; 
         async function openLogoSelector(e, tmdbId, title, currentLogo, source, mType) {
             e.stopPropagation(); activeLogoSelectTmdbId = tmdbId; activeLogoSelectTitle = title; activeLogoCurrent = currentLogo; activeLogoSource = source || 'auto';
             document.getElementById('logo-select-title').innerText = \`为《\${title}》选择备用 Logo\`;
             document.getElementById('logo-select-grid').innerHTML = \`<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-purple-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描所有候选图...</span></div>\`;
             document.getElementById('custom-logo-url').value = ''; document.getElementById('logo-select-modal').classList.remove('hidden');
-            const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || catObj.type || 'movie';
+            const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
             try {
                 const res = await fetch(\`\${ACTION_BASE}/list_logos\`, { method: 'POST', headers: { 'Authorization': \`Bearer \${sysPwd}\`, 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId, type: mediaType }) });
                 const data = await res.json();
@@ -931,7 +982,7 @@ const FRONTEND_HTML_P1 = `
             document.getElementById('thumb-select-title').innerText = \`为《\${title}》选择备用剧照 / 背景\`;
             document.getElementById('thumb-select-grid').innerHTML = \`<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-blue-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描...</span></div>\`;
             document.getElementById('custom-thumb-url').value = ''; document.getElementById('thumb-select-modal').classList.remove('hidden');
-            const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || catObj.type || 'movie';
+            const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
             try {
                 const res = await fetch(\`\${ACTION_BASE}/list_thumbs\`, { method: 'POST', headers: { 'Authorization': \`Bearer \${sysPwd}\`, 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId, type: mediaType }) });
                 const data = await res.json();
@@ -998,7 +1049,6 @@ const FRONTEND_HTML_P1 = `
                     <input type="checkbox" value="\${item.tmdbId}" data-type="\${mType}" class="logo-checkbox w-3.5 h-3.5 accent-purple-600 rounded cursor-pointer border-none" onchange="updateLogoToolbar()">
                 </label>\`;
                 
-                // 🌟 双重按钮区域：显眼的红色移除键 + 低调黑灰色的分类封禁键
                 const actionControlBtns = \`<div class="absolute top-2.5 left-11 flex gap-1 z-30">
                     <button onclick="removeItem(event, '\${item.tmdbId}')" class="bg-red-600/90 hover:bg-red-500 text-white p-1 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center justify-center" title="从当前列表移除（同步可能恢复）">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -1012,13 +1062,17 @@ const FRONTEND_HTML_P1 = `
                 const yearStr = (item.release_date || item.first_air_date || '').substring(0, 4);
                 const yearBadge = yearStr ? \`<div class="absolute bottom-2.5 left-2.5 bg-blue-600/90 text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center z-20 shadow-sm border border-white/20">\${yearStr}</div>\` : '';
                 
-                const thumbSource = item.thumb_source || 'auto'; const logoSource = item.logo_source || 'auto';
+                const posterSource = item.poster_source || 'auto'; const thumbSource = item.thumb_source || 'auto'; const logoSource = item.logo_source || 'auto';
+                const posterBtnColor = posterSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-pink-600/90 hover:bg-pink-500';
+                const posterTick = posterSource === 'manual' ? '✅' : '☑️';
                 const thumbBtnColor = thumbSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-purple-600/90 hover:bg-purple-500';
                 const thumbTick = thumbSource === 'manual' ? '✅' : '☑️';
                 const logoBtnColor = logoSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-purple-600/90 hover:bg-purple-500';
                 const logoTick = logoSource === 'manual' ? '✅' : '☑️';
 
-                const actionBtns = \`<div class="absolute bottom-2.5 right-2.5 flex flex-col gap-1.5 z-30 items-end">
+                // 🌟 新增：📇海报 选图按钮，按钮排成纵向3连按
+                const actionBtns = \`<div class="absolute bottom-2.5 right-2.5 flex flex-col gap-1 z-30 items-end">
+                    <button onclick="openPosterSelector(event, '\${item.tmdbId}', '\${safeTitle}', '\${item.poster_path}', '\${posterSource}', '\${mType}')" class="\${posterBtnColor} text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选竖海报（优选纯净无字）">📇海报 \${posterTick}</button>
                     <button onclick="openThumbSelector(event, '\${item.tmdbId}', '\${safeTitle}', '\${item.thumb}', '\${thumbSource}', '\${mType}')" class="\${thumbBtnColor} text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选剧照">📺图 \${thumbTick}</button>
                     <button onclick="openLogoSelector(event, '\${item.tmdbId}', '\${safeTitle}', '\${item.logo}', '\${logoSource}', '\${mType}')" class="\${logoBtnColor} text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选Logo">🖼️标 \${logoTick}</button>
                 </div>\`;
@@ -1284,7 +1338,7 @@ const TITLE_TRANSLATIONS: Record<HomeTitleKey, Record<Locale, string>> = {
   "home.weekly_korean_drama": { en: "Weekly Korean Dramas", zh: "韩剧追剧周更表", "zh-Hant": "韓劇追劇周更表", ja: "韓国ドラマ週間更新", es: "Dramas Coreanos Semanales", ar: "دراما كورية أ週間" },
   "home.weekly_japanese_drama": { en: "Weekly Japanese Dramas", zh: "日剧追剧周更表", "zh-Hant": "日劇追劇周更表", ja: "日本ドラマ週間更新", es: "Dramas Japoneses Semanales", ar: "دراما يابانية أ週間" },
   "home.weekly_sea_drama": { en: "Weekly Southeast Asian Dramas", zh: "东南亚剧周更表", "zh-Hant": "東南亞劇周更表", ja: "東南アジアドラマ週間更新", es: "Dramas del Sudeste Asiático Semanales", ar: "دراما جنوب شرق آسيا" },
-  "home.tmdb_tv_netflix": { en: "Netflix Global Hits", zh: "Netflix 全球热播好剧", "zh-Hant": "Netflix 全球熱編好劇", ja: "Netflix グローバルヒット", es: "Éxitos Globales de Netflix", ar: "مسلسلات netflx العالمية" },
+  "home.tmdb_tv_netflix": { en: "Netflix Global Hits", zh: "Netflix 全球热播好剧", "zh-Hant": "Netflix 全球熱編好剧", ja: "Netflix グローバルヒット", es: "Éxitos Globales de Netflix", ar: "مسلسلات netflx العالمية" },
   "home.variety_cn": { en: "Popular Chinese Variety Shows", zh: "热门国产综艺", "zh-Hant": "熱門國產綜藝", ja: "人気の中国バラエティ", es: "Variedades Chinas", ar: "برامج منوعة صينية" },
   "home.variety_kr": { en: "Trending Korean Variety Shows", zh: "爆款韩国综艺", "zh-Hant": "爆款韓國綜藝", ja: "人気の韓国バラエティ", es: "Variedades Coreanas", ar: "برامج منوعة كورية" },
   "home.variety_global": { en: "Global Hit Variety Shows", zh: "全球流媒体新热综艺", "zh-Hant": "全球流媒體新熱綜艺", ja: "世界の人気バラエティ", es: "Variedades Globales", ar: "برامج منوعة عالمية" },
@@ -1294,7 +1348,7 @@ const TITLE_TRANSLATIONS: Record<HomeTitleKey, Record<Locale, string>> = {
   "home.trakt_shows": { en: "Trending Western Series", zh: "时下热播欧美剧集", "zh-Hant": "時下熱播歐美劇集", ja: "話題の欧米ドラマ", es: "Series Occidentales en Tendencia", ar: "مسلسلات غربية رائجة" },
   "home.tmdb_anime_jp": { en: "Trending Japanese Anime", zh: "近期热门日本动漫", "zh-Hant": "近期熱門日本動漫", ja: "話題の日本アニメ", es: "Anime Japonés en Tendencia", ar: "أنمي ياباني رائج" },
   "home.imdb_top_anime": { en: "IMDb Epic Anime Masterpieces", zh: "IMDb 史诗动漫神作", "zh-Hant": "IMDb 史詩動漫神作", ja: "IMDb 傑作アニメ", es: "Obras Maestras de Anime en IMDb", ar: "أفضل أنمي" },
-  "home.prime_hot_anime": { en: "Trending on Prime Video", zh: "Prime Video 热门日漫", "zh-Hant": "Prime Video 熱門日漫", ja: "Prime Video 人気アニメ", es: "En Tendencia en Prime Video", ar: "رائج على برا임" },
+  "home.prime_hot_anime": { en: "Trending on Prime Video", zh: "Prime Video 热门日漫", "zh-Hant": "Prime Video 熱門日漫", ja: "Prime Video 人気アニメ", es: "En Tendencia en Prime Video", ar: "رائج على برايم" },
   "home.filmarks_anime_movie": { en: "Highly Rated Anime Movies", zh: "Filmarks 高分剧场版", "zh-Hant": "Filmarks 高分劇場版", ja: "Filmarks 高評価アニメ映画", es: "Películas de Anime Mejor Valoradas", ar: "أفلام أنمي عالية التギイム" },
   "home.netflix_hot_anime": { en: "Netflix Trending Anime", zh: "Netflix 独播霸榜日漫", "zh-Hant": "Netflix 點播霸榜日漫", ja: "Netflix 話題のアニメ", es: "Anime en Tendencia de Netflix", ar: "أنمي نتفليكس الرائج" },
   "home.tmdb_anime_top_ja": { en: "Top Rated Japanese Anime", zh: "TMDB 高分神作日漫", "zh-Hant": "TMDB 高分神作日漫", ja: "TMDB 高評価日本アニメ", es: "Anime Japonés Mejor Valorado", ar: "أنمي ياباني عالي التギイム" },
@@ -1655,7 +1709,6 @@ function escapeHTML(str) {
   return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
 }
 
-// 🌟 强力旧数据匹配辅助函数（彻底解决 String/Number 类型不匹配及剧名缺失问题）
 function buildOldDataHelper(itemsArray) {
     const mapById = new Map();
     const mapByTitle = new Map();
@@ -1864,7 +1917,8 @@ async function fetchTMDBDiscoverList(type, paramsObj, env, limit = 100, reqCtx) 
   return results.slice(0, limit).map(item => ({
     title: item.title || item.name, tmdbId: item.id, overview: item.overview, vote_average: item.vote_average,
     poster_path: item.poster_path, backdrop_path: item.backdrop_path, first_air_date: item.first_air_date, release_date: item.release_date,
-    popularity: item.popularity, origin_country: item.origin_country || [], original_language: item.original_language
+    popularity: item.popularity, origin_country: item.origin_country || [], original_language: item.original_language,
+    genre_ids: item.genre_ids || []
   }));
 }
 
@@ -1932,7 +1986,7 @@ async function tmdbFetch(path, paramsObj, env, reqCtx) {
 }
 
 // ==========================================
-// 6. 图片清洗与去重辅助函数
+// 6. 图片清洗与去重辅助函数 (包含纯净无字海报筛选)
 // ==========================================
 function extractImages(images, backdropPath, posterPath, origLang) {
   const backdrops = (images && images.backdrops) ? images.backdrops : [];
@@ -1970,6 +2024,7 @@ function extractImages(images, backdropPath, posterPath, origLang) {
 
   const logo = sortedLogos[0]?.file_path || null;
 
+  // 🌟【竖海报优选逻辑】：优先选择无字纯净海报（iso_639_1 为 null 或 'xx'）
   const posters = (images && images.posters) ? images.posters : [];
   const noLogoPoster = posters.filter(p => !p.iso_639_1 || p.iso_639_1 === 'xx' || p.iso_639_1 === null)
                               .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))[0]?.file_path || null;
@@ -2014,7 +2069,7 @@ function deduplicateRawList(items) {
 }
 
 // ==========================================
-// 7. TMDB 详细数据加工处理（彻底锁定旧数据逻辑）
+// 7. TMDB 详细数据加工处理
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
@@ -2050,6 +2105,13 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             }
         }
 
+        if (options.isDomesticDramaOnly) {
+            const genres = basicData.genre_ids || [];
+            if (genres.some(g => [16, 10764, 10767, 99, 10763].includes(g))) {
+                return null;
+            }
+        }
+
         let thumb = basicData.backdrop_path || basicData.poster_path || null;
         let poster_path = basicData.poster_path || null;
         let backdrop_path = basicData.backdrop_path || null;
@@ -2062,20 +2124,20 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         let actualMediaType = basicData.media_type || mediaType;
         if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
 
-        // 🌟 核心修复1：通过 buildOldDataHelper 强力匹配旧数据（跨越数字/字符串及剧名）
         let oldRecord = null;
         if (options.oldDataHelper) {
             oldRecord = options.oldDataHelper.find(tmdbId, item.title || basicData.title || basicData.name);
         }
 
-        // 🌟 核心修复2：多重融合已存在的数据（优先拿对象自身或旧库记录）
         const mergedOld = {
             logo: oldRecord?.logo || item.logo || null,
             thumb: oldRecord?.thumb || item.thumb || null,
+            poster_path: oldRecord?.poster_path || item.poster_path || null,
+            noLogoPoster: oldRecord?.noLogoPoster || item.noLogoPoster || null,
             logo_source: oldRecord?.logo_source || item.logo_source || null,
             thumb_source: oldRecord?.thumb_source || item.thumb_source || null,
+            poster_source: oldRecord?.poster_source || item.poster_source || null,
             image_scanned: oldRecord?.image_scanned || item.image_scanned || false,
-            poster_path: oldRecord?.poster_path || item.poster_path || null,
             backdrop_path: oldRecord?.backdrop_path || item.backdrop_path || null,
             overview: oldRecord?.overview || item.overview || null,
             release_date: oldRecord?.release_date || item.release_date || null,
@@ -2087,8 +2149,10 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
         let originalLogoFromDB = mergedOld.logo;
         let originalThumbFromDB = mergedOld.thumb;
+        let originalPosterFromDB = mergedOld.poster_path;
         let originalLogoSourceFromDB = mergedOld.logo_source || (originalLogoFromDB && !originalLogoFromDB.includes('image.tmdb.org') && !originalLogoFromDB.includes('text_logo.svg') ? 'manual' : 'auto');
         let originalThumbSourceFromDB = mergedOld.thumb_source || (originalThumbFromDB && !originalThumbFromDB.includes('image.tmdb.org') ? 'manual' : 'auto');
+        let originalPosterSourceFromDB = mergedOld.poster_source || (originalPosterFromDB && !originalPosterFromDB.includes('image.tmdb.org') ? 'manual' : 'auto');
         let oldImageScanned = mergedOld.image_scanned === true;
 
         if (mergedOld.poster_path) poster_path = mergedOld.poster_path;
@@ -2097,13 +2161,12 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         if (mergedOld.release_date) release_date = mergedOld.release_date;
         if (mergedOld.first_air_date) first_air_date = mergedOld.first_air_date;
 
-        // 🌟 核心修复3：校验已有 Logo 和剧照是否有效
         const hasValidLogoInDB = originalLogoFromDB && !originalLogoFromDB.includes("text_logo.svg");
         const hasValidThumbInDB = !!originalThumbFromDB;
+        const hasValidPosterInDB = !!originalPosterFromDB && originalPosterSourceFromDB === 'manual';
 
         let needDetailFetch = false;
 
-        // 只有在没抓过且旧数据确实缺图时才抓取
         if (reqCtx.clearCooldown) {
             needDetailFetch = true;
         } else {
@@ -2140,6 +2203,13 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
                 if (detailLang && detailLang !== 'ja') return null;
             }
 
+            if (options.isDomesticDramaOnly) {
+                const genresArr = detailsAndImages.genres || [];
+                if (genresArr.some(g => [16, 10764, 10767, 99, 10763].includes(g.id))) {
+                    return null;
+                }
+            }
+
             poster_path = detailsAndImages.poster_path || poster_path;
             backdrop_path = detailsAndImages.backdrop_path || backdrop_path;
             
@@ -2153,6 +2223,8 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
             thumb = ext.thumb || thumb;
             noLogoPoster = ext.noLogoPoster || noLogoPoster;
+            poster_path = noLogoPoster || poster_path;
+
             release_date = detailsAndImages.release_date || release_date;
             first_air_date = detailsAndImages.first_air_date || first_air_date;
             overview = detailsAndImages.overview || overview;
@@ -2177,7 +2249,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             return TMDB_IMG_LOGO + p;
         };
 
-        // 🌟 核心修复4：绝对锁死原有有效 Logo，即使二次更新也 100% 保持不动！
         let finalLogo = hasValidLogoInDB 
             ? originalLogoFromDB 
             : (newlyFoundLogoUrl ? toAbsLogo(newlyFoundLogoUrl) : originalLogoFromDB);
@@ -2186,8 +2257,14 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             ? originalThumbFromDB 
             : (newlyFoundThumbUrl ? toAbs(newlyFoundThumbUrl) : (originalThumbFromDB || toAbs(thumb)));
 
+        // 🌟 锁死海报：如果有手动选过的海报，绝对锁定！
+        let finalPoster = hasValidPosterInDB
+            ? originalPosterFromDB
+            : toAbs(noLogoPoster || poster_path);
+
         let finalLogoSource = hasValidLogoInDB ? originalLogoSourceFromDB : (newlyFoundLogoUrl ? 'auto' : originalLogoSourceFromDB);
         let finalThumbSource = hasValidThumbInDB ? originalThumbSourceFromDB : (newlyFoundThumbUrl ? 'auto' : originalThumbSourceFromDB);
+        let finalPosterSource = hasValidPosterInDB ? 'manual' : 'auto';
 
         if (newlyFoundLogoUrl && !hasValidLogoInDB && options.newLogosTracker) {
             options.newLogosTracker.push(basicData.name || basicData.title || item.title);
@@ -2204,8 +2281,11 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           tmdbId: tmdbId,
           original_language: origLang,
           vote_average: vote_average,
-          poster_path: toAbs(poster_path),
-          backdrop_path: toAbs(backdrop_path) || finalThumb || toAbs(poster_path),
+          poster_path: finalPoster,
+          // 🌟 核心修复：确保 noLogoPoster 与 poster_path 完全保持强一致，防止客户端优先读取旧 noLogoPoster！
+          noLogoPoster: finalPoster, 
+          poster_source: finalPosterSource,
+          backdrop_path: toAbs(backdrop_path) || finalThumb || finalPoster,
           genre_ids: basicData.genre_ids || [],
           media_type: actualMediaType,
           overview: overview,
@@ -2215,7 +2295,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           logo_source: finalLogo ? finalLogoSource : 'auto', 
           verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
           logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
-          noLogoPoster: toAbs(noLogoPoster),
           crawledAt: new Date().toISOString(),
           image_scanned: oldImageScanned || successfullyScannedNow || hasValidLogoInDB,
           last_episode_air_date: last_episode_air_date,
@@ -2293,7 +2372,7 @@ function determineDay(item, bgmCalendar, standardDays, overrides) {
 }
 
 // ==========================================
-// 8. 核心同步引擎 (构建强索引助手)
+// 8. 核心同步引擎
 // ==========================================
 async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, reqCtx, originUrl, fetchLogo = true, fetchThumb = true) {
   let category = categoryInput;
@@ -2310,7 +2389,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   const blacklist = await getBlacklist(env);
 
-  // 🌟 1. 全量收集旧数据列表
   let oldItemsList = [];
   try {
       if (category.endsWith("_collection")) {
@@ -2332,7 +2410,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       }
   } catch (e) {}
   
-  // 🌟 2. 建立多维双向索引匹配器
   const oldDataHelper = buildOldDataHelper(oldItemsList);
 
   let newLogosTracker = [];
@@ -2635,6 +2712,30 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   else if (category === "tmdb_popular_tv") { processedData = await processItemsWithTMDB(await fetchTMDBTrending('tv', env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
   else if (category === "tmdb_popular_movies") { processedData = await processItemsWithTMDB(await fetchTMDBTrending('movie', env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
   else if (category === "bangumi_airing") { let raw = await fetchBangumiCalendar(limit, reqCtx); processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx); }
+  
+  // 🌟【防污染关卡】douban_tv 纯国产电视剧过滤 + TMDB补足
+  else if (category === "douban_tv") { 
+    let raw = await fetchDoubanSubjectCollection("tv_domestic", limit, reqCtx).catch(() => []); 
+    if (!raw.length) raw = await fetchDoubanRecentHot("tv", { tag: "国产剧" }, limit, reqCtx).catch(() => []); 
+    
+    raw = raw.filter(item => {
+      const t = item.title || "";
+      return !/(动画|动漫|真人秀|脱口秀|演唱会|晚会|纪录片|特别节目|第[一二三四五六七八九十\d]+期|季|年番)/.test(t);
+    });
+
+    if (raw.length < limit) { 
+      let tmdbCn = await fetchTMDBDiscoverList('tv', { 
+        with_original_language: 'zh', 
+        with_origin_country: 'CN', 
+        without_genres: '16,10764,10767,10763,99', 
+        sort_by: 'popularity.desc' 
+      }, env, limit, reqCtx).catch(() => []); 
+      raw = deduplicateRawList([...raw, ...tmdbCn]); 
+    } 
+    
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts({ isDomesticDramaOnly: true }), reqCtx); 
+  }
+
   else if (category === "imdb_top_anime") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_genres: '16', with_original_language: 'ja|zh', sort_by: 'vote_average.desc', 'vote_count.gte': '1000' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
   else if (category === "prime_hot_anime") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_watch_providers: '9', watch_region: 'JP', with_genres: '16', sort_by: 'popularity.desc' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
   else if (category === "filmarks_anime_movie") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('movie', { with_genres: '16', with_original_language: 'ja', sort_by: 'vote_average.desc', 'vote_count.gte': '200' }, env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
@@ -2647,7 +2748,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   else if (category === "tmdb_tv_hbo") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_networks: '49' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
   else if (category === "tmdb_tv_apple") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_networks: '2552' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
   else if (category === "douban_movies") { processedData = await processItemsWithTMDB(await fetchDoubanRecentHot("movie", { category: "热门", type: "华语" }, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
-  else if (category === "douban_tv") { let raw = await fetchDoubanSubjectCollection("tv_domestic", limit, reqCtx); if (!raw.length) raw = await fetchDoubanRecentHot("tv", { tag: "国产剧" }, limit, reqCtx); processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx); }
   else if (category === "variety_cn") {
     let rawCn = await fetchDoubanRecentHot("tv", { category: "show", type: "show_domestic" }, limit, reqCtx).catch(() => []);
     if (rawCn.length < limit) { let tmdbCn = await fetchTMDBDiscoverList('tv', { with_genres: '10764', with_original_language: 'zh', sort_by: 'popularity.desc' }, env, limit, reqCtx).catch(() => []); rawCn = [...rawCn, ...tmdbCn]; }
@@ -2745,15 +2845,18 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
     processedData = await processItemsWithTMDB(pureList, "tv", env, limit, processOpts(), reqCtx);
   }
 
-  // 🌟 单榜落库前黑名单过滤
   if (Array.isArray(processedData)) {
       processedData = processedData.filter(item => !isItemBlacklisted(item, blacklist, category));
   }
 
   if (processedData.length === 0 && targetDay === null) throw new Error("TMDB未能匹配到任何符合条件的影视数据");
 
+  // 🌟 单榜落库时自动与历史数据融合去重，防止夜间更新/单次同步覆盖掉手动注入的内容！
   if (!category.endsWith("_collection")) {
-      const finalJson = { platform: config.platform, type: config.type, count: processedData.length, lastUpdated: new Date().toISOString(), data: processedData };
+      let combinedData = deduplicateByTmdbId([...processedData, ...oldItemsList]);
+      combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
+
+      const finalJson = { platform: config.platform, type: config.type, count: combinedData.length, lastUpdated: new Date().toISOString(), data: combinedData };
       await env.R2_BUCKET.put(config.fileName, JSON.stringify(finalJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       return { count: finalJson.count, newLogos: newLogosTracker };
   }
@@ -3247,7 +3350,6 @@ export default {
       }
     }
 
-    // 🌟 单条操作（支持模式：mode = 'remove' 普通移除 或 'blacklist' 分类黑名单）
     if (action === "action" && category === "delete_item" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
@@ -3286,7 +3388,6 @@ export default {
       }
     }
 
-    // 🌟 批量操作（支持模式：mode = 'remove' 普通移除 或 'blacklist' 分类黑名单）
     if (action === "action" && category === "batch_delete" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
@@ -3346,6 +3447,56 @@ export default {
 
         return new Response(JSON.stringify({ success: true, count: result.count, newLogos: result.newLogos }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
       } catch (e) { return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders }); }
+    }
+
+    // 🌟 获取备用竖海报 API（给无字海报赋予 +100000 权重排在最前）
+    if (action === "action" && category === "list_posters" && request.method === "POST") {
+        if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
+        try {
+            const body = await request.json();
+            const tmdbId = body.tmdbId;
+            const mediaType = body.type || 'movie';
+            const fctx = { subreqs: 0, maxSubreqs: 5, isSafeMode: false, clearCooldown: true };
+            
+            const details = await tmdbFetch(
+                mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
+                { language: "zh-CN" }, env, fctx
+            );
+            const origLang = details.original_language || "";
+
+            const imagesData = await tmdbFetch(
+                mediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`,
+                {}, env, fctx
+            );
+            
+            let posters = imagesData.posters || [];
+            
+            const getPosterScore = (p) => {
+                const lang = p.iso_639_1;
+                const isClean = lang === null || lang === 'xx';
+                let score = isClean ? 100000 : 0; 
+                if (lang === 'zh') score += 500;
+                else if (origLang && lang === origLang) score += 300;
+                else if (lang === 'en') score += 100;
+                return score + (p.vote_average || 0);
+            };
+
+            posters.sort((a, b) => getPosterScore(b) - getPosterScore(a));
+            
+            const TMDB_IMG_POSTER = 'https://image.tmdb.org/t/p/w500';
+            const posterUrls = posters.map(p => ({
+                url: TMDB_IMG_POSTER + p.file_path,
+                file_path: p.file_path,
+                lang: p.iso_639_1,
+                isClean: p.iso_639_1 === null || p.iso_639_1 === 'xx'
+            }));
+            
+            return new Response(JSON.stringify({ success: true, posters: posterUrls }), {
+                headers: { "Content-Type": "application/json", ...antiCacheHeaders }
+            });
+        } catch (e) {
+            return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
+        }
     }
 
     if (action === "action" && category === "list_logos" && request.method === "POST") {
@@ -3441,6 +3592,52 @@ export default {
             return new Response(JSON.stringify({ success: true, thumbs: thumbUrls }), {
                 headers: { "Content-Type": "application/json", ...antiCacheHeaders }
             });
+        } catch (e) {
+            return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
+        }
+    }
+
+    // 🌟【关键修复】：手动更新海报 API（同步修改 poster_path 和 noLogoPoster，保证客户端瞬间刷出来！）
+    if (action === "action" && category === "update_single_poster" && request.method === "POST") {
+        if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
+        try {
+            const body = await request.json();
+            const tmdbId = body.tmdbId;
+            const posterUrl = body.poster; 
+            const categoryName = body.category;
+
+            if (categoryName && env.R2_BUCKET && posterUrl) {
+                let fileName = categoryName + ".json";
+                if (categoryName.endsWith("_collection")) {
+                    fileName = `${categoryName}-${body.weekday || 1}.json`;
+                } else {
+                    const config = CATEGORY_MAP[categoryName];
+                    if (config) fileName = config.fileName;
+                }
+
+                const oldObj = await env.R2_BUCKET.get(fileName);
+                if (oldObj) {
+                    const oldJson = await oldObj.json();
+                    if (oldJson && oldJson.data) {
+                        let updated = false;
+                        oldJson.data.forEach(item => {
+                            if (item.tmdbId == tmdbId) {
+                                item.poster_path = posterUrl;
+                                // 🌟 修复关键：同步更新客户端播放器优先读取的 noLogoPoster 字段！
+                                item.noLogoPoster = posterUrl;
+                                item.poster_source = 'manual'; 
+                                item.crawledAt = new Date().toISOString();
+                                item.image_scanned = true;
+                                updated = true;
+                            }
+                        });
+                        if (updated) {
+                            await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
+                        }
+                    }
+                }
+            }
+            return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
         } catch (e) {
             return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
         }
@@ -3610,6 +3807,11 @@ export default {
                                 thumbUrl = ext.thumb.startsWith('http') ? ext.thumb : 'https://image.tmdb.org/t/p/original' + ext.thumb;
                             }
 
+                            let posterUrl = null;
+                            if (ext.noLogoPoster) {
+                                posterUrl = ext.noLogoPoster.startsWith('http') ? ext.noLogoPoster : 'https://image.tmdb.org/t/p/original' + ext.noLogoPoster;
+                            }
+
                             oldJson.data.forEach(item => {
                                 if (item.tmdbId == tmdbId) { 
                                     if (logoUrl) {
@@ -3627,6 +3829,11 @@ export default {
                                         item.thumb = thumbUrl;
                                         item.thumb_source = 'auto'; 
                                         item.backdrop_path = thumbUrl;
+                                    }
+                                    if (posterUrl && item.poster_source !== 'manual') {
+                                        item.poster_path = posterUrl;
+                                        item.noLogoPoster = posterUrl;
+                                        item.poster_source = 'auto';
                                     }
                                     item.crawledAt = new Date().toISOString();
                                     item.image_scanned = true; 
