@@ -2139,21 +2139,29 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             return TMDB_IMG + p;
         };
         const toAbsLogo = (p) => {
-            if (!p) return null;
-            if (p.startsWith('data:')) return null;
-            if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('/api/')) return p;
-            return TMDB_IMG_LOGO + p;
-        };
+                if (!p) return null;
+                if (p.startsWith('data:')) return null;
+                if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('/api/')) return p;
+                return TMDB_IMG_LOGO + p;
+            };
 
-        // 🌟 记忆优先继承：存在旧数据时 100% 保持原有海报/剧照/Logo，绝对不去重新覆盖！
-        let finalPoster = oldRecord?.poster_path || toAbs(basicData.poster_path);
-        let finalThumb = oldRecord?.thumb || oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path);
-        let finalLogo = oldRecord?.logo || null;
-        let finalPosterSource = oldRecord?.poster_source || 'auto';
-        let finalThumbSource = oldRecord?.thumb_source || 'auto';
-        let finalLogoSource = oldRecord?.logo_source || 'auto';
+            // ✅ 替换为带自动升频原图的版本：
+            const upgradeToOriginal = (url) => {
+                if (!url || typeof url !== 'string') return url;
+                if (url.includes('image.tmdb.org')) {
+                    return url.replace(/\/w\d+/, '/original');
+                }
+                return url;
+            };
 
-        let needDetailFetch = false;
+            let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
+            let finalThumb = upgradeToOriginal(oldRecord?.thumb || oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
+            let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
+            let finalPosterSource = oldRecord?.poster_source || 'auto';
+            let finalThumbSource = oldRecord?.thumb_source || 'auto';
+            let finalLogoSource = oldRecord?.logo_source || 'auto';
+
+            let needDetailFetch = false;
 
         // 只有全新未录入的影片，或者图片缺失且未扫描过时，才发起细节调取
         if (reqCtx.clearCooldown) {
