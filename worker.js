@@ -1042,7 +1042,7 @@ const FRONTEND_HTML_P1 = `
 
             displayData.forEach(item => {
                 const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                const posterUrl = item.poster_path ? (item.poster_path.startsWith('http') ? item.poster_path : 'https://image.tmdb.org/t/p/w500' + item.poster_path) : 'https://via.placeholder.com/500x750?text=No+Poster';
+                const posterUrl = item.poster_path ? (item.poster_path.startsWith('http') ? item.poster_path : 'https://image.tmdb.org/t/p/original' + item.poster_path) : 'https://via.placeholder.com/500x750?text=No+Poster';
                 const mType = item.media_type || (catObj ? catObj.type : 'movie');
                 
                 const checkboxHtml = \`<label class="absolute top-2.5 left-2.5 z-30 cursor-pointer bg-black/50 backdrop-blur-md rounded-md p-1 shadow-sm border border-white/20 flex items-center justify-center transition-all hover:scale-110" onclick="event.stopPropagation()">
@@ -2234,8 +2234,9 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           } catch(e) {}
         }
 
+        // 🌟 统一转换为 TMDB 顶级 /original 高清规格！
         const TMDB_IMG = 'https://image.tmdb.org/t/p/original';
-        const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/w500';
+        const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/original';
         const toAbs = (p) => {
             if (!p) return null;
             if (p.startsWith('data:')) return null;
@@ -2257,7 +2258,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             ? originalThumbFromDB 
             : (newlyFoundThumbUrl ? toAbs(newlyFoundThumbUrl) : (originalThumbFromDB || toAbs(thumb)));
 
-        // 🌟 锁死海报：如果有手动选过的海报，绝对锁定！
         let finalPoster = hasValidPosterInDB
             ? originalPosterFromDB
             : toAbs(noLogoPoster || poster_path);
@@ -2282,7 +2282,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           original_language: origLang,
           vote_average: vote_average,
           poster_path: finalPoster,
-          // 🌟 核心修复：确保 noLogoPoster 与 poster_path 完全保持强一致，防止客户端优先读取旧 noLogoPoster！
+          // 🌟 强一致性锁定：确保 noLogoPoster 与 poster_path 完全保持高清一致！
           noLogoPoster: finalPoster, 
           poster_source: finalPosterSource,
           backdrop_path: toAbs(backdrop_path) || finalThumb || finalPoster,
@@ -2851,7 +2851,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   if (processedData.length === 0 && targetDay === null) throw new Error("TMDB未能匹配到任何符合条件的影视数据");
 
-  // 🌟 单榜落库时自动与历史数据融合去重，防止夜间更新/单次同步覆盖掉手动注入的内容！
+  // 🌟 单榜落库时与历史数据融合去重
   if (!category.endsWith("_collection")) {
       let combinedData = deduplicateByTmdbId([...processedData, ...oldItemsList]);
       combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
@@ -3449,7 +3449,7 @@ export default {
       } catch (e) { return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders }); }
     }
 
-    // 🌟 获取备用竖海报 API（给无字海报赋予 +100000 权重排在最前）
+    // 🌟 获取备用竖海报 API（返回 /original 最高高清原图，无字海报 +100000 权重）
     if (action === "action" && category === "list_posters" && request.method === "POST") {
         if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
         try {
@@ -3483,7 +3483,8 @@ export default {
 
             posters.sort((a, b) => getPosterScore(b) - getPosterScore(a));
             
-            const TMDB_IMG_POSTER = 'https://image.tmdb.org/t/p/w500';
+            // 🌟 统一使用 /original 规格输出最高清画质！
+            const TMDB_IMG_POSTER = 'https://image.tmdb.org/t/p/original';
             const posterUrls = posters.map(p => ({
                 url: TMDB_IMG_POSTER + p.file_path,
                 file_path: p.file_path,
@@ -3537,7 +3538,7 @@ export default {
                 return scoreB - scoreA;
             });
             
-            const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/w500';
+            const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/original';
             const logoUrls = logos.map(l => ({ url: TMDB_IMG_LOGO + l.file_path, file_path: l.file_path, lang: l.iso_639_1 }));
             
             return new Response(JSON.stringify({ success: true, logos: logoUrls }), {
@@ -3586,7 +3587,7 @@ export default {
                 return scoreB - scoreA;
             });
             
-            const TMDB_IMG_BACKDROP = 'https://image.tmdb.org/t/p/w780';
+            const TMDB_IMG_BACKDROP = 'https://image.tmdb.org/t/p/original';
             const thumbUrls = backdrops.map(l => ({ url: TMDB_IMG_BACKDROP + l.file_path, file_path: l.file_path, lang: l.iso_639_1 }));
             
             return new Response(JSON.stringify({ success: true, thumbs: thumbUrls }), {
@@ -3597,16 +3598,21 @@ export default {
         }
     }
 
-    // 🌟【关键修复】：手动更新海报 API（同步修改 poster_path 和 noLogoPoster，保证客户端瞬间刷出来！）
+    // 🌟【核心升级】：手动更新海报 API（自动将 /w500 强制升级为 /original 4K原图，并强一致性同步更新 noLogoPoster 字段）
     if (action === "action" && category === "update_single_poster" && request.method === "POST") {
         if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
         try {
             const body = await request.json();
             const tmdbId = body.tmdbId;
-            const posterUrl = body.poster; 
+            let posterUrl = body.poster; 
             const categoryName = body.category;
 
             if (categoryName && env.R2_BUCKET && posterUrl) {
+                // 🌟 分辨率提升补丁：如果传入的是 TMDB 压缩分辨率，强行补加提升为 /original 无损原图！
+                if (posterUrl.includes('image.tmdb.org')) {
+                    posterUrl = posterUrl.replace(/\/w\d+/, '/original');
+                }
+
                 let fileName = categoryName + ".json";
                 if (categoryName.endsWith("_collection")) {
                     fileName = `${categoryName}-${body.weekday || 1}.json`;
@@ -3623,7 +3629,7 @@ export default {
                         oldJson.data.forEach(item => {
                             if (item.tmdbId == tmdbId) {
                                 item.poster_path = posterUrl;
-                                // 🌟 修复关键：同步更新客户端播放器优先读取的 noLogoPoster 字段！
+                                // 🌟 同步更新客户端优先读取的 noLogoPoster 字段，双重保险！
                                 item.noLogoPoster = posterUrl;
                                 item.poster_source = 'manual'; 
                                 item.crawledAt = new Date().toISOString();
@@ -3648,12 +3654,16 @@ export default {
         try {
             const body = await request.json();
             const tmdbId = body.tmdbId;
-            const logoUrl = body.logo; 
+            let logoUrl = body.logo; 
             const title = body.title || "未知";
             const categoryName = body.category;
             const currentOrigin = new URL(request.url).origin;
 
             if (categoryName && env.R2_BUCKET) {
+                if (logoUrl && logoUrl.includes('image.tmdb.org')) {
+                    logoUrl = logoUrl.replace(/\/w\d+/, '/original');
+                }
+
                 let fileName = categoryName + ".json";
                 if (categoryName.endsWith("_collection")) {
                     fileName = `${categoryName}-${body.weekday || 1}.json`;
@@ -3701,10 +3711,14 @@ export default {
         try {
             const body = await request.json();
             const tmdbId = body.tmdbId;
-            const thumbUrl = body.thumb; 
+            let thumbUrl = body.thumb; 
             const categoryName = body.category;
 
             if (categoryName && env.R2_BUCKET && thumbUrl) {
+                if (thumbUrl.includes('image.tmdb.org')) {
+                    thumbUrl = thumbUrl.replace(/\/w\d+/, '/original');
+                }
+
                 let fileName = categoryName + ".json";
                 if (categoryName.endsWith("_collection")) {
                     fileName = `${categoryName}-${body.weekday || 1}.json`;
@@ -3722,11 +3736,7 @@ export default {
                             if (item.tmdbId == tmdbId) {
                                 item.thumb = thumbUrl;
                                 item.thumb_source = 'manual'; 
-                                if (thumbUrl.includes('image.tmdb.org')) {
-                                    item.backdrop_path = thumbUrl.replace('/w780', '/original').replace('/w500', '/original');
-                                } else {
-                                    item.backdrop_path = thumbUrl;
-                                }
+                                item.backdrop_path = thumbUrl;
                                 item.crawledAt = new Date().toISOString();
                                 item.image_scanned = true;
                                 updated = true;
@@ -3799,7 +3809,7 @@ export default {
                             
                             let logoUrl = null;
                             if (ext.logo) {
-                                logoUrl = ext.logo.startsWith('http') ? ext.logo : 'https://image.tmdb.org/t/p/w500' + ext.logo;
+                                logoUrl = ext.logo.startsWith('http') ? ext.logo : 'https://image.tmdb.org/t/p/original' + ext.logo;
                             }
                             
                             let thumbUrl = null;
