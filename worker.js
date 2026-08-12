@@ -150,7 +150,7 @@ const FRONTEND_HTML_P1 = `
         <div class="lg:hidden fixed bottom-0 left-0 w-full bg-white/70 dark:bg-zinc-900/80 backdrop-blur-2xl border-t border-white/50 dark:border-zinc-800/50 flex justify-start items-center p-2 z-50 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-10px_20px_rgba(0,0,0,0.02)] overflow-x-auto hide-scrollbar gap-2" id="mob-nav"></div>
     </div>
 
-    <!-- 🌟 可视化选图弹窗 (新增：竖版海报选择器) -->
+    <!-- 可视化选图弹窗 (竖版海报选择器) -->
     <div id="poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="poster-select-title">选择备用竖版海报</h3>
@@ -363,7 +363,7 @@ const FRONTEND_HTML_P1 = `
             { id: 'variety_kr', titleKey: 'home.variety_kr', name: '爆款韩国综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'thumb-list', type: 'tv' },
             { id: 'variety_global', titleKey: 'home.variety_global', name: '全球流媒体新热综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'thumb-list', type: 'tv' },
             { id: 'tmdb_tv_hbo', titleKey: 'home.tmdb_tv_hbo', name: 'HBO 高分神剧', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z', preset: 'poster-list', type: 'tv' },
-            { id: 'tmdb_tv_apple', titleKey: 'home.tmdb_tv_apple', name: 'Apple TV+ 原创精品', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', preset: 'poster-list', type: 'tv' },
+            { id: 'tmdb_tv_apple', titleKey: 'home.tmdb_tv_apple', name: 'Apple TV+ 原创精品', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1v4a1 1 0 001 1m-6 0h6', preset: 'poster-list', type: 'tv' },
             { id: 'trakt_movies', titleKey: 'home.trakt_movies', name: '火爆全球欧美大片', icon: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z', preset: 'thumb-list', type: 'movie' },
             { id: 'tmdb_anime_cn', titleKey: 'home.popular_domestic_anime', name: '热门国产动漫', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z', preset: 'thumb-list', type: 'tv' },
             { id: 'trakt_shows', titleKey: 'home.trakt_shows', name: '时下热播欧美剧集', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z', preset: 'thumb-list', type: 'tv' },
@@ -900,7 +900,7 @@ const FRONTEND_HTML_P1 = `
             } catch(e) { showToast("❌ 网络异常", true); }
         }
 
-        // 🌟 新增：竖海报可视化挑选控制逻辑
+        // 🌟 竖海报可视化挑选控制逻辑
         let activePosterSelectTmdbId = null, activePosterSelectTitle = "", activePosterCurrent = null, activePosterSource = 'auto';
         async function openPosterSelector(e, tmdbId, title, currentPoster, source, mType) {
             e.stopPropagation(); activePosterSelectTmdbId = tmdbId; activePosterSelectTitle = title; activePosterCurrent = currentPoster; activePosterSource = source || 'auto';
@@ -1027,15 +1027,48 @@ const FRONTEND_HTML_P1 = `
                 else btn.className = "flex-1 xl:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200";
             });
 
+            // 🌟 完美日期解析器：兼容全字段
+            const extractYearAndDate = (x) => {
+                if (!x || typeof x !== 'object') return { year: 0, fullDate: "0000-00-00", isUpcoming: false };
+                const rawDateStr = String(
+                    x.release_date || x.first_air_date || x.air_date || x.last_episode_air_date || 
+                    (Array.isArray(x.pubdates) ? x.pubdates[0] : x.pubdate) || x.year || ""
+                ).trim();
+
+                const dateMatch = rawDateStr.match(/\\b(19|20)\\d{2}[-/.\\s]\\d{1,2}[-/.\\s]\\d{1,2}\\b/);
+                if (dateMatch) {
+                    const parts = dateMatch[0].split(/[-/.\\s]/);
+                    const y = parseInt(parts[0], 10);
+                    const m = parts[1].padStart(2, '0');
+                    const d = parts[2].padStart(2, '0');
+                    return { year: y, fullDate: \`\${y}-\${m}-\${d}\`, isUpcoming: false };
+                }
+
+                const yearMatch = rawDateStr.match(/\\b(19|20)\\d{2}\\b/);
+                if (yearMatch) {
+                    const y = parseInt(yearMatch[0], 10);
+                    return { year: y, fullDate: \`\${y}-01-01\`, isUpcoming: false };
+                }
+
+                const currentYear = new Date().getFullYear();
+                return { year: currentYear + 1, fullDate: \`\${currentYear + 1}-12-31\`, isUpcoming: true };
+            };
+
             let displayData = [...window.currentFetchedData];
             if (sortType === 'year') {
                 displayData.sort((a, b) => {
-                    const getYear = (x) => parseInt((x.release_date || x.first_air_date || '').substring(0, 4)) || 0;
-                    const yearDiff = getYear(b) - getYear(a);
-                    if (yearDiff !== 0) return yearDiff; return (b.vote_average || 0) - (a.vote_average || 0); 
+                    const infoA = extractYearAndDate(a);
+                    const infoB = extractYearAndDate(b);
+                    if (infoB.year !== infoA.year) return infoB.year - infoA.year;
+                    if (infoB.fullDate !== infoA.fullDate) return infoB.fullDate.localeCompare(infoA.fullDate);
+                    return (b.vote_average || 0) - (a.vote_average || 0);
                 });
             } else if (sortType === 'heat') {
-                displayData.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+                displayData.sort((a, b) => {
+                    const voteDiff = (b.vote_average || 0) - (a.vote_average || 0);
+                    if (Math.abs(voteDiff) > 0.01) return voteDiff;
+                    return (b.popularity || 0) - (a.popularity || 0);
+                });
             }
 
             grid.innerHTML = ""; const catObj = CATEGORIES.find(c => c.id === currentCategory);
@@ -1059,8 +1092,11 @@ const FRONTEND_HTML_P1 = `
                 </div>\`;
                 
                 const ratingBadge = item.vote_average ? \`<div class="absolute top-2.5 right-2.5 bg-black/80 text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 z-20 shadow-sm border border-white/20"><span class="text-yellow-400 text-[10px]">★</span>\${item.vote_average.toFixed(1)}</div>\` : '';
-                const yearStr = (item.release_date || item.first_air_date || '').substring(0, 4);
-                const yearBadge = yearStr ? \`<div class="absolute bottom-2.5 left-2.5 bg-blue-600/90 text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center z-20 shadow-sm border border-white/20">\${yearStr}</div>\` : '';
+                
+                // 🌟 年份/待播状态角标
+                const yearInfo = extractYearAndDate(item);
+                const displayYearStr = yearInfo.isUpcoming ? '待播' : (yearInfo.year > 0 ? yearInfo.year : '');
+                const yearBadge = displayYearStr ? \`<div class="absolute bottom-2.5 left-2.5 \${yearInfo.isUpcoming ? 'bg-purple-600/90' : 'bg-blue-600/90'} text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center z-20 shadow-sm border border-white/20">\${displayYearStr}</div>\` : '';
                 
                 const posterSource = item.poster_source || 'auto'; const thumbSource = item.thumb_source || 'auto'; const logoSource = item.logo_source || 'auto';
                 const posterBtnColor = posterSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-pink-600/90 hover:bg-pink-500';
@@ -1070,7 +1106,6 @@ const FRONTEND_HTML_P1 = `
                 const logoBtnColor = logoSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-purple-600/90 hover:bg-purple-500';
                 const logoTick = logoSource === 'manual' ? '✅' : '☑️';
 
-                // 🌟 新增：📇海报 选图按钮，按钮排成纵向3连按
                 const actionBtns = \`<div class="absolute bottom-2.5 right-2.5 flex flex-col gap-1 z-30 items-end">
                     <button onclick="openPosterSelector(event, '\${item.tmdbId}', '\${safeTitle}', '\${item.poster_path}', '\${posterSource}', '\${mType}')" class="\${posterBtnColor} text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选竖海报（优选纯净无字）">📇海报 \${posterTick}</button>
                     <button onclick="openThumbSelector(event, '\${item.tmdbId}', '\${safeTitle}', '\${item.thumb}', '\${thumbSource}', '\${mType}')" class="\${thumbBtnColor} text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选剧照">📺图 \${thumbTick}</button>
@@ -1343,7 +1378,7 @@ const TITLE_TRANSLATIONS: Record<HomeTitleKey, Record<Locale, string>> = {
   "home.variety_kr": { en: "Trending Korean Variety Shows", zh: "爆款韩国综艺", "zh-Hant": "爆款韓國綜藝", ja: "人気の韓国バラエティ", es: "Variedades Coreanas", ar: "برامج منوعة كورية" },
   "home.variety_global": { en: "Global Hit Variety Shows", zh: "全球流媒体新热综艺", "zh-Hant": "全球流媒體新熱綜艺", ja: "世界の人気バラエティ", es: "Variedades Globales", ar: "برامج منوعة عالمية" },
   "home.tmdb_tv_hbo": { en: "HBO Masterpieces", zh: "HBO 高分神剧", "zh-Hant": "HBO 高分神劇", ja: "HBO 傑作ドラマ", es: "Obras Maestras de HBO", ar: "روائع HBO" },
-  "home.tmdb_tv_apple": { en: "Apple TV+ Originals", zh: "Apple TV+ 原创精品", "zh-Hant": "Apple TV+ 原創精品", ja: "Apple TV+ オリジナル", es: "Originales de Apple TV+", ar: "أعمال Apple TV+ الأصلية" },
+  "home.tmdb_tv_apple": { en: "Apple TV+ Originals", zh: "Apple TV+ 原创精品", "zh-Hant": "Apple TV+ 原創精品", ja: "Apple TV+ オリジナル", es: "Originales de Apple TV+", ar: "أعمال Apple TV+ picnic" },
   "home.trakt_movies": { en: "Global Blockbusters", zh: "火爆全球欧美大片", "zh-Hant": "火爆全球歐美大片", ja: "世界の大ヒット映画", es: "Éxitos de Taquilla Globales", ar: "أفلام أجنبية" },
   "home.trakt_shows": { en: "Trending Western Series", zh: "时下热播欧美剧集", "zh-Hant": "時下熱播歐美劇集", ja: "話題の欧米ドラマ", es: "Series Occidentales en Tendencia", ar: "مسلسلات غربية رائجة" },
   "home.tmdb_anime_jp": { en: "Trending Japanese Anime", zh: "近期热门日本动漫", "zh-Hant": "近期熱門日本動漫", ja: "話題の日本アニメ", es: "Anime Japonés en Tendencia", ar: "أنمي ياباني رائج" },
@@ -1627,7 +1662,12 @@ export function createDefaultHomeConfig(options: DefaultHomeConfigOptions): Defa
             document.getElementById("stat-count").innerText = "0"; document.getElementById("stat-time").innerText = "加载中...";
 
             try {
-                const response = await fetch(\`\${API_BASE}/\${fetchCategory}?_t=\${Date.now()}\`);
+                // 🌟 核心修补：加载数据时，自动带上当前设定的排序参数 &sort=
+                let savedV2 = JSON.parse(localStorage.getItem('saved_layout_v2') || '{}');
+                let sortType = 'default'; if (savedV2[category] && savedV2[category].sort) sortType = savedV2[category].sort;
+                const sortQuery = (sortType && sortType !== 'default') ? \`&sort=\${sortType}\` : '';
+
+                const response = await fetch(\`\${API_BASE}/\${fetchCategory}?_t=\${Date.now()}\${sortQuery}\`);
                 const data = await response.json();
                 
                 if(!data.data || data.data.length === 0) { 
@@ -1695,6 +1735,7 @@ const CATEGORY_CONFIGS = [
   { id: "netflix_tv_minor", fileName: "netflix-tv-minor.json", type: "tv_series", platform: "tmdb", name: "Netflix 小语种神剧" },
   { id: "netflix_movie_minor", fileName: "netflix-movie-minor.json", type: "movie", platform: "tmdb", name: "冷门却惊艳的小语种电影" }
 ];
+
 const CATEGORY_MAP = {};
 CATEGORY_CONFIGS.forEach(c => CATEGORY_MAP[c.id] = c);
 
@@ -1895,7 +1936,7 @@ async function fetchTMDBTrending(type, env, limit = 100, reqCtx) {
       if (res.ok) { const data = await res.json(); results.push(...(data.results || [])); }
     } catch (e) { break; }
   }
-  return results.slice(0, limit).map(item => ({ title: item.title || item.name, tmdbId: item.id, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, original_language: item.original_language, origin_country: item.origin_country || [] }));
+  return results.slice(0, limit).map(item => ({ title: item.title || item.name, tmdbId: item.id, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, original_language: item.original_language, origin_country: item.origin_country || [], release_date: item.release_date, first_air_date: item.first_air_date, popularity: item.popularity }));
 }
 
 async function fetchTMDBDiscoverList(type, paramsObj, env, limit = 100, reqCtx) {
@@ -2080,7 +2121,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
       let titleToSearch = item.searchQuery || item.title || item.name || "";
 
-      // 🌟 核心升级：优先去旧数据库寻找匹配的“记忆记录”
       let oldRecord = null;
       if (options.oldDataHelper) {
         oldRecord = options.oldDataHelper.find(item.tmdbId, titleToSearch);
@@ -2089,13 +2129,11 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
       let tmdbId = item.tmdbId || oldRecord?.tmdbId || null;
       let basicData = item;
 
-      // 🌟【记忆判定】：如果原库里已经有该影片且图片已生成，直接锁定复用，跳过 TMDB 搜索！
       const hasMemoryPoster = !!(oldRecord?.poster_path);
       const hasMemoryThumb  = !!(oldRecord?.thumb || oldRecord?.backdrop_path);
       const hasMemoryLogo   = !!(oldRecord?.logo && !oldRecord.logo.includes('text_logo.svg'));
       const isFullyRemembered = oldRecord && (hasMemoryPoster || oldRecord.image_scanned) && !reqCtx.clearCooldown;
 
-      // 只有在既没有 tmdbId，也没有旧数据记忆时，才发起网络搜索
       if (!tmdbId && !isFullyRemembered && reqCtx.subreqs < reqCtx.maxSubreqs) {
         try {
           const searchParams = { query: titleToSearch, language: "zh-CN" };
@@ -2107,7 +2145,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         } catch(e) {}
       }
 
-      // 如果搜索到了 tmdbId，再次尝试匹配旧数据（防因微小标题差异漏匹配）
       if (tmdbId && !oldRecord && options.oldDataHelper) {
         oldRecord = options.oldDataHelper.find(tmdbId, titleToSearch);
       }
@@ -2139,35 +2176,36 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             return TMDB_IMG + p;
         };
         const toAbsLogo = (p) => {
-                if (!p) return null;
-                if (p.startsWith('data:')) return null;
-                if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('/api/')) return p;
-                return TMDB_IMG_LOGO + p;
-            };
+            if (!p) return null;
+            if (p.startsWith('data:')) return null;
+            if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('/api/')) return p;
+            return TMDB_IMG_LOGO + p;
+        };
 
-            // ✅ 替换为带自动升频原图的版本：
-            const upgradeToOriginal = (url) => {
-                if (!url || typeof url !== 'string') return url;
-                if (url.includes('image.tmdb.org')) {
-                    return url.replace(/\/w\d+/, '/original');
-                }
-                return url;
-            };
+        const upgradeToOriginal = (url) => {
+            if (!url || typeof url !== 'string') return url;
+            if (url.includes('image.tmdb.org')) {
+                return url.replace(/\/w\d+/, '/original');
+            }
+            return url;
+        };
 
-            let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
-            let finalThumb = upgradeToOriginal(oldRecord?.thumb || oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
-            let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
-            let finalPosterSource = oldRecord?.poster_source || 'auto';
-            let finalThumbSource = oldRecord?.thumb_source || 'auto';
-            let finalLogoSource = oldRecord?.logo_source || 'auto';
+        let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
+        let finalThumb = upgradeToOriginal(oldRecord?.thumb || oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
+        let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
+        let finalPosterSource = oldRecord?.poster_source || 'auto';
+        let finalThumbSource = oldRecord?.thumb_source || 'auto';
+        let finalLogoSource = oldRecord?.logo_source || 'auto';
 
-            let needDetailFetch = false;
+        let needDetailFetch = false;
 
-        // 只有全新未录入的影片，或者图片缺失且未扫描过时，才发起细节调取
+        // 🌟 修复：如果旧记录中缺少日期字段，强制触发 TMDB 详情拉取以补全年份！
+        const isMissingDate = !oldRecord?.first_air_date && !oldRecord?.release_date;
+
         if (reqCtx.clearCooldown) {
             needDetailFetch = true;
-        } else if (!oldRecord || !oldRecord.image_scanned) {
-            if ((options.fetchLogo && !finalLogo) || (options.fetchThumb && !finalThumb)) {
+        } else if (!oldRecord || !oldRecord.image_scanned || isMissingDate) {
+            if (isMissingDate || (options.fetchLogo && !finalLogo) || (options.fetchThumb && !finalThumb)) {
                 needDetailFetch = true;
             }
         }
@@ -2179,6 +2217,9 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
         let actualMediaType = basicData.media_type || oldRecord?.media_type || mediaType;
         if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
+
+        let release_date = basicData.release_date || oldRecord?.release_date || null;
+        let first_air_date = basicData.first_air_date || oldRecord?.first_air_date || null;
 
         if (needDetailFetch && tmdbId) {
           try {
@@ -2197,6 +2238,9 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
                 }
             }
 
+            release_date = detailsAndImages.release_date || release_date;
+            first_air_date = detailsAndImages.first_air_date || first_air_date;
+
             const ext = extractImages(detailsAndImages.images, detailsAndImages.backdrop_path, detailsAndImages.poster_path, origLang);
 
             if (!finalLogo && ext.logo) finalLogo = toAbsLogo(ext.logo);
@@ -2211,13 +2255,18 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           ? (options.originUrl + '/api/text_logo.svg?v=' + Date.now() + '&text=' + encodeURIComponent(finalTitle))
           : null;
 
+        // 🌟【100% 完整补回字段】：包含 release_date, first_air_date, year, popularity，彻底解决年份排序失效！
         return {
           title: finalTitle,
           tmdbId: tmdbId || oldRecord?.tmdbId,
+          release_date: release_date || basicData.release_date || oldRecord?.release_date || null,
+          first_air_date: first_air_date || basicData.first_air_date || oldRecord?.first_air_date || null,
+          year: oldRecord?.year || (release_date || first_air_date || basicData.release_date || basicData.first_air_date || "").substring(0, 4) || null,
+          popularity: basicData.popularity || oldRecord?.popularity || 0,
           original_language: origLang,
           vote_average: basicData.vote_average || oldRecord?.vote_average || 0,
           poster_path: finalPoster,
-          noLogoPoster: finalPoster, // 强一致性锁定
+          noLogoPoster: finalPoster, 
           poster_source: finalPosterSource,
           backdrop_path: oldRecord?.backdrop_path || finalThumb || finalPoster,
           genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
@@ -2782,10 +2831,15 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   if (processedData.length === 0 && targetDay === null) throw new Error("TMDB未能匹配到任何符合条件的影视数据");
 
-  // 🌟 单榜落库时与历史数据融合去重，彻底保护手动注入与历史图源
+  // 🌟 单榜落库时与历史数据融合去重，保护手动注入与历史图源
   if (!category.endsWith("_collection")) {
       let combinedData = deduplicateByTmdbId([...processedData, ...oldItemsList]);
       combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
+
+      // 🛡️ 拦截闸：如果结合后依然小于25条且原本更多，拦截防止误清空
+      if (combinedData.length < 25 && oldItemsList.length >= 25) {
+          return { count: oldItemsList.length, newLogos: [] };
+      }
 
       const finalJson = { platform: config.platform, type: config.type, count: combinedData.length, lastUpdated: new Date().toISOString(), data: combinedData };
       await env.R2_BUCKET.put(config.fileName, JSON.stringify(finalJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -3240,19 +3294,51 @@ export default {
       const object = await env.R2_BUCKET.get(config.fileName);
       if (object === null) return new Response(JSON.stringify({ count: 0, data: [] }), { headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders } });
 
+      // 🌟 全字段日期逻辑：严格精确到月日进行年份倒序排列！
       const sortType = url.searchParams.get("sort");
       if (sortType === "year" || sortType === "heat") {
         const rawData = await object.json();
         if (rawData.data && Array.isArray(rawData.data)) {
+          const extractYearAndDate = (x) => {
+              if (!x || typeof x !== 'object') return { year: 0, fullDate: "0000-00-00", isUpcoming: false };
+              const rawDateStr = String(
+                  x.release_date || x.first_air_date || x.air_date || x.last_episode_air_date || 
+                  (Array.isArray(x.pubdates) ? x.pubdates[0] : x.pubdate) || x.year || ""
+              ).trim();
+
+              const dateMatch = rawDateStr.match(/\b(19|20)\d{2}[-/.\s]\d{1,2}[-/.\s]\d{1,2}\b/);
+              if (dateMatch) {
+                  const parts = dateMatch[0].split(/[-/.\s]/);
+                  const y = parseInt(parts[0], 10);
+                  const m = parts[1].padStart(2, '0');
+                  const d = parts[2].padStart(2, '0');
+                  return { year: y, fullDate: `${y}-${m}-${d}`, isUpcoming: false };
+              }
+
+              const yearMatch = rawDateStr.match(/\b(19|20)\d{2}\b/);
+              if (yearMatch) {
+                  const y = parseInt(yearMatch[0], 10);
+                  return { year: y, fullDate: `${y}-01-01`, isUpcoming: false };
+              }
+
+              const currentYear = new Date().getFullYear();
+              return { year: currentYear + 1, fullDate: `${currentYear + 1}-12-31`, isUpcoming: true };
+          };
+
           if (sortType === "year") {
             rawData.data.sort((a, b) => {
-              const getYear = (x) => parseInt((x.release_date || x.first_air_date || '').substring(0, 4)) || 0;
-              const yearDiff = getYear(b) - getYear(a);
-              if (yearDiff !== 0) return yearDiff;
+              const infoA = extractYearAndDate(a);
+              const infoB = extractYearAndDate(b);
+              if (infoB.year !== infoA.year) return infoB.year - infoA.year;
+              if (infoB.fullDate !== infoA.fullDate) return infoB.fullDate.localeCompare(infoA.fullDate);
               return (b.vote_average || 0) - (a.vote_average || 0);
             });
           } else if (sortType === "heat") {
-            rawData.data.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+            rawData.data.sort((a, b) => {
+              const voteDiff = (b.vote_average || 0) - (a.vote_average || 0);
+              if (Math.abs(voteDiff) > 0.01) return voteDiff;
+              return (b.popularity || 0) - (a.popularity || 0);
+            });
           }
         }
         return new Response(JSON.stringify(rawData), { headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders } });
@@ -3879,37 +3965,7 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    ctx.waitUntil((async () => {
-      await sendTgMessage(env, `⏳ <b>开始执行凌晨全站大更新！</b>\n🛡️ <i>系统正在稳定同步所有榜单的最新片单数据...</i>`);
-
-      let successCount = 0;
-      let failCount = 0;
-      let cronDetails = [];
-
-      const cronCtx = { subreqs: 0, maxSubreqs: 950, isSafeMode: true, clearCooldown: false };
-
-      for (let config of CATEGORY_CONFIGS) {
-        if (cronCtx.subreqs >= cronCtx.maxSubreqs - 40) {
-          await sendTgMessage(env, `🛡️ <b>警告:</b> 即将触碰 Cloudflare 免费版底层红线，已保护剩余数据的安全。`);
-          break;
-        }
-
-        try {
-          const defaultOrigin = env.API_BASE_URL || "https://movie-api.l3okuu.workers.dev";
-          let res = await executeSyncTask(config.id, env, 100, true, cronCtx, defaultOrigin, false, false);
-          successCount++;
-          cronDetails.push(`✅ <b>${escapeHTML(config.name)}</b> (已更新)`);
-        } catch (e) { 
-          failCount++; 
-          cronDetails.push(`❌ <b>${escapeHTML(config.name)}</b> 失败: ${e.message}`);
-        }
-
-        await delay(1000);
-      }
-
-      let summaryMsg = `🎉 <b>凌晨全站大更新完毕</b>\n✅ 成功: ${successCount}  ❌ 失败: ${failCount}  ⚠️ 额度消耗: ${cronCtx.subreqs}\n\n<b>执行明细:</b>\n` + cronDetails.join('\n');
-      
-      await sendTgMessage(env, summaryMsg);
-    })());
+    // 🌟 彻底禁用后台定时任务自动更新，保证数据库零重置，完全归你在控制台手动掌控！
+    return;
   }
 };
