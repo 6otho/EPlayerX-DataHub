@@ -357,7 +357,7 @@ const FRONTEND_HTML_P1 = `
             { id: 'tmdb_popular_movies', titleKey: 'home.tmdb_popular_movies', name: '今日热门电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'thumb-list', type: 'movie' },
             { id: 'tmdb_popular_tv', titleKey: 'home.tmdb_popular_tv_shows', name: '今日热门电视剧', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'hero-list', type: 'tv' },
             { id: 'bangumi_airing', titleKey: 'home.bangumi_popular_anime', name: '今日热门番剧', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', preset: 'thumb-list', type: 'tv' },
-            { id: 'douban_tv', titleKey: 'home.popular_tv_shows', name: '时下最热门的国产剧', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'thumb-list', type: 'tv' },
+            { id: 'douban_tv_custom', titleKey: 'home.popular_tv_shows', name: '时下热门国产剧', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'thumb-list', type: 'tv' },
             { id: 'tmdb_tv_netflix', titleKey: 'home.tmdb_tv_netflix', name: 'Netflix 全球热播好剧', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'poster-list', type: 'tv' },
             { id: 'variety_cn', titleKey: 'home.variety_cn', name: '热门国产综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'thumb-list', type: 'tv' },
             { id: 'variety_kr', titleKey: 'home.variety_kr', name: '爆款韩国综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'thumb-list', type: 'tv' },
@@ -1704,7 +1704,7 @@ const CATEGORY_CONFIGS = [
   { id: "tmdb_popular_movies", fileName: "tmdb-popular-movies.json", type: "movie", platform: "tmdb", name: "今日热门电影" },
   { id: "tmdb_popular_tv", fileName: "tmdb-popular-tv.json", type: "tv_series", platform: "tmdb", name: "今日热门电视剧" },
   { id: "bangumi_airing", fileName: "bangumi-airing.json", type: "animation", platform: "bangumi", name: "今日热门番剧" },
-  { id: "douban_tv", fileName: "douban-tv.json", type: "tv_series", platform: "douban", name: "时下最热门的国产剧" },
+  { id: "douban_tv_custom", fileName: "douban-tv-custom.json", type: "tv_series", platform: "douban", name: "时下热门国产剧" },
   { id: "tmdb_tv_netflix", fileName: "tmdb-tv-netflix.json", type: "tv_series", platform: "tmdb", name: "Netflix 全球热播好剧" },
   { id: "variety_cn", fileName: "variety-cn.json", type: "variety_show", platform: "tmdb", name: "热门国产综艺" },
   { id: "variety_kr", fileName: "variety-kr.json", type: "variety_show", platform: "tmdb", name: "爆款韩国综艺" },
@@ -2108,7 +2108,7 @@ function deduplicateRawList(items) {
 }
 
 // ==========================================
-// 7. TMDB 详细数据加工处理（带智能增量记忆逻辑）
+// 7. TMDB 详细数据加工处理（带时间归一化修复全覆盖）
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
@@ -2199,7 +2199,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
         let needDetailFetch = false;
 
-        // 🌟 修复：如果旧记录中缺少日期字段，强制触发 TMDB 详情拉取以补全年份！
         const isMissingDate = !oldRecord?.first_air_date && !oldRecord?.release_date;
 
         if (reqCtx.clearCooldown) {
@@ -2218,14 +2217,13 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         let actualMediaType = basicData.media_type || oldRecord?.media_type || mediaType;
         if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
 
-        let release_date = basicData.release_date || oldRecord?.release_date || null;
-        let first_air_date = basicData.first_air_date || oldRecord?.first_air_date || null;
+        let detailsAndImages = null;
 
         if (needDetailFetch && tmdbId) {
           try {
             let imgLangs = origLang && !SAFE_LANGS.includes(origLang) ? SAFE_LANGS + "," + origLang : SAFE_LANGS;
 
-            const detailsAndImages = await tmdbFetch(
+            detailsAndImages = await tmdbFetch(
               actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
               { language: "zh-CN", append_to_response: "images", include_image_language: imgLangs },
               env, reqCtx
@@ -2237,9 +2235,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
                     return null;
                 }
             }
-
-            release_date = detailsAndImages.release_date || release_date;
-            first_air_date = detailsAndImages.first_air_date || first_air_date;
 
             const ext = extractImages(detailsAndImages.images, detailsAndImages.backdrop_path, detailsAndImages.poster_path, origLang);
 
@@ -2255,13 +2250,39 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           ? (options.originUrl + '/api/text_logo.svg?v=' + Date.now() + '&text=' + encodeURIComponent(finalTitle))
           : null;
 
-        // 🌟【100% 完整补回字段】：包含 release_date, first_air_date, year, popularity，彻底解决年份排序失效！
+        // 🌟【全字段时间归一化】：提取标准 YYYY-MM-DD，同时赋给 release_date、first_air_date、air_date、pubdate
+        let rawDate = (
+            detailsAndImages?.first_air_date ||
+            detailsAndImages?.release_date ||
+            detailsAndImages?.last_episode_air_date ||
+            basicData.first_air_date ||
+            basicData.release_date ||
+            oldRecord?.first_air_date ||
+            oldRecord?.release_date ||
+            oldRecord?.air_date ||
+            ""
+        ).toString().trim();
+
+        let validDate = null;
+        const dateMatch = rawDate.match(/\b(19|20)\d{2}[-/.\s]\d{1,2}[-/.\s]\d{1,2}\b/);
+        if (dateMatch) {
+            const parts = dateMatch[0].split(/[-/.\s]/);
+            validDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        } else {
+            const yearMatch = rawDate.match(/\b(19|20)\d{2}\b/);
+            if (yearMatch) validDate = `${yearMatch[0]}-01-01`;
+        }
+
+        const finalYear = validDate ? validDate.substring(0, 4) : (oldRecord?.year || null);
+
         return {
           title: finalTitle,
           tmdbId: tmdbId || oldRecord?.tmdbId,
-          release_date: release_date || basicData.release_date || oldRecord?.release_date || null,
-          first_air_date: first_air_date || basicData.first_air_date || oldRecord?.first_air_date || null,
-          year: oldRecord?.year || (release_date || first_air_date || basicData.release_date || basicData.first_air_date || "").substring(0, 4) || null,
+          release_date: validDate || basicData.release_date || oldRecord?.release_date || null,
+          first_air_date: validDate || basicData.first_air_date || oldRecord?.first_air_date || null,
+          air_date: validDate || null,
+          pubdate: validDate || null,
+          year: finalYear,
           popularity: basicData.popularity || oldRecord?.popularity || 0,
           original_language: origLang,
           vote_average: basicData.vote_average || oldRecord?.vote_average || 0,
@@ -2279,7 +2300,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
           logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
           crawledAt: oldRecord?.crawledAt || new Date().toISOString(),
-          image_scanned: oldRecord?.image_scanned || true,
+          image_scanned: true,
           last_episode_air_date: oldRecord?.last_episode_air_date || null,
           next_episode_air_date: oldRecord?.next_episode_air_date || null
         };
@@ -2694,7 +2715,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   else if (category === "bangumi_airing") { let raw = await fetchBangumiCalendar(limit, reqCtx); processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx); }
   
   // 🌟 douban_tv 纯国产电视剧过滤 + TMDB补足
-  else if (category === "douban_tv") { 
+  else if (category === "douban_tv" || category === "douban_tv_custom") { 
     let raw = await fetchDoubanSubjectCollection("tv_domestic", limit, reqCtx).catch(() => []); 
     if (!raw.length) raw = await fetchDoubanRecentHot("tv", { tag: "国产剧" }, limit, reqCtx).catch(() => []); 
     
