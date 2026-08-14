@@ -122,59 +122,75 @@ const FRONTEND_HTML_P1 = `
                     </div>
                 </div>
 
-                <!-- 🌟 全页面通用状态栏 (左侧绝对贴边：LED 电子时钟监控屏 + 暂停开关；右侧绝对居中：周更新卡片) -->
-                <div class="flex flex-col xl:flex-row items-center justify-between gap-3 w-full mb-6 shrink-0">
-                    <!-- 1. 左侧：全页面常驻 LED 电子时钟监控表 (带一键暂停开关) -->
-                    <div id="led-monitor-box" class="w-full xl:w-auto shrink-0 px-3.5 py-2 rounded-2xl flex items-center justify-between gap-3 text-xs border font-mono-led select-none transition-all duration-500 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner">
-                        <div class="flex items-center gap-2">
-                            <span id="led-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0"></span>
-                            <span id="led-tag" class="font-black px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400">IDLE</span>
-                            <span id="led-info" class="truncate font-bold text-[11px] max-w-[180px] sm:max-w-[240px]">大盘待命中</span>
-                        </div>
-                        <div class="flex items-center gap-2 shrink-0 pl-2 border-l border-slate-800">
-                            <button onclick="toggleCronPause()" id="cron-pause-btn" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded text-[10px] font-bold transition-all border border-slate-700" title="暂停/恢复后台自动轮询">⏸ 暂停</button>
-                            <span class="text-slate-600 text-[10px]">TIME</span>
-                            <span id="led-clock" class="font-bold text-xs tracking-wider text-slate-300">--:--:--</span>
+                <!-- 🌟 第一行：周更合集专属状态栏 (周更时显示：左边LED表 + 右边周历；普通分类时整行收起) -->
+                <div id="status-bar-container" class="flex flex-col xl:flex-row items-center justify-between gap-3 w-full mb-6 shrink-0">
+                    <!-- 周更模式下：LED 电子表插槽 -->
+                    <div id="led-slot-weekly" class="w-full xl:w-auto shrink-0">
+                        <div id="led-monitor-box" class="w-full xl:w-auto shrink-0 px-3.5 py-2 rounded-2xl flex items-center justify-between gap-3 text-xs border font-mono-led select-none transition-all duration-500 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner overflow-x-auto hide-scrollbar whitespace-nowrap">
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span id="led-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0"></span>
+                                <span id="led-tag" class="font-black px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 shrink-0">IDLE</span>
+                                <span id="led-info" class="font-bold text-[11px] text-slate-300">大盘待命中</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0 pl-2.5 border-l border-slate-800 ml-2">
+                                <button onclick="toggleCronPause()" id="cron-pause-btn" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded text-[10px] font-bold transition-all border border-slate-700 shrink-0" title="暂停/恢复后台自动轮询">⏸ 暂停</button>
+                                <span class="text-slate-600 text-[10px] shrink-0">TIME</span>
+                                <span id="led-clock" class="font-bold text-xs tracking-wider text-slate-300 shrink-0">--:--:--</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 2. 右侧：占满剩余区域并在内部完美居中周日~周六卡片 (仅周更分类激活) -->
+                    <!-- 周日~周六卡片 (仅周更分类激活) -->
                     <div id="weekday-tabs-container" class="hidden flex-1 justify-center items-center w-full">
                         <div id="weekday-buttons" class="flex bg-white/50 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-white/60 dark:border-zinc-700/60 shadow-inner justify-between gap-1 w-full max-w-xl"></div>
                     </div>
                 </div>
 
-                <!-- 大盘数据监控 & 排序控制 -->
-                <div class="flex flex-col xl:flex-row w-full mb-8 gap-3 md:gap-5 justify-end items-center relative">
-                    <div id="custom-override-container" class="hidden mr-auto w-full xl:w-auto bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl p-3 md:p-4 shadow-sm border border-white dark:border-zinc-700/50 flex-col justify-center items-center xl:items-start transition-transform hover:scale-[1.02] cursor-pointer" onclick="openOverrideModal()">
-                        <span class="text-[10px] md:text-xs text-purple-600 dark:text-purple-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                            追更排期强制干预 (跨榜单生效)
-                        </span>
-                        <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">点击此处添加遗漏新番，或修复星期几</div>
+                <!-- 🌟 控制栏 (合集按键全部统一高度 h-[88px]，右侧按钮精简为 默认/最新/热度) -->
+                <div class="flex flex-col xl:flex-row w-full mb-8 gap-2.5 md:gap-3 justify-end items-center relative">
+                    
+                    <!-- 普通分类时：LED 实时电子表插槽 (放在最左边，留足超宽空间) -->
+                    <div id="led-slot-normal" class="hidden mr-auto w-full xl:w-auto shrink-0"></div>
+
+                    <!-- 周更分类时：追更排期强制干预 (锁定 h-[88px]，靠左) -->
+                    <div id="custom-override-container" class="hidden mr-auto w-full xl:w-auto h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-5 md:px-6 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col justify-center items-start transition-all duration-200 origin-left hover:-translate-y-0.5 hover:shadow-md cursor-pointer group hover:border-purple-300 dark:hover:border-purple-700/50 ml-1 shrink-0" onclick="openOverrideModal()">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <div class="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-105 transition-transform">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            </div>
+                            <span class="text-xs md:text-sm text-purple-700 dark:text-purple-300 font-black tracking-tight whitespace-nowrap">追更排期强制干预 (跨榜单生效)</span>
+                        </div>
+                        <div class="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1.5 whitespace-nowrap pl-1">
+                            <span>点击添加遗漏新番 · 定向星期排期</span>
+                            <span class="text-purple-500 font-bold group-hover:translate-x-1 transition-transform">➔</span>
+                        </div>
                     </div>
 
-                    <div class="w-full xl:w-auto bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl p-3 md:p-4 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col justify-center items-center xl:items-start transition-transform hover:scale-[1.02]">
-                        <span class="text-[10px] md:text-xs text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <!-- 1. 当前榜单排序 (高度锁定 h-[88px]，按钮精简为 默认 / 最新 / 热度) -->
+                    <div class="w-full xl:w-auto h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-3.5 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col justify-center items-center xl:items-start transition-transform hover:scale-[1.02] shrink-0">
+                        <span class="text-[10px] md:text-xs text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1 whitespace-nowrap">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
-                            当前榜单排序 (自动保存推送配置)
+                            榜单排序 (自动保存)
                         </span>
                         <div class="flex bg-gray-100/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-inner w-full md:w-auto justify-between gap-1">
-                            <button id="sort-default" onclick="setSort('default')" class="flex-1 xl:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-800">默认排位</button>
-                            <button id="sort-year" onclick="setSort('year')" class="flex-1 xl:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-800">最新年份</button>
-                            <button id="sort-heat" onclick="setSort('heat')" class="flex-1 xl:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-800">最高热度</button>
+                            <button id="sort-default" onclick="setSort('default')" class="flex-1 xl:flex-none px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-800">默认</button>
+                            <button id="sort-year" onclick="setSort('year')" class="flex-1 xl:flex-none px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-800">最新</button>
+                            <button id="sort-heat" onclick="setSort('heat')" class="flex-1 xl:flex-none px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 hover:text-gray-800">热度</button>
                         </div>
                     </div>
-                    <div class="flex w-full xl:w-auto gap-3 md:gap-5 justify-center">
-                        <div class="flex-1 max-w-sm xl:w-48 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl py-4 px-6 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]">
-                            <span class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mb-1">当前大盘收录数</span>
-                            <span id="stat-count" class="text-3xl md:text-4xl font-black text-gray-800 dark:text-white tracking-tighter">0</span>
+
+                    <!-- 2 & 3. 大数据盘 (高度锁定 h-[88px]，宽度精简收窄，居中大字号) -->
+                    <div class="flex w-full xl:w-auto gap-2.5 md:gap-3 justify-center shrink-0">
+                        <div class="flex-1 max-w-sm xl:w-36 h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-4 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-transform hover:scale-[1.02]">
+                            <span class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mb-1 whitespace-nowrap text-center block w-full">当前大盘收录数</span>
+                            <span id="stat-count" class="text-3xl md:text-4xl font-black text-gray-800 dark:text-white tracking-tighter text-center block w-full leading-none">0</span>
                         </div>
-                        <div class="flex-1 max-w-sm xl:w-64 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl py-4 px-6 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col items-center justify-center transition-transform hover:scale-[1.02]">
-                            <span class="text-[10px] md:text-xs text-[#ff6b4a] font-bold uppercase tracking-widest mb-1">最后一次同步时间</span>
-                            <span id="stat-time" class="text-sm md:text-lg mt-1 font-black text-gray-800 dark:text-white tracking-tighter">--:--</span>
+                        <div class="flex-1 max-w-sm xl:w-48 h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-4 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-transform hover:scale-[1.02]">
+                            <span class="text-[10px] md:text-xs text-[#ff6b4a] font-bold uppercase tracking-widest mb-1 whitespace-nowrap text-center block w-full">最后一次同步时间</span>
+                            <span id="stat-time" class="text-sm md:text-base mt-1 font-black text-gray-800 dark:text-white tracking-tight text-center block w-full">--:--</span>
                         </div>
                     </div>
+
                 </div>
 
                 <div id="movie-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-6 relative"></div>
@@ -419,8 +435,7 @@ const FRONTEND_HTML_P1 = `
             { id: 'tmdb_movie_th', titleKey: 'home.tmdb_movie_th', name: '不止鬼片的泰国电影', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', preset: 'poster-list', type: 'movie' },
             { id: 'tmdb_tv_bl', titleKey: 'home.tmdb_tv_bl', name: '暧昧拉扯到极致的亚洲耽美神作', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z', preset: 'thumb-list', type: 'tv' },
             { id: 'netflix_tv_minor', titleKey: 'home.netflix_minor_tv_shows', name: 'Netflix 小语种神剧', icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9', preset: 'thumb-list', type: 'tv' },
-            { id: 'netflix_movie_minor', titleKey: 'home.netflix_minor_movies', name: '冷门却惊艳的小语种电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' },
-            { id: 'popular_taiwanese_movies', titleKey: 'home.popular_taiwanese_movies', name: '台味浓浓的宝藏台片', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' }
+            { id: 'netflix_movie_minor', titleKey: 'home.netflix_minor_movies', name: '冷门却惊艳的小语种电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' }
         ];
 
         let currentCategory = 'tmdb_popular_movies';
@@ -1227,6 +1242,80 @@ const FRONTEND_HTML_P1 = `
             updateLogoToolbar();
         }
 
+        const TITLE_TRANSLATIONS = {
+            "home.continue_watching": { en: "Continue Watching", zh: "继续观看", "zh-Hant": "繼續觀看", ja: "続きを見る", es: "Continuar Viendo", ar: "متابعة المشاهدة" },
+            "home.tmdb_popular_tv_shows": { en: "Popular TV Shows", zh: "今日热门电视剧", "zh-Hant": "今日熱門電視劇", ja: "人気のテレビ番組", es: "Series Populares", ar: "مسلسلات شهيرة" },
+            "home.tmdb_popular_movies": { en: "Popular Movies", zh: "今日热门电影", "zh-Hant": "今日熱門電影", ja: "人気の映画", es: "Películas Populares", ar: "أفلام شهيرة" },
+            "home.popular_domestic_anime": { en: "Popular Domestic Anime", zh: "热门国产动漫", "zh-Hant": "熱門國產動漫", ja: "人気の国産アニメ", es: "Anime Doméstico Popular", ar: "أنمي محلي شهير" },
+            "home.bangumi_popular_anime": { en: "Trending Anime", zh: "今日热门番剧", "zh-Hant": "今日熱門新番", ja: "注目のアニメ", es: "Anime en Tendencia", ar: "أنمي رائج" },
+            "home.tmdb_on_the_air_tv_shows": { en: "TV Shows On The Air", zh: "正在热播电视剧", "zh-Hant": "現正播出電視劇", ja: "放送中のテレビ番組", es: "Series al Aire", ar: "مسلسلات تُعرض حالياً" },
+            "home.popular_tv_shows": { en: "Popular Chinese TV Shows", zh: "时下热门国产剧", "zh-Hant": "時下熱門國產劇", ja: "中国ドラマ", es: "Dramas Populares", ar: "مسلسلات صينية شهيرة" },
+            "home.popular_movies": { en: "Popular Chinese Movies", zh: "实时热门电影", "zh-Hant": "實時熱門電影", ja: "人気の中国映画", es: "Películas Populares", ar: "أفلام صينية شهيرة" },
+            "home.popular_variety_shows": { en: "Popular Variety Shows", zh: "热门综艺", "zh-Hant": "熱門綜藝", ja: "人気のバラエティ", es: "Programas de Variedades", ar: "برامج منوعة شهيرة" },
+            "home.popular_korean_tv_shows": { en: "Popular Korean Dramas", zh: "备受欢迎的韩剧推荐", "zh-Hant": "備受歡迎的韓劇推薦", ja: "人気の韓国ドラマ", es: "Dramas Coreanos Populares", ar: "مسلسلات كورية شهيرة" },
+            "home.popular_japanese_tv_shows": { en: "Popular Japanese TV Shows", zh: "细腻又治愈的高人气日剧", "zh-Hant": "細膩又治癒的高人氣日劇", ja: "人気の国内ドラマ", es: "Dramas Japoneses Populares", ar: "مسلسلات يابانية شهيرة" },
+            "home.popular_spanish_tv_shows": { en: "Popular Spanish TV Shows", zh: "时下流行的西语剧集", "zh-Hant": "時下流行的西語劇集", ja: "人気のスペイン語ドラマ", es: "Series en Español Populares", ar: "مسلسلات إسبانية شهيرة" },
+            "home.popular_taiwanese_tv_shows": { en: "Popular Taiwanese TV Shows", zh: "台剧当然也不能落下", "zh-Hant": "台劇當然也不能落下", ja: "人気の台湾ドラマ", es: "Series Taiwanesas Populares", ar: "مسلسلات تايوانية شهيرة" },
+            "home.popular_taiwanese_movies": { en: "Popular Taiwanese Movies", zh: "台味浓浓的宝藏台片", "zh-Hant": "台味濃濃的寶藏台片", ja: "人気の台湾映画", es: "Películas Taiwanesas Populares", ar: "أفلام تايوانية شهيرة" },
+            "home.weekly_anime": { en: "Weekly Anime", zh: "动漫新番周更表", "zh-Hant": "動漫新番週更表", ja: "アニメ週間更新", es: "Anime Semanal", ar: "أنمي أسبوعي" },
+            "home.weekly_drama": { en: "Weekly Chinese Dramas", zh: "国产追剧周更表", "zh-Hant": "國產追劇週更表", ja: "中国ドラマ週間更新", es: "Dramas Semanales", ar: "دراما صينية أسبوعية" },
+            "home.weekly_guoman": { en: "Weekly Domestic Anime", zh: "国漫追番周历表", "zh-Hant": "國漫追番週歷表", ja: "国漫週間更新", es: "Animación China Semanal", ar: "أنمي صيني أسبوعي" },
+            "home.weekly_korean_drama": { en: "Weekly Korean Dramas", zh: "韩剧追剧周更表", "zh-Hant": "韓劇追劇週更表", ja: "韓国ドラマ週間更新", es: "Dramas Coreanos Semanales", ar: "دراما كورية أسبوعية" },
+            "home.weekly_japanese_drama": { en: "Weekly Japanese Dramas", zh: "日剧追剧周更表", "zh-Hant": "日劇追劇週更表", ja: "日本ドラマ週間更新", es: "Dramas Japoneses Semanales", ar: "دراما يابانية أسبوعية" },
+            "home.weekly_sea_drama": { en: "Weekly Southeast Asian Dramas", zh: "东南亚剧周更表", "zh-Hant": "東南亞劇週更表", ja: "東南アジアドラマ週間更新", es: "Dramas del Sudeste Asiático Semanales", ar: "دراما جنوب شرق آسيا" },
+            "home.tmdb_tv_netflix": { en: "Netflix Popular TV", zh: "Netflix 全球热播好剧", "zh-Hant": "Netflix 全球熱播好劇", ja: "Netflix 人気ドラマ", es: "Series Populares de Netflix", ar: "مسلسلات نتفليكس الشهيرة" },
+            "home.variety_cn": { en: "Chinese Variety Shows", zh: "热门国产综艺", "zh-Hant": "熱門國產綜藝", ja: "人気の中国バラエティ", es: "Variedades Chinas Populares", ar: "برامج منوعة صينية" },
+            "home.variety_kr": { en: "Korean Variety Shows", zh: "爆款韩国综艺", "zh-Hant": "爆款韓國綜藝", ja: "人気の韓国バラエティ", es: "Variedades Coreanas Populares", ar: "برامج منوعة كورية" },
+            "home.variety_global": { en: "Global Streaming Variety Shows", zh: "全球流媒体新热综艺", "zh-Hant": "全球串流新熱綜藝", ja: "グローバルバラエティ", es: "Variedades Globales", ar: "برامج منوعة عالمية" },
+            "home.tmdb_tv_hbo": { en: "HBO High-Rated TV Shows", zh: "HBO 高分神剧", "zh-Hant": "HBO 高分神劇", ja: "HBO 名作ドラマ", es: "Series de HBO", ar: "مسلسلات HBO" },
+            "home.tmdb_tv_apple": { en: "Apple TV+ Originals", zh: "Apple TV+ 原创精品", "zh-Hant": "Apple TV+ 原創精品", ja: "Apple TV+ オリジナル", es: "Originales de Apple TV+", ar: "أعمال Apple TV+ الأصلية" },
+            "home.trakt_movies": { en: "Trakt Blockbuster Movies", zh: "火爆全球欧美大片", "zh-Hant": "火爆全球歐美大片", ja: "大ヒット映画", es: "Películas Populares de Trakt", ar: "أفلام رائجة" },
+            "home.trakt_shows": { en: "Trakt Popular TV Shows", zh: "时下热播欧美剧集", "zh-Hant": "時下熱播歐美劇集", ja: "海外人気ドラマ", es: "Series Populares de Trakt", ar: "مسلسلات رائجة" },
+            "home.tmdb_anime_jp": { en: "Recent Popular Anime", zh: "近期热门日本动漫", "zh-Hant": "近期熱門日本動漫", ja: "最近人気の日本アニメ", es: "Anime Japonés Popular", ar: "أنمي ياباني شهير" },
+            "home.imdb_top_anime": { en: "IMDb Top Anime", zh: "IMDb 史诗动漫神作", "zh-Hant": "IMDb 史詩動漫神作", ja: "IMDb 高評価アニメ", es: "Anime Mejor Valorado IMDb", ar: "أفضل أنمي حسب IMDb" },
+            "home.prime_hot_anime": { en: "Prime Video Hot Anime", zh: "Prime Video 热门日漫", "zh-Hant": "Prime Video 熱門日漫", ja: "Prime Video 人気アニメ", es: "Anime Popular de Prime Video", ar: "أنمي برايم فيديو الشهير" },
+            "home.filmarks_anime_movie": { en: "Filmarks Anime Movies", zh: "Filmarks 高分剧场版", "zh-Hant": "Filmarks 高分劇場版", ja: "Filmarks 高評価アニメ映画", es: "Películas de Anime Filmarks", ar: "أفلام أنمي Filmarks" },
+            "home.netflix_hot_anime": { en: "Netflix Exclusive Anime", zh: "Netflix 独播霸榜日漫", "zh-Hant": "Netflix 獨播霸榜日漫", ja: "Netflix 人気アニメ", es: "Anime Exclusivo de Netflix", ar: "أنمي نتفليكس الحصري" },
+            "home.tmdb_anime_top_ja": { en: "TMDB Top Rated Anime", zh: "TMDB 高分神作日漫", "zh-Hant": "TMDB 高分神作日漫", ja: "TMDB 高評価アニメ", es: "Anime Mejor Valorado TMDB", ar: "أفضل أنمي حسب TMDB" },
+            "home.tmdb_anime_movie_ja": { en: "Acclaimed Anime Movies", zh: "备受好评的动画电影", "zh-Hant": "備受好評的動畫電影", ja: "名作アニメ映画", es: "Películas de Anime Aclamadas", ar: "أفلام أنمي مميزة" },
+            "home.tmdb_movie_sea": { en: "Southeast Asian Passion Movies", zh: "荷尔模超标的东南亚", "zh-Hant": "荷爾蒙超標的東南亞", ja: "東南アジア映画", es: "Películas del Sudeste Asiático", ar: "أفلام جنوب شرق آسيا" },
+            "home.tmdb_movie_hk_erotic_comedy": { en: "Hong Kong Classic Comedies", zh: "港产经典风月喜剧", "zh-Hant": "港產經典風月喜劇", ja: "香港クラシックコメディ", es: "Comedias Clásicas de Hong Kong", ar: "كوميديا هونغ كونغ الكلاسيكية" },
+            "home.tmdb_tv_th": { en: "Popular Thai Dramas", zh: "狗血上头的爆款泰剧", "zh-Hant": "狗血上頭的爆款泰劇", ja: "人気のタイドラマ", es: "Dramas Tailandeses Populares", ar: "مسلسلات تايلاندية شهيرة" },
+            "home.tmdb_movie_th": { en: "Thai Movies Selection", zh: "不止鬼片的泰国电影", "zh-Hant": "不止鬼片的泰國電影", ja: "タイ映画コレクション", es: "Películas Tailandesas", ar: "أفلام تايلاندية" },
+            "home.tmdb_tv_bl": { en: "Ultimate Asian BL Dramas", zh: "暧昧拉扯到极致的亚洲耽美神作", "zh-Hant": "曖昧拉扯到極致的亞洲耽美神作", ja: "アジアのBLドラマ名作", es: "Dramas BL Asiáticos", ar: "دراما آسيوية مميزة" },
+            "home.netflix_minor_tv_shows": { en: "Netflix Minor Language Shows", zh: "Netflix 小语种神剧", "zh-Hant": "Netflix 小語種神劇", ja: "Netflix マイナー言語ドラマ", es: "Series de Netflix en Otros Idiomas", ar: "مسلسلات نتفليكس بلغات أخرى" },
+            "home.netflix_minor_movies": { en: "Hidden Gem Minor Language Movies", zh: "冷门却惊艳的小语种电影", "zh-Hant": "冷門卻驚豔的小語種電影", ja: "隠れた名作外国映画", es: "Películas Sorprendentes en Otros Idiomas", ar: "أفلام بلغات أخرى" }
+        };
+
+        // ==========================================
+        // 补齐缺失的 TMDB 路由参数
+        // ==========================================
+        const TMDB_LIST_ROUTE_PARAMS = {
+            "tmdb_popular_movies": { category: "trending", type: "movie" },
+            "tmdb_popular_tv": { category: "trending", type: "tv" },
+            "tmdb_tv_netflix": { category: "discover", type: "tv", network: "213", networkName: "Netflix" },
+            "tmdb_tv_hbo": { category: "discover", type: "tv", network: "49", networkName: "HBO" },
+            "tmdb_tv_apple": { category: "discover", type: "tv", network: "2552", networkName: "Apple TV+" },
+            "tmdb_tv_ja": { category: "discover", type: "tv", language: "ja" },
+            "tmdb_tv_es": { category: "discover", type: "tv", language: "es" },
+            "tmdb_tv_th": { category: "discover", type: "tv", language: "th" },
+            "tmdb_movie_th": { category: "discover", type: "movie", language: "th" },
+            "tmdb_anime_jp": { category: "discover", type: "tv", genre: "16", language: "ja" },
+            "tmdb_anime_cn": { category: "discover", type: "tv", genre: "16", language: "zh" }
+        };
+
+        // ==========================================
+        // 补齐缺失的排版全选/清空函数
+        // ==========================================
+        function toggleAllLayout(check) {
+            document.querySelectorAll('.layout-cb').forEach(cb => {
+                cb.checked = check;
+                if (modalLayoutState[cb.value]) {
+                    modalLayoutState[cb.value].checked = check;
+                }
+            });
+        }
+
         function openLayoutModal() {
             initCategoryOrder();
             modalLayoutState = JSON.parse(localStorage.getItem('saved_layout_v2') || '{}');
@@ -1443,12 +1532,43 @@ const FRONTEND_HTML_P1 = `
                 document.getElementById('sync-btn').style.display = 'inline-block';
             }
             
-            if (catObj && catObj.isCollection) {
-                document.getElementById("custom-override-container").classList.remove("hidden");
-                document.getElementById("custom-override-container").classList.add("flex");
+            const isCol = !!(catObj && catObj.isCollection);
+            const statusBar = document.getElementById("status-bar-container");
+            const slotWeekly = document.getElementById("led-slot-weekly");
+            const slotNormal = document.getElementById("led-slot-normal");
+            const ledBox = document.getElementById("led-monitor-box");
+            const overrideBox = document.getElementById("custom-override-container");
+
+            if (isCol) {
+                // 🌟 周更合集 UI：第一行展开显示 LED 与 周历；第二行展示追更干预 (全部统一等高)
+                if (statusBar) {
+                    statusBar.classList.remove("hidden");
+                    statusBar.classList.add("flex");
+                }
+                if (slotWeekly && ledBox) slotWeekly.appendChild(ledBox);
+                if (overrideBox) {
+                    overrideBox.classList.remove("hidden");
+                    overrideBox.classList.add("flex");
+                }
+                if (slotNormal) {
+                    slotNormal.classList.remove("flex");
+                    slotNormal.classList.add("hidden");
+                }
             } else {
-                document.getElementById("custom-override-container").classList.remove("flex");
-                document.getElementById("custom-override-container").classList.add("hidden");
+                // 🌟 普通分类 UI：第一行收起；第二行最左侧放置 LED 电子表
+                if (statusBar) {
+                    statusBar.classList.remove("flex");
+                    statusBar.classList.add("hidden");
+                }
+                if (overrideBox) {
+                    overrideBox.classList.remove("flex");
+                    overrideBox.classList.add("hidden");
+                }
+                if (slotNormal && ledBox) {
+                    slotNormal.appendChild(ledBox);
+                    slotNormal.classList.remove("hidden");
+                    slotNormal.classList.add("flex");
+                }
             }
             
             CATEGORIES.forEach(cat => {
@@ -1581,8 +1701,7 @@ const CATEGORY_CONFIGS = [
   { id: "tmdb_movie_th", fileName: "tmdb-movie-th.json", type: "thai_movie", platform: "tmdb", name: "不止鬼片的泰国电影" },
   { id: "tmdb_tv_bl", fileName: "tmdb-tv-bl.json", type: "tv_series", platform: "tmdb", name: "暧昧拉扯到极致的亚洲耽美神作" },
   { id: "netflix_tv_minor", fileName: "netflix-tv-minor.json", type: "tv_series", platform: "tmdb", name: "Netflix 小语种神剧" },
-  { id: "netflix_movie_minor", fileName: "netflix-movie-minor.json", type: "movie", platform: "tmdb", name: "冷门却惊艳的小语种电影" },
-  { id: "popular_taiwanese_movies", fileName: "popular-taiwanese-movies.json", type: "movie", platform: "tmdb", name: "台味浓浓的宝藏台片" }
+  { id: "netflix_movie_minor", fileName: "netflix-movie-minor.json", type: "movie", platform: "tmdb", name: "冷门却惊艳的小语种电影" }
 ];
 
 const CATEGORY_MAP = {};
