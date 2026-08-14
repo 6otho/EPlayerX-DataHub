@@ -1,5 +1,5 @@
 // ==========================================
-// 1. 前端 HTML 界面与拖拉拽系统 (Part 1 - 包含海报/剧照/Logo三选一与分类黑名单)
+// 1. 前端 HTML 界面与拖拉拽系统 (Part 1 - 包含海报/剧照/Logo三选一、分类黑名单与 LED 电子时钟监控表)
 // ==========================================
 const FRONTEND_HTML_P1 = `
 <!DOCTYPE html>
@@ -11,8 +11,9 @@ const FRONTEND_HTML_P1 = `
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .font-mono-led { font-family: 'Share Tech Mono', monospace; }
         .fade-in { animation: fadeIn 0.4s ease-out; } 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
@@ -21,6 +22,15 @@ const FRONTEND_HTML_P1 = `
         .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
         .dark .glass-panel { background: rgba(24, 24, 27, 0.7); }
         
+        .led-active {
+            color: #00ffcc !important;
+            border-color: rgba(0, 255, 204, 0.5) !important;
+            text-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
+            box-shadow: inset 0 0 10px rgba(0,255,204,0.1), 0 0 15px rgba(0,255,204,0.15);
+        }
+        @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        .led-blink { animation: pulseDot 1s infinite; }
+
         .bg-checker {
             background-color: #f0f0f0;
             background-image: 
@@ -107,8 +117,25 @@ const FRONTEND_HTML_P1 = `
                     </div>
                 </div>
 
-                <!-- 星期卡片选择器 -->
-                <div id="weekday-tabs-container" class="hidden mb-6 flex bg-white/50 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-white/60 dark:border-zinc-700/60 shadow-inner justify-between gap-1 w-full max-w-2xl mx-auto shrink-0">
+                <!-- 🌟 星期卡片选择器 & LED 电子时钟监控表 (左靠齐时钟 + 右侧剩余区域绝对居中) -->
+                <div id="weekday-tabs-container" class="hidden mb-6 flex flex-col xl:flex-row items-center justify-between gap-3 w-full shrink-0">
+                    <!-- 1. 左侧：LED 电子时钟秒表仪表盘 (固定靠最左) -->
+                    <div id="led-monitor-box" class="w-full xl:w-auto shrink-0 px-3.5 py-2 rounded-2xl flex items-center justify-between gap-3 text-xs border font-mono-led select-none transition-all duration-500 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner">
+                        <div class="flex items-center gap-2">
+                            <span id="led-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0"></span>
+                            <span id="led-tag" class="font-black px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400">IDLE</span>
+                            <span id="led-info" class="truncate font-bold text-[11px] max-w-[180px] sm:max-w-[240px]">大盘待命中</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0 pl-2 border-l border-slate-800">
+                            <span class="text-slate-600 text-[10px]">TIME</span>
+                            <span id="led-clock" class="font-bold text-xs tracking-wider text-slate-300">--:--:--</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. 右侧：占满剩余区域并在内部完美居中周日~周六卡片 -->
+                    <div class="flex-1 flex justify-center items-center w-full">
+                        <div id="weekday-buttons" class="flex bg-white/50 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-white/60 dark:border-zinc-700/60 shadow-inner justify-between gap-1 w-full max-w-xl"></div>
+                    </div>
                 </div>
 
                 <!-- 大盘数据监控 & 排序控制 -->
@@ -477,6 +504,44 @@ const FRONTEND_HTML_P1 = `
             initNav(); 
             if(categoryOrder.length > 0) switchCategory(categoryOrder[0]);
         }
+
+        // 🌟 电子时钟跳动与后台轮询监控引擎
+        setInterval(() => {
+            const clockEl = document.getElementById('led-clock');
+            if (clockEl) clockEl.innerText = new Date().toTimeString().substring(0, 8);
+        }, 1000);
+
+        async function pollCronStatus() {
+            try {
+                const res = await fetch('/api/cron_status?_t=' + Date.now());
+                if (!res.ok) return;
+                const data = await res.json();
+                const box = document.getElementById('led-monitor-box');
+                const dot = document.getElementById('led-dot');
+                const tag = document.getElementById('led-tag');
+                const info = document.getElementById('led-info');
+                if (!box || !data.lastRunTime) return;
+
+                const lastRun = new Date(data.lastRunTime).getTime();
+                const isRunning = (Date.now() - lastRun) < 150000;
+
+                if (isRunning) {
+                    box.classList.add('led-active');
+                    dot.className = 'w-2 h-2 rounded-full bg-[#00ffcc] led-blink shrink-0 shadow-[0_0_8px_#00ffcc]';
+                    tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-[#00ffcc]/20 text-[#00ffcc]';
+                    tag.innerText = 'SYNCING';
+                    info.innerHTML = '[' + (data.currentIndex || 0) + '/77] ' + (data.lastTask || '更新中') + ' <span class="opacity-70 ml-1">(' + (data.lastStatus || '') + ')</span>';
+                } else {
+                    box.classList.remove('led-active');
+                    dot.className = 'w-2 h-2 rounded-full bg-slate-600 shrink-0';
+                    tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400';
+                    tag.innerText = 'IDLE';
+                    info.innerText = data.lastTask ? ('最近完成: ' + data.lastTask + ' (' + data.lastRunTime.substring(11) + ')') : '大盘待命中';
+                }
+            } catch(e) {}
+        }
+        setInterval(pollCronStatus, 5000);
+        setTimeout(pollCronStatus, 1000);
 
         window.onload = async () => {
             const storedPwd = localStorage.getItem('ep_pwd');
@@ -1341,7 +1406,7 @@ export interface DefaultHomeConfig {
 
 export const HOME_CONFIG_VERSION = 1;
 
-const TITLE_TRANSLATIONS: Record<HomeTitleKey, Record<Locale, string>> = {
+const TITLE_TRANSLATIONS = {
   "home.continue_watching": { en: "Continue Watching", zh: "继续观看", "zh-Hant": "繼續觀看", ja: "続きを視聴", es: "Continuar Viendo", ar: "متابعة المشاهدة" },
   "home.tmdb_popular_tv_shows": { en: "Today's Popular TV Shows", zh: "今日热门电视剧", "zh-Hant": "今日熱門電視劇", ja: "今日の人気テレビ番組", es: "Series de TV Populares de Hoy", ar: "مسلسلات شائعة" },
   "home.tmdb_popular_movies": { en: "Today's Popular Movies", zh: "今日热门电影", "zh-Hant": "今日熱門電影", ja: "今日の人気映画", es: "Películas Populares de Hoy", ar: "أفلام شائعة" },
@@ -1639,10 +1704,11 @@ export function createDefaultHomeConfig(options) {
                 const tabs = document.getElementById("weekday-tabs-container");
                 tabs.classList.remove("hidden");
                 const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-                tabs.innerHTML = weekdays.map((w, idx) => {
+                const btnsContainer = document.getElementById("weekday-buttons");
+                btnsContainer.innerHTML = weekdays.map((w, idx) => {
                     const day = idx === 0 ? 7 : idx; 
                     const isActive = day === currentWeekday;
-                    return \`<button onclick="currentWeekday=\${day}; loadData('\${category}')" class="flex-1 py-2.5 rounded-xl text-xs md:text-sm font-black transition-all \${isActive ? 'bg-gradient-to-r from-[#ff6b4a] to-[#e53a1a] text-white shadow-md transform scale-[1.03] animate-[fadeIn_0.2s_ease]' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}" >\${w}</button>\`;
+                    return \`<button onclick="currentWeekday=\${day}; loadData('\${category}')" class="flex-1 py-2 rounded-xl text-xs md:text-sm font-black transition-all \${isActive ? 'bg-gradient-to-r from-[#ff6b4a] to-[#e53a1a] text-white shadow-md transform scale-[1.03] animate-[fadeIn_0.2s_ease]' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}" >\${w}</button>\`;
                 }).join("");
             } else {
                 document.getElementById("weekday-tabs-container").classList.add("hidden");
@@ -2096,7 +2162,6 @@ function deduplicateRawList(items) {
     }
     return result;
 }
-
 // ==========================================
 // 7. TMDB 详细数据加工处理（带时间归一化修复全覆盖）
 // ==========================================
@@ -3036,7 +3101,7 @@ export default {
     const action = pathParts[0];
     const category = pathParts[1];
 
-    // 🌟【超级调试神器】：浏览器访问 /api/test_cron 即可瞬间手动触发一次定时任务，并在网页直观看到执行状态与 TG 推送结果！
+    // 🌟【超级调试神器】：浏览器访问 /api/test_cron 即可瞬间手动触发一次定时任务并在页面看到详细反馈！
     if (action === "api" && category === "test_cron") {
       try {
         const result = await this.runCronLogic(env, ctx, "【手动浏览器触发】");
@@ -3048,6 +3113,14 @@ export default {
           status: 500, headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders }
         });
       }
+    }
+
+    // 🌟 读取后台定时任务实时状态（用于前端 LED 电子时钟监控屏）
+    if (action === "api" && category === "cron_status" && request.method === "GET") {
+      if (!env.R2_BUCKET) return new Response("{}", { headers: antiCacheHeaders });
+      const obj = await env.R2_BUCKET.get("cron_state.json");
+      if (obj === null) return new Response(JSON.stringify({ status: "idle" }), { headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders } });
+      return new Response(obj.body, { headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders } });
     }
 
     if (url.pathname.startsWith("/blocks/public/")) {
@@ -4061,6 +4134,7 @@ export default {
     state.currentIndex = nextIndex;
     state.lastRunTime = nowTimeStr;
     state.lastTask = currentTask.name;
+    state.lastStatus = syncSuccess ? `成功${count}部` : `异常`;
 
     // 🌟【唯一通知点 2】：全部跑完（仅在最后一个任务执行完毕后发送）
     let sentFinishNotice = false;
