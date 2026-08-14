@@ -23,15 +23,16 @@ const FRONTEND_HTML_P1 = `
         .dark .glass-panel { background: rgba(24, 24, 27, 0.7); }
         
         .led-active {
-            color: #00ffcc !important;
-            border-color: rgba(0, 255, 204, 0.5) !important;
-            text-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
-            box-shadow: inset 0 0 10px rgba(0,255,204,0.1), 0 0 15px rgba(0,255,204,0.15);
+            color: #10b981 !important;
+            border-color: rgba(16, 185, 129, 0.4) !important;
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
+            box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.08), 0 0 15px rgba(16, 185, 129, 0.12);
         }
         .led-paused {
             color: #f59e0b !important;
             border-color: rgba(245, 158, 11, 0.5) !important;
             text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+            box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.08), 0 0 15px rgba(245, 158, 11, 0.12);
         }
         @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
         .led-blink { animation: pulseDot 1s infinite; }
@@ -548,39 +549,55 @@ const FRONTEND_HTML_P1 = `
                 if (!box) return;
 
                 cronIsCurrentlyPaused = !!data.isPaused;
-                if (pauseBtn) {
-                    pauseBtn.innerText = cronIsCurrentlyPaused ? "▶️ 恢复" : "⏸ 暂停";
-                    pauseBtn.className = cronIsCurrentlyPaused
-                        ? "px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold transition-all shadow-sm"
-                        : "px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold transition-all border border-slate-700";
-                }
 
+                // 🟠 1. 暂停状态 (纯正暖橙色)
                 if (cronIsCurrentlyPaused) {
                     box.classList.remove('led-active');
                     box.classList.add('led-paused');
-                    dot.className = 'w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-[0_0_8px_#f59e0b]';
-                    tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400';
-                    tag.innerText = 'PAUSED';
-                    info.innerText = '自动更新已暂停 (点击恢复开启)';
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-[0_0_8px_#f59e0b]';
+                    if (tag) {
+                        tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0';
+                        tag.innerText = 'PAUSED';
+                    }
+                    if (info) info.innerHTML = '<span class="text-amber-400 font-bold">已暂停</span> <span class="opacity-70 text-[10px] ml-1 text-slate-400">(点击恢复)</span>';
+                    if (pauseBtn) {
+                        pauseBtn.innerText = "▶️ 恢复";
+                        pauseBtn.className = "px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold transition-all shadow-sm shrink-0 active:scale-95";
+                    }
                     return;
                 }
 
+                // 🟢 2. 开启运行状态 (纯正翠绿色)
                 box.classList.remove('led-paused');
+                box.classList.add('led-active');
+
+                if (pauseBtn) {
+                    pauseBtn.innerText = "⏸ 暂停";
+                    pauseBtn.className = "px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded text-[10px] font-bold transition-all border border-emerald-500/30 shrink-0 active:scale-95";
+                }
+
                 const lastRun = data.lastRunTime ? new Date(data.lastRunTime).getTime() : 0;
                 const isRunning = (Date.now() - lastRun) < 150000;
 
                 if (isRunning) {
-                    box.classList.add('led-active');
-                    dot.className = 'w-2 h-2 rounded-full bg-[#00ffcc] led-blink shrink-0 shadow-[0_0_8px_#00ffcc]';
-                    tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-[#00ffcc]/20 text-[#00ffcc]';
-                    tag.innerText = 'SYNCING';
-                    info.innerHTML = '[' + (data.currentIndex || 0) + '/77] ' + (data.lastTask || '更新中') + ' <span class="opacity-70 ml-1">(' + (data.lastStatus || '') + ')</span>';
+                    // 正在抓取中 (呼吸绿灯)
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 led-blink shrink-0 shadow-[0_0_8px_#10b981]';
+                    if (tag) {
+                        tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0';
+                        tag.innerText = 'SYNCING';
+                    }
+                    if (info) info.innerHTML = '<span class="text-emerald-300 font-bold">[' + (data.currentIndex || 0) + '/77] ' + (data.lastTask || '抓取中') + '</span> <span class="opacity-75 text-[10px] ml-1 text-emerald-400">(' + (data.lastStatus || '更新中') + ')</span>';
                 } else {
-                    box.classList.remove('led-active');
-                    dot.className = 'w-2 h-2 rounded-full bg-slate-600 shrink-0';
-                    tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400';
-                    tag.innerText = 'IDLE';
-                    info.innerText = data.lastTask ? ('最近完成: ' + data.lastTask + ' (' + (data.lastRunTime ? data.lastRunTime.substring(11) : '') + ')') : '大盘待命中';
+                    // 等待下一任务 (常亮绿灯)
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_#10b981]';
+                    if (tag) {
+                        tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0';
+                        tag.innerText = 'AUTO-ON';
+                    }
+                    if (info) {
+                        const timeText = data.lastRunTime ? data.lastRunTime.substring(11) : '';
+                        info.innerHTML = '<span class="text-emerald-300 font-bold">运行中</span> <span class="opacity-75 text-[10px] ml-1 text-slate-400">' + (data.lastTask ? ('(最近: ' + data.lastTask + ' ' + timeText + ')') : '待命中') + '</span>';
+                    }
                 }
             } catch(e) {}
         }
