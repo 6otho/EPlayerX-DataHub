@@ -233,6 +233,22 @@ const FRONTEND_HTML_P1 = `
         </div>
     </div>
 
+    <!-- 可视化选图弹窗 (纯净无字轮播竖海报选择器) -->
+    <div id="clean-poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
+        <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
+            <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="clean-poster-select-title">选择备用【纯净无字】轮播竖海报</h3>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">✨ 此处选择的海报将专门用于<span class="text-cyan-600 dark:text-cyan-400 font-bold">【大轮播图 / Hero 大卡片】</span>叠加透明 Logo 显示，绝不与小列表带字海报冲突！</p>
+            <div class="flex items-center gap-2 mb-4 shrink-0">
+                <input type="text" id="custom-clean-poster-url" placeholder="或者直接输入您自定义纯净无字竖海报的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-cyan-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
+                <button onclick="applyCustomCleanPoster()" class="px-5 py-2.5 bg-cyan-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-cyan-700 transition-colors shrink-0">直接应用</button>
+            </div>
+            <div id="clean-poster-select-grid" class="overflow-y-auto flex-1 hide-scrollbar grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-2 content-start auto-rows-max min-h-[30vh] border-y border-gray-100 dark:border-zinc-800 py-4 relative"></div>
+            <div class="flex flex-wrap gap-3 justify-end shrink-0 mt-5">
+                <button onclick="closeModal('clean-poster-select-modal')" class="flex-1 md:flex-none py-3 px-6 rounded-xl font-bold text-xs md:text-sm text-white bg-gray-400 dark:bg-zinc-700 hover:bg-gray-500 dark:hover:bg-zinc-600 transition-colors shadow-md">关闭取消</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 可视化选图弹窗 (剧照) -->
     <div id="thumb-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
@@ -1039,8 +1055,8 @@ const FRONTEND_HTML_P1 = `
         let activePosterSelectTmdbId = null, activePosterSelectTitle = "", activePosterCurrent = null, activePosterSource = 'auto';
         async function openPosterSelector(e, tmdbId, title, currentPoster, source, mType) {
             e.stopPropagation(); activePosterSelectTmdbId = tmdbId; activePosterSelectTitle = title; activePosterCurrent = currentPoster; activePosterSource = source || 'auto';
-            document.getElementById('poster-select-title').innerText = "为《" + title + "》选择备用竖版海报";
-            document.getElementById('poster-select-grid').innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-pink-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描海报（优先排位【纯净无字】海报）...</span></div>';
+            document.getElementById('poster-select-title').innerText = "为《" + title + "》选择备用【正标带字】竖海报";
+            document.getElementById('poster-select-grid').innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-pink-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描海报...</span></div>';
             document.getElementById('custom-poster-url').value = ''; document.getElementById('poster-select-modal').classList.remove('hidden');
             const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
             try {
@@ -1054,14 +1070,14 @@ const FRONTEND_HTML_P1 = `
                     const div = document.createElement('div');
                     div.className = "relative w-full pt-[150%] rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-pink-500 transition-all hover:-translate-y-1 hover:shadow-lg group bg-gray-200 dark:bg-zinc-800 transform-gpu";
                     div.onclick = () => selectAndSavePoster(obj.url);
-                    div.innerHTML = '<div class="absolute inset-0 flex items-center justify-center z-10"><img src="' + obj.url + '" loading="lazy" class="w-full h-full object-cover" /></div><div class="absolute top-2 left-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded shadow-sm z-30">' + (obj.isClean ? '✨ 纯净无字' : '带字海报 (' + obj.lang + ')') + '</div>' + (isCurrent ? '<div class="absolute top-2 right-2 ' + tickColor + ' text-white rounded-md p-1 shadow-sm border border-white/20 z-30"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>' : '') + '<div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center z-20 transition-all"><span class="text-white font-black text-xs md:text-sm bg-pink-600 px-4 py-1.5 rounded-full shadow-lg transform transition-transform scale-90 group-hover:scale-100">使用此海报</span></div>';
+                    div.innerHTML = '<div class="absolute inset-0 flex items-center justify-center z-10"><img src="' + obj.url + '" loading="lazy" class="w-full h-full object-cover" /></div><div class="absolute top-2 left-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded shadow-sm z-30">' + (obj.isClean ? '✨ 纯净无字' : '带字海报 (' + obj.lang + ')') + '</div>' + (isCurrent ? '<div class="absolute top-2 right-2 ' + tickColor + ' text-white rounded-md p-1 shadow-sm border border-white/20 z-30"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>' : '') + '<div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center z-20 transition-all"><span class="text-white font-black text-xs md:text-sm bg-pink-600 px-4 py-1.5 rounded-full shadow-lg transform transition-transform scale-90 group-hover:scale-100">设为正标海报</span></div>';
                     grid.appendChild(div);
                 });
             } catch(e) { document.getElementById('poster-select-grid').innerHTML = '<div class="col-span-full text-center py-10 text-red-500 font-bold text-sm">拉取失败</div>'; }
         }
         async function applyCustomPoster() { const url = document.getElementById('custom-poster-url').value.trim(); if (!url) return showToast("请输入有效的图片链接", true); await selectAndSavePoster(url); }
         async function selectAndSavePoster(posterUrl) {
-            showToast("⏳ 正在应用新海报并更新主库..."); closeModal('poster-select-modal');
+            showToast("⏳ 正在应用新正标海报并更新主库..."); closeModal('poster-select-modal');
             try {
                 const res = await fetch(ACTION_BASE + '/update_single_poster', { 
                     method: 'POST', 
@@ -1069,10 +1085,47 @@ const FRONTEND_HTML_P1 = `
                     body: JSON.stringify({ tmdbId: activePosterSelectTmdbId, poster: posterUrl, category: currentCategory, weekday: currentWeekday }) 
                 });
                 const data = await res.json();
-                if (data.success) { showToast("✅ 新竖海报更新成功！"); loadData(currentCategory); } else showToast("❌ 更新失败: " + data.error, true);
+                if (data.success) { showToast("✅ 正标竖海报更新成功！"); loadData(currentCategory); } else showToast("❌ 更新失败: " + data.error, true);
             } catch(e) { showToast("❌ 请求异常", true); }
         }
 
+        // 🌟 纯净无字轮播海报自选逻辑
+        let activeCleanPosterSelectTmdbId = null, activeCleanPosterSelectTitle = "", activeCleanPosterCurrent = null, activeCleanPosterSource = 'auto';
+        async function openCleanPosterSelector(e, tmdbId, title, currentCleanPoster, source, mType) {
+            e.stopPropagation(); activeCleanPosterSelectTmdbId = tmdbId; activeCleanPosterSelectTitle = title; activeCleanPosterCurrent = currentCleanPoster; activeCleanPosterSource = source || 'auto';
+            document.getElementById('clean-poster-select-title').innerText = "为《" + title + "》选择备用【纯净无字】轮播海报";
+            document.getElementById('clean-poster-select-grid').innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-cyan-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描纯净无字海报...</span></div>';
+            document.getElementById('custom-clean-poster-url').value = ''; document.getElementById('clean-poster-select-modal').classList.remove('hidden');
+            const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
+            try {
+                const res = await fetch(ACTION_BASE + '/list_posters', { method: 'POST', headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId, type: mediaType }) });
+                const data = await res.json();
+                const grid = document.getElementById('clean-poster-select-grid');
+                if (!data.success || !data.posters || data.posters.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何海报资源</div>'; return; }
+                grid.innerHTML = '';
+                data.posters.forEach(obj => {
+                    let isCurrent = activeCleanPosterCurrent && activeCleanPosterCurrent.includes(obj.file_path); let tickColor = activeCleanPosterSource === 'manual' ? 'bg-emerald-500' : 'bg-cyan-500';
+                    const div = document.createElement('div');
+                    div.className = "relative w-full pt-[150%] rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-cyan-500 transition-all hover:-translate-y-1 hover:shadow-lg group bg-gray-200 dark:bg-zinc-800 transform-gpu";
+                    div.onclick = () => selectAndSaveCleanPoster(obj.url);
+                    div.innerHTML = '<div class="absolute inset-0 flex items-center justify-center z-10"><img src="' + obj.url + '" loading="lazy" class="w-full h-full object-cover" /></div><div class="absolute top-2 left-2 bg-black/80 text-white text-[10px] px-2 py-1 rounded shadow-sm z-30">' + (obj.isClean ? '✨ 纯净无字' : '带字海报 (' + obj.lang + ')') + '</div>' + (isCurrent ? '<div class="absolute top-2 right-2 ' + tickColor + ' text-white rounded-md p-1 shadow-sm border border-white/20 z-30"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>' : '') + '<div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center z-20 transition-all"><span class="text-white font-black text-xs md:text-sm bg-cyan-600 px-4 py-1.5 rounded-full shadow-lg transform transition-transform scale-90 group-hover:scale-100">设为无字轮播图</span></div>';
+                    grid.appendChild(div);
+                });
+            } catch(e) { document.getElementById('clean-poster-select-grid').innerHTML = '<div class="col-span-full text-center py-10 text-red-500 font-bold text-sm">拉取失败</div>'; }
+        }
+        async function applyCustomCleanPoster() { const url = document.getElementById('custom-clean-poster-url').value.trim(); if (!url) return showToast("请输入有效的图片链接", true); await selectAndSaveCleanPoster(url); }
+        async function selectAndSaveCleanPoster(posterUrl) {
+            showToast("⏳ 正在应用无字海报并更新主库..."); closeModal('clean-poster-select-modal');
+            try {
+                const res = await fetch(ACTION_BASE + '/update_single_no_logo_poster', { 
+                    method: 'POST', 
+                    headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ tmdbId: activeCleanPosterSelectTmdbId, noLogoPoster: posterUrl, category: currentCategory, weekday: currentWeekday }) 
+                });
+                const data = await res.json();
+                if (data.success) { showToast("✅ 无字轮播海报更新成功！"); loadData(currentCategory); } else showToast("❌ 更新失败: " + data.error, true);
+            } catch(e) { showToast("❌ 请求异常", true); }
+        }
         let activeLogoSelectTmdbId = null, activeLogoSelectTitle = "", activeLogoCurrent = null, activeLogoSource = 'auto'; 
         async function openLogoSelector(e, tmdbId, title, currentLogo, source, mType) {
             e.stopPropagation(); activeLogoSelectTmdbId = tmdbId; activeLogoSelectTitle = title; activeLogoCurrent = currentLogo; activeLogoSource = source || 'auto';
@@ -1231,18 +1284,28 @@ const FRONTEND_HTML_P1 = `
                 const displayYearStr = yearInfo.isUpcoming ? '待播' : (yearInfo.year > 0 ? yearInfo.year : '');
                 const yearBadge = displayYearStr ? '<div class="absolute bottom-2.5 left-2.5 ' + (yearInfo.isUpcoming ? 'bg-purple-600/90' : 'bg-blue-600/90') + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center z-20 shadow-sm border border-white/20">' + displayYearStr + '</div>' : '';
                 
-                const posterSource = item.poster_source || 'auto'; const thumbSource = item.thumb_source || 'auto'; const logoSource = item.logo_source || 'auto';
+                const posterSource = item.poster_source || 'auto';
+                const noLogoSource = item.no_logo_poster_source || 'auto';
+                const thumbSource = item.thumb_source || 'auto';
+                const logoSource = item.logo_source || 'auto';
+
                 const posterBtnColor = posterSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-pink-600/90 hover:bg-pink-500';
                 const posterTick = posterSource === 'manual' ? '✅' : '☑️';
-                const thumbBtnColor = thumbSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-purple-600/90 hover:bg-purple-500';
+
+                const noLogoBtnColor = noLogoSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-cyan-600/90 hover:bg-cyan-500';
+                const noLogoTick = noLogoSource === 'manual' ? '✅' : '☑️';
+
+                const thumbBtnColor = thumbSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-blue-600/90 hover:bg-blue-500';
                 const thumbTick = thumbSource === 'manual' ? '✅' : '☑️';
+
                 const logoBtnColor = logoSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-purple-600/90 hover:bg-purple-500';
                 const logoTick = logoSource === 'manual' ? '✅' : '☑️';
 
                 const actionBtns = '<div class="absolute bottom-2.5 right-2.5 flex flex-col gap-1 z-30 items-end">' +
-                    '<button onclick="openPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.poster_path || '') + '\\', \\'' + posterSource + '\\', \\'' + mType + '\\')" class="' + posterBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选竖海报（优选纯净无字）">📇海报 ' + posterTick + '</button>' +
-                    '<button onclick="openThumbSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.thumb || '') + '\\', \\'' + thumbSource + '\\', \\'' + mType + '\\')" class="' + thumbBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选剧照">📺图 ' + thumbTick + '</button>' +
-                    '<button onclick="openLogoSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.logo || '') + '\\', \\'' + logoSource + '\\', \\'' + mType + '\\')" class="' + logoBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选Logo">🖼️标 ' + logoTick + '</button>' +
+                    '<button onclick="openCleanPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.noLogoPoster || '') + '\\', \\'' + noLogoSource + '\\', \\'' + mType + '\\')" class="' + noLogoBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选轮播海报（纯净无字版）">🎴轮播 ' + noLogoTick + '</button>' +
+                    '<button onclick="openThumbSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.thumb || '') + '\\', \\'' + thumbSource + '\\', \\'' + mType + '\\')" class="' + thumbBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选剧照/横版背景">📺剧照 ' + thumbTick + '</button>' +
+                    '<button onclick="openPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.poster_path || '') + '\\', \\'' + posterSource + '\\', \\'' + mType + '\\')" class="' + posterBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选竖版正标海报（带官方艺术字）">📇竖 ' + posterTick + '</button>' +
+                    '<button onclick="openLogoSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.logo || '') + '\\', \\'' + logoSource + '\\', \\'' + mType + '\\')" class="' + logoBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选透明Logo">🖼️标 ' + logoTick + '</button>' +
                 '</div>';
 
                 const cardHtml = '<div class="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md transform-gpu border border-white/60 dark:border-zinc-700/60 rounded-2xl md:rounded-[1.5rem] shadow-sm relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-xl group flex flex-col h-full cursor-pointer" onclick="const cb = this.querySelector(\\'.logo-checkbox\\'); if(cb) { cb.checked = !cb.checked; updateLogoToolbar(); }">' +
@@ -2018,6 +2081,7 @@ async function tmdbFetch(path, paramsObj, env, reqCtx) {
 function extractImages(images, backdropPath, posterPath, origLang) {
   const backdrops = (images && images.backdrops) ? images.backdrops : [];
   const logos = (images && images.logos) ? images.logos : [];
+  const posters = (images && images.posters) ? images.posters : [];
 
   const getLangScore = (lang) => {
     if (lang === 'zh') return 100;
@@ -2030,32 +2094,43 @@ function extractImages(images, backdropPath, posterPath, origLang) {
     return 0; 
   };
 
+  // 1. 提取专供小卡片展示的【官方中文/原语言带字海报】
+  const textPosters = posters.filter(p => p.iso_639_1 && p.iso_639_1 !== 'xx')
+                             .sort((a, b) => {
+                               const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
+                               const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
+                               return scoreB - scoreA;
+                             });
+
+  // 2. 提取专供大轮播图叠 Logo 的【纯净无字竖海报】
+  const cleanPosters = posters.filter(p => !p.iso_639_1 || p.iso_639_1 === 'xx' || p.iso_639_1 === null)
+                              .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+  const noLogoPoster = cleanPosters[0]?.file_path || null;
+
+  // 正标海报优先用带字版，无带字才降级用无字版
+  const officialPoster = textPosters[0]?.file_path || noLogoPoster || posterPath || null;
+
+  // 3. 提取横版剧照/背景
   const sortedBackdrops = [...backdrops].sort((a, b) => {
     const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
     const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
     return scoreB - scoreA;
   });
-
   const textThumbs = sortedBackdrops.filter(b => b.iso_639_1 !== null && b.iso_639_1 !== 'xx');
   const cleanThumbs = sortedBackdrops.filter(b => b.iso_639_1 === null || b.iso_639_1 === 'xx');
-
   const thumb = (textThumbs.length > 0 ? textThumbs[0].file_path : null) 
              || (cleanThumbs.length > 0 ? cleanThumbs[0].file_path : null) 
              || backdropPath || posterPath || null;
 
+  // 4. 提取透明 Logo
   const sortedLogos = [...logos].sort((a, b) => {
     const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
     const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
     return scoreB - scoreA;
   });
-
   const logo = sortedLogos[0]?.file_path || null;
 
-  const posters = (images && images.posters) ? images.posters : [];
-  const noLogoPoster = posters.filter(p => !p.iso_639_1 || p.iso_639_1 === 'xx' || p.iso_639_1 === null)
-                              .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))[0]?.file_path || null;
-
-  return { thumb, logo, noLogoPoster };
+  return { thumb, logo, noLogoPoster, officialPoster };
 }
 
 function deduplicateByTmdbId(items) {
@@ -2180,16 +2255,13 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         };
 
         let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
+        let finalNoLogoPoster = upgradeToOriginal(oldRecord?.noLogoPoster || null);
         let finalThumb = upgradeToOriginal(oldRecord?.thumb || oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
         let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
         let finalPosterSource = oldRecord?.poster_source || 'auto';
         let finalThumbSource = oldRecord?.thumb_source || 'auto';
         let finalLogoSource = oldRecord?.logo_source || 'auto';
 
-        // 🌟【核心提图触发判断】：
-        // 1. 如果是全新影片（!oldRecord）-> 必须自动提！
-        // 2. 如果是老片但缺失了 Logo（或只有文字标）、缺失了剧照、缺失了海报中的任意一个 -> 自动补充提取！
-        // 3. 如果老片三者都齐全 -> needDetailFetch 为 false，直接 0 消耗跳过！
         let needDetailFetch = false;
         const isMissingDate = !oldRecord?.first_air_date && !oldRecord?.release_date;
         const isMissingAnyImage = !finalPoster || !finalThumb || !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'));
@@ -2200,7 +2272,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             needDetailFetch = true;
         }
 
-        // CF 配额安全熔断保护（剩最后 5 次 fetch 时停止提图防超标报错）
         let safeMargin = reqCtx.isSafeMode ? 8 : 4;
         if (needDetailFetch && reqCtx.subreqs >= (reqCtx.maxSubreqs - safeMargin)) {
             needDetailFetch = false; 
@@ -2211,7 +2282,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
         let detailsAndImages = null;
 
-        // 🌟【单请求聚合提取】：1 个网络请求同时打包拿下 [Logo + 有字剧照 + 纯净无字海报]
         if (needDetailFetch && tmdbId) {
           try {
             let imgLangs = origLang && !SAFE_LANGS.includes(origLang) ? SAFE_LANGS + "," + origLang : SAFE_LANGS;
@@ -2231,15 +2301,18 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
             const ext = extractImages(detailsAndImages.images, detailsAndImages.backdrop_path, detailsAndImages.poster_path, origLang);
 
-            // 保护用户手动挑选手选的图片，没被手动指定才自动赋值
             if ((!finalLogo || finalLogo.includes('text_logo.svg')) && finalLogoSource !== 'manual' && ext.logo) {
                 finalLogo = toAbsLogo(ext.logo);
             }
             if (!finalThumb && finalThumbSource !== 'manual' && ext.thumb) {
                 finalThumb = toAbs(ext.thumb);
             }
-            if (!finalPoster && finalPosterSource !== 'manual' && ext.noLogoPoster) {
-                finalPoster = toAbs(ext.noLogoPoster);
+            // 🌟 核心：有字海报赋给 poster_path，无字海报赋给 noLogoPoster
+            if (ext.officialPoster && finalPosterSource !== 'manual') {
+                finalPoster = toAbs(ext.officialPoster);
+            }
+            if (ext.noLogoPoster) {
+                finalNoLogoPoster = toAbs(ext.noLogoPoster);
             }
 
           } catch(e) {}
@@ -2286,7 +2359,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           original_language: origLang,
           vote_average: basicData.vote_average || oldRecord?.vote_average || 0,
           poster_path: finalPoster,
-          noLogoPoster: finalPoster, 
+          noLogoPoster: finalNoLogoPoster || finalPoster, 
           poster_source: finalPosterSource,
           backdrop_path: oldRecord?.backdrop_path || finalThumb || finalPoster,
           genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
@@ -3716,6 +3789,53 @@ export default {
         }
     }
 
+    if (action === "action" && category === "update_single_no_logo_poster" && request.method === "POST") {
+        if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
+        try {
+            const body = await request.json();
+            const tmdbId = body.tmdbId;
+            let noLogoPosterUrl = body.noLogoPoster; 
+            const categoryName = body.category;
+
+            if (categoryName && env.R2_BUCKET && noLogoPosterUrl) {
+                if (noLogoPosterUrl.includes('image.tmdb.org')) {
+                    noLogoPosterUrl = noLogoPosterUrl.replace(/\/w\d+/, '/original');
+                }
+
+                let fileName = categoryName + ".json";
+                if (categoryName.endsWith("_collection")) {
+                    fileName = `${categoryName}-${body.weekday || 1}.json`;
+                } else {
+                    const config = CATEGORY_MAP[categoryName];
+                    if (config) fileName = config.fileName;
+                }
+
+                const oldObj = await env.R2_BUCKET.get(fileName);
+                if (oldObj) {
+                    const oldJson = await oldObj.json();
+                    if (oldJson && oldJson.data) {
+                        let updated = false;
+                        oldJson.data.forEach(item => {
+                            if (item.tmdbId == tmdbId) {
+                                item.noLogoPoster = noLogoPosterUrl;
+                                item.no_logo_poster_source = 'manual'; 
+                                item.crawledAt = new Date().toISOString();
+                                item.image_scanned = true;
+                                updated = true;
+                            }
+                        });
+                        if (updated) {
+                            await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
+                        }
+                    }
+                }
+            }
+            return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
+        } catch (e) {
+            return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
+        }
+    }
+
     if (action === "action" && category === "update_single_logo" && request.method === "POST") {
         if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
         try {
@@ -3884,9 +4004,13 @@ export default {
                                 thumbUrl = ext.thumb.startsWith('http') ? ext.thumb : 'https://image.tmdb.org/t/p/original' + ext.thumb;
                             }
 
-                            let posterUrl = null;
+                            let officialPosterUrl = null;
+                            if (ext.officialPoster) {
+                                officialPosterUrl = ext.officialPoster.startsWith('http') ? ext.officialPoster : 'https://image.tmdb.org/t/p/original' + ext.officialPoster;
+                            }
+                            let noLogoPosterUrl = null;
                             if (ext.noLogoPoster) {
-                                posterUrl = ext.noLogoPoster.startsWith('http') ? ext.noLogoPoster : 'https://image.tmdb.org/t/p/original' + ext.noLogoPoster;
+                                noLogoPosterUrl = ext.noLogoPoster.startsWith('http') ? ext.noLogoPoster : 'https://image.tmdb.org/t/p/original' + ext.noLogoPoster;
                             }
 
                             oldJson.data.forEach(item => {
@@ -3907,10 +4031,12 @@ export default {
                                         item.thumb_source = 'auto'; 
                                         item.backdrop_path = thumbUrl;
                                     }
-                                    if (posterUrl && item.poster_source !== 'manual') {
-                                        item.poster_path = posterUrl;
-                                        item.noLogoPoster = posterUrl;
+                                    if (officialPosterUrl && item.poster_source !== 'manual') {
+                                        item.poster_path = officialPosterUrl;
                                         item.poster_source = 'auto';
+                                    }
+                                    if (noLogoPosterUrl) {
+                                        item.noLogoPoster = noLogoPosterUrl;
                                     }
                                     item.crawledAt = new Date().toISOString();
                                     item.image_scanned = true; 
