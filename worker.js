@@ -224,7 +224,7 @@ const FRONTEND_HTML_P1 = `
                 </div>
             </div>
             
-            <!-- 智能批量导入面板 (平时隐藏) -->
+            <!-- 智能批量导入面板 -->
             <div id="bulk-import-container" class="hidden flex-1 mb-4 border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 bg-blue-50/50 dark:bg-zinc-800/80 flex flex-col gap-2 min-h-[30vh]">
                 <div class="text-[11px] md:text-xs text-blue-600 dark:text-blue-400 font-bold mb-1">直接粘贴包含“周一/星期一”等字眼的纯文本 或 Excel 表格内容：</div>
                 <textarea id="bulk-textarea" class="flex-1 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg p-3 text-xs md:text-sm outline-none focus:border-blue-500 resize-none hide-scrollbar font-medium leading-relaxed" placeholder="支持格式示例：&#10;周一 周二 周三&#10;剧名1 剧名2 剧名3&#10;&#10;或者（推荐加上书名号）：&#10;2025-01-01 周三 国产剧 《驻站》 CCTV-1&#10;周二：《国色芳华》，《白月梵星》"></textarea>
@@ -780,7 +780,7 @@ const FRONTEND_HTML_P1 = `
             
             bar.innerHTML = \`
                 <div class="text-[11px] md:text-sm font-bold text-gray-600 dark:text-gray-300">
-                    已选 <span class="text-purple-600 dark:text-purple-400 text-sm md:text-base font-black">\${checkedCount}</span> 部 <span class="mx-2 text-gray-300 dark:text-zinc-600">|</span> 大盘已有真实Logo: <span class="text-emerald-600 dark:text-emerald-400">\${hasLogoCount}</span> / \${items.length}
+                    已选 <span class="text-purple-600 dark:text-purple-400 text-sm md:text-base font-black">\${checkedCount}</span> 部 <span class="mx-2 text-gray-300 dark:zinc-600">|</span> 大盘已有真实Logo: <span class="text-emerald-600 dark:text-emerald-400">\${hasLogoCount}</span> / \${items.length}
                 </div>
                 <div class="flex gap-2 w-full md:w-auto justify-end">
                     <button onclick="document.querySelectorAll('.logo-checkbox').forEach(c => c.checked=true); updateLogoToolbar()" class="px-3 py-1.5 text-[11px] font-bold text-indigo-600 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition-colors shadow-sm">全选</button>
@@ -791,7 +791,6 @@ const FRONTEND_HTML_P1 = `
             \`;
         }
 
-        // 🌟 普通移除（单条，轻量）
         async function removeItem(e, tmdbId) {
             e.stopPropagation();
             showToast("🗑️ 正在从当前列表中移除...");
@@ -806,7 +805,6 @@ const FRONTEND_HTML_P1 = `
             } catch(err) { showToast("❌ 网络异常", true); }
         }
 
-        // 🌟 分类黑名单封禁
         async function blacklistItem(e, tmdbId, title) {
             e.stopPropagation();
             const catObj = CATEGORIES.find(c => c.id === currentCategory);
@@ -826,7 +824,6 @@ const FRONTEND_HTML_P1 = `
             } catch(err) { showToast("❌ 网络异常", true); }
         }
 
-        // 🌟 批量普通移除
         async function batchRemoveItems() {
             const checkedBoxes = document.querySelectorAll('.logo-checkbox:checked');
             if (checkedBoxes.length === 0) return showToast("⚠️ 请至少勾选一部影片！", true);
@@ -849,7 +846,6 @@ const FRONTEND_HTML_P1 = `
             } catch(err) { showToast("❌ 网络异常", true); }
         }
 
-        // 🌟 批量分类黑名单封禁
         async function batchBlacklistItems() {
             const checkedBoxes = document.querySelectorAll('.logo-checkbox:checked');
             if (checkedBoxes.length === 0) return showToast("⚠️ 请至少勾选一部影片！", true);
@@ -900,7 +896,6 @@ const FRONTEND_HTML_P1 = `
             } catch(e) { showToast("❌ 网络异常", true); }
         }
 
-        // 🌟 竖海报可视化挑选控制逻辑
         let activePosterSelectTmdbId = null, activePosterSelectTitle = "", activePosterCurrent = null, activePosterSource = 'auto';
         async function openPosterSelector(e, tmdbId, title, currentPoster, source, mType) {
             e.stopPropagation(); activePosterSelectTmdbId = tmdbId; activePosterSelectTitle = title; activePosterCurrent = currentPoster; activePosterSource = source || 'auto';
@@ -1027,7 +1022,6 @@ const FRONTEND_HTML_P1 = `
                 else btn.className = "flex-1 xl:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200";
             });
 
-            // 🌟 完美日期解析器：兼容全字段
             const extractYearAndDate = (x) => {
                 if (!x || typeof x !== 'object') return { year: 0, fullDate: "0000-00-00", isUpcoming: false };
                 const rawDateStr = String(
@@ -1035,9 +1029,9 @@ const FRONTEND_HTML_P1 = `
                     (Array.isArray(x.pubdates) ? x.pubdates[0] : x.pubdate) || x.year || ""
                 ).trim();
 
-                const dateMatch = rawDateStr.match(/\\b(19|20)\\d{2}[-/.\\s]\\d{1,2}[-/.\\s]\\d{1,2}\\b/);
+                const dateMatch = rawDateStr.match(/\\b(19|20)\\d{2}[-/.]\\d{1,2}[-/.]\\d{1,2}\\b/);
                 if (dateMatch) {
-                    const parts = dateMatch[0].split(/[-/.\\s]/);
+                    const parts = dateMatch[0].split(/[-/.]/);
                     const y = parseInt(parts[0], 10);
                     const m = parts[1].padStart(2, '0');
                     const d = parts[2].padStart(2, '0');
@@ -1093,7 +1087,6 @@ const FRONTEND_HTML_P1 = `
                 
                 const ratingBadge = item.vote_average ? \`<div class="absolute top-2.5 right-2.5 bg-black/80 text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 z-20 shadow-sm border border-white/20"><span class="text-yellow-400 text-[10px]">★</span>\${item.vote_average.toFixed(1)}</div>\` : '';
                 
-                // 🌟 年份/待播状态角标
                 const yearInfo = extractYearAndDate(item);
                 const displayYearStr = yearInfo.isUpcoming ? '待播' : (yearInfo.year > 0 ? yearInfo.year : '');
                 const yearBadge = displayYearStr ? \`<div class="absolute bottom-2.5 left-2.5 \${yearInfo.isUpcoming ? 'bg-purple-600/90' : 'bg-blue-600/90'} text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center z-20 shadow-sm border border-white/20">\${displayYearStr}</div>\` : '';
@@ -1395,13 +1388,10 @@ const TITLE_TRANSLATIONS: Record<HomeTitleKey, Record<Locale, string>> = {
   "home.tmdb_tv_bl": { en: "Ultimate Asian BL Masterpieces", zh: "暧昧拉扯到极致的亚洲耽美神作", "zh-Hant": "曖昧拉扯到極致的亞洲耽美神作", ja: "極上のアジアBL・ブロマンス", es: "Obras Maestras BL Asiáticas", ar: "روائع BL الآسيوية" },
   "home.netflix_minor_tv_shows": { en: "Global Minor Language Series", zh: "Netflix 小语种神剧", "zh-Hant": "Netflix 小語種神劇", ja: "マイナー言語の制覇ドラマ", es: "Series Internacionales", ar: "مسلسلات بلغات أخرى" },
   "home.netflix_minor_movies": { en: "Hidden Gem International Movies", zh: "冷门却惊艳的小语种电影", "zh-Hant": "冷門卻驚豔的小語種电影", ja: "知られざる名作映画", es: "Joyas Ocultas del Cine", ar: "أفلام عالمية مميزة" },
-  "home.popular_taiwanese_movies": { en: "Popular Taiwanese Movies", zh: "台味浓浓的宝藏台片", "zh-Hant": "台味濃濃的宝藏台片", ja: "おすすめ台湾映画", es: "Películas Taiwaneses Populares", ar: "أفلام تايوانية شائعة" },
-  "home.weekly_korean_drama": { en: "Weekly Korean Dramas", zh: "韩剧追剧周更表", "zh-Hant": "韓劇追劇周更表", ja: "韓国ドラマ週間更新", es: "Dramas Coreanos Semanales", ar: "دراما كورية أ週間" },
-  "home.weekly_japanese_drama": { en: "Weekly Japanese Dramas", zh: "日剧追剧周更表", "zh-Hant": "日劇追劇周更表", ja: "日本ドラマ週間更新", es: "Dramas Japoneses Semanales", ar: "دراما يابانية أ週間" },
-  "home.weekly_sea_drama": { en: "Weekly Southeast Asian Dramas", zh: "东南亚剧周更表", "zh-Hant": "東南亞劇周更表", ja: "東南アジアドラマ週間更新", es: "Dramas del Sudeste Asiático Semanales", ar: "دراما جنوب شرق آسيا" },
+  "home.popular_taiwanese_movies": { en: "Popular Taiwanese Movies", zh: "台味浓浓的宝藏台片", "zh-Hant": "台味濃濃的宝藏台片", ja: "おすすめ台湾映画", es: "Películas Taiwaneses Populares", ar: "أفلام تايوانية شائعة" }
 };
 
-const TMDB_LIST_ROUTE_PARAMS: Partial<Record<string, TmdbListRouteParams>> = {
+const TMDB_LIST_ROUTE_PARAMS = {
   "tmdb-popular-tv-shows": { category: "trending", type: "tv" },
   "tmdb-popular-movies": { category: "trending", type: "movie" },
   "tmdb-top-rated-movies": { category: "top-rated", type: "movie" },
@@ -1409,7 +1399,7 @@ const TMDB_LIST_ROUTE_PARAMS: Partial<Record<string, TmdbListRouteParams>> = {
   "tmdb-popular-taiwanese-tv-shows": { category: "discover", type: "tv", originCountry: "TW" },
 };
 
-function resolveLocale(language: string): Locale {
+function resolveLocale(language) {
   const normalized = language.toLowerCase();
   if (normalized.startsWith("zh-hant") || normalized.includes("tw") || normalized.includes("hk")) { return "zh-Hant"; }
   if (normalized.startsWith("zh")) return "zh";
@@ -1419,21 +1409,21 @@ function resolveLocale(language: string): Locale {
   return "en";
 }
 
-function resolveTitle(titleKey: HomeTitleKey, language: string): string {
+function resolveTitle(titleKey, language) {
   return TITLE_TRANSLATIONS[titleKey][resolveLocale(language)];
 }
 
-function createTmdbListRoute(title: string, params: TmdbListRouteParams): TmdbListRoute {
+function createTmdbListRoute(title, params) {
   return { type: "tmdb-list", title, params };
 }
 
-function createDefaultBlockTemplates(language: string, timezone: string): HomeBlockTemplate[] {
+function createDefaultBlockTemplates(language, timezone) {
   return [
 \${customBlocks}
   ];
 }
 
-function resolveBlockTitle(block: HomeBlockTemplate, language: string): HomeBlock {
+function resolveBlockTitle(block, language) {
   const { titleKey, ...rest } = block;
   if (!titleKey) return rest;
   const title = resolveTitle(titleKey, language);
@@ -1441,7 +1431,7 @@ function resolveBlockTitle(block: HomeBlockTemplate, language: string): HomeBloc
   return { ...rest, title, ...(routeParams ? { route: createTmdbListRoute(title, routeParams) } : {}) };
 }
 
-export function createDefaultHomeConfig(options: DefaultHomeConfigOptions): DefaultHomeConfig {
+export function createDefaultHomeConfig(options) {
   return {
     version: HOME_CONFIG_VERSION,
     apiBaseUrl: options.apiBaseUrl,
@@ -1662,7 +1652,6 @@ export function createDefaultHomeConfig(options: DefaultHomeConfigOptions): Defa
             document.getElementById("stat-count").innerText = "0"; document.getElementById("stat-time").innerText = "加载中...";
 
             try {
-                // 🌟 核心修补：加载数据时，自动带上当前设定的排序参数 &sort=
                 let savedV2 = JSON.parse(localStorage.getItem('saved_layout_v2') || '{}');
                 let sortType = 'default'; if (savedV2[category] && savedV2[category].sort) sortType = savedV2[category].sort;
                 const sortQuery = (sortType && sortType !== 'default') ? \`&sort=\${sortType}\` : '';
@@ -1689,6 +1678,7 @@ export function createDefaultHomeConfig(options: DefaultHomeConfigOptions): Defa
 const FRONTEND_HTML_P2 = `</html>
 `;
 const FRONTEND_HTML = FRONTEND_HTML_P1 + FRONTEND_HTML_P2;
+
 // ==========================================
 // 2. 爬虫核心与全局分类字典 (Part 1 引擎配置)
 // ==========================================
@@ -2131,7 +2121,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
       const hasMemoryPoster = !!(oldRecord?.poster_path);
       const hasMemoryThumb  = !!(oldRecord?.thumb || oldRecord?.backdrop_path);
-      const hasMemoryLogo   = !!(oldRecord?.logo && !oldRecord.logo.includes('text_logo.svg'));
       const isFullyRemembered = oldRecord && (hasMemoryPoster || oldRecord.image_scanned) && !reqCtx.clearCooldown;
 
       if (!tmdbId && !isFullyRemembered && reqCtx.subreqs < reqCtx.maxSubreqs) {
@@ -2250,7 +2239,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           ? (options.originUrl + '/api/text_logo.svg?v=' + Date.now() + '&text=' + encodeURIComponent(finalTitle))
           : null;
 
-        // 🌟【全字段时间归一化】：提取标准 YYYY-MM-DD，同时赋给 release_date、first_air_date、air_date、pubdate
         let rawDate = (
             detailsAndImages?.first_air_date ||
             detailsAndImages?.release_date ||
@@ -2264,9 +2252,9 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         ).toString().trim();
 
         let validDate = null;
-        const dateMatch = rawDate.match(/\b(19|20)\d{2}[-/.\s]\d{1,2}[-/.\s]\d{1,2}\b/);
+        const dateMatch = rawDate.match(/\b(19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/);
         if (dateMatch) {
-            const parts = dateMatch[0].split(/[-/.\s]/);
+            const parts = dateMatch[0].split(/[-/.]/);
             validDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
         } else {
             const yearMatch = rawDate.match(/\b(19|20)\d{2}\b/);
@@ -2714,7 +2702,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   else if (category === "tmdb_popular_movies") { processedData = await processItemsWithTMDB(await fetchTMDBTrending('movie', env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
   else if (category === "bangumi_airing") { let raw = await fetchBangumiCalendar(limit, reqCtx); processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx); }
   
-  // 🌟 douban_tv 纯国产电视剧过滤 + TMDB补足
   else if (category === "douban_tv" || category === "douban_tv_custom") { 
     let raw = await fetchDoubanSubjectCollection("tv_domestic", limit, reqCtx).catch(() => []); 
     if (!raw.length) raw = await fetchDoubanRecentHot("tv", { tag: "国产剧" }, limit, reqCtx).catch(() => []); 
@@ -2852,12 +2839,10 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   if (processedData.length === 0 && targetDay === null) throw new Error("TMDB未能匹配到任何符合条件的影视数据");
 
-  // 🌟 单榜落库时与历史数据融合去重，保护手动注入与历史图源
   if (!category.endsWith("_collection")) {
       let combinedData = deduplicateByTmdbId([...processedData, ...oldItemsList]);
       combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
 
-      // 🛡️ 拦截闸：如果结合后依然小于25条且原本更多，拦截防止误清空
       if (combinedData.length < 25 && oldItemsList.length >= 25) {
           return { count: oldItemsList.length, newLogos: [] };
       }
@@ -2896,7 +2881,6 @@ function isAdmin(request, env) {
   return (env.ADMIN_SECRET && token === env.ADMIN_SECRET) || (env.SYNC_SECRET && token === env.SYNC_SECRET);
 }
 
-// 🌟 GitHub 智能增量合并代码生成器
 function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl, fallbackTsCode) {
   if (!existingText || !existingText.includes("createDefaultBlockTemplates")) {
     return fallbackTsCode;
@@ -3048,6 +3032,24 @@ export default {
 
     if (request.method === "OPTIONS") return new Response(null, { headers: antiCacheHeaders });
 
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    const action = pathParts[0];
+    const category = pathParts[1];
+
+    // 🌟【超级调试神器】：浏览器访问 /api/test_cron 即可瞬间手动触发一次定时任务，并在网页直观看到执行状态与 TG 推送结果！
+    if (action === "api" && category === "test_cron") {
+      try {
+        const result = await this.runCronLogic(env, ctx, "【手动浏览器触发】");
+        return new Response(JSON.stringify({ success: true, debug: result }, null, 2), {
+          headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ success: false, error: err.message, stack: err.stack }, null, 2), {
+          status: 500, headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders }
+        });
+      }
+    }
+
     if (url.pathname.startsWith("/blocks/public/")) {
       if (!env.R2_BUCKET) return new Response(JSON.stringify({ error: "R2未绑定" }), { status: 500, headers: antiCacheHeaders });
       const fileName = url.pathname.substring("/blocks/public/".length); 
@@ -3057,10 +3059,6 @@ export default {
       }
       return new Response(await object.text(), { headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders } });
     }
-
-    const pathParts = url.pathname.split('/').filter(Boolean);
-    const action = pathParts[0];
-    const category = pathParts[1];
 
     if (action === "api" && category === "text_logo.svg" && request.method === "GET") {
       const text = url.searchParams.get("text") || "未知名称";
@@ -3315,7 +3313,6 @@ export default {
       const object = await env.R2_BUCKET.get(config.fileName);
       if (object === null) return new Response(JSON.stringify({ count: 0, data: [] }), { headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders } });
 
-      // 🌟 全字段日期逻辑：严格精确到月日进行年份倒序排列！
       const sortType = url.searchParams.get("sort");
       if (sortType === "year" || sortType === "heat") {
         const rawData = await object.json();
@@ -3327,9 +3324,9 @@ export default {
                   (Array.isArray(x.pubdates) ? x.pubdates[0] : x.pubdate) || x.year || ""
               ).trim();
 
-              const dateMatch = rawDateStr.match(/\b(19|20)\d{2}[-/.\s]\d{1,2}[-/.\s]\d{1,2}\b/);
+              const dateMatch = rawDateStr.match(/\b(19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/);
               if (dateMatch) {
-                  const parts = dateMatch[0].split(/[-/.\s]/);
+                  const parts = dateMatch[0].split(/[-/.]/);
                   const y = parseInt(parts[0], 10);
                   const m = parts[1].padStart(2, '0');
                   const d = parts[2].padStart(2, '0');
@@ -3487,7 +3484,6 @@ export default {
       } catch (e) { return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders }); }
     }
 
-    // 🌟 获取备用竖海报 API（返回 /original 最高高清原图，无字海报 +100000 权重）
     if (action === "action" && category === "list_posters" && request.method === "POST") {
         if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
         try {
@@ -3635,7 +3631,6 @@ export default {
         }
     }
 
-    // 🌟 手动更新海报 API（自动升级为 /original 4K原图，并同步更新 noLogoPoster 字段）
     if (action === "action" && category === "update_single_poster" && request.method === "POST") {
         if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
         try {
@@ -3985,8 +3980,125 @@ export default {
     return new Response("Not Found", { status: 404, headers: antiCacheHeaders });
   },
 
+  // ==========================================
+  // 10. 核心调度引擎 (两头通知：第1个启动通知，中间彻底闭嘴，全部完成大汇总通知)
+  // ==========================================
+  async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】") {
+    if (!env.R2_BUCKET) throw new Error("未检测到 env.R2_BUCKET 存储桶绑定");
+
+    // 1. 构建全量任务清单（单项榜单 + 6大周更表按7天拆解，共约 77 个轻量任务）
+    const taskQueue = [];
+    for (const cat of CATEGORY_CONFIGS) {
+      if (cat.id.endsWith("_collection")) {
+        for (let d = 1; d <= 7; d++) {
+          taskQueue.push({
+            id: `${cat.id}-${d}`,
+            name: `${cat.name} (周${["一","二","三","四","五","六","日"][d-1]})`
+          });
+        }
+      } else {
+        taskQueue.push({
+          id: cat.id,
+          name: cat.name
+        });
+      }
+    }
+
+    const totalTasks = taskQueue.length;
+
+    // 2. 从 R2 读取轮询进度
+    let state = { currentIndex: 0, cycleCount: 1, cycleStartTime: null };
+    try {
+      const stateObj = await env.R2_BUCKET.get("cron_state.json");
+      if (stateObj) state = await stateObj.json();
+    } catch (e) {}
+
+    if (state.currentIndex >= totalTasks || state.currentIndex < 0) {
+      state.currentIndex = 0;
+    }
+
+    const currentTaskIndex = state.currentIndex;
+    const currentTask = taskQueue[currentTaskIndex];
+    const taskSeq = currentTaskIndex + 1;
+    const nowTimeStr = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false });
+
+    // 🌟【唯一通知点 1】：新一轮开始（仅在第 1 个任务启动时发送，中途绝不发送）
+    let sentStartNotice = false;
+    if (currentTaskIndex === 0) {
+      state.cycleStartTime = nowTimeStr;
+      if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
+        const startMsg = `🚀 <b>[大盘全自动同步 · 开始执行]</b>\n` +
+                         `═══════════════════\n` +
+                         `📊 <b>计划轮次</b>: 第 ${state.cycleCount || 1} 轮全量更新\n` +
+                         `📋 <b>总任务量</b>: 共 ${totalTasks} 个分类榜单与子周历\n` +
+                         `⏰ <b>启动时间</b>: <code>${nowTimeStr}</code>\n` +
+                         `🤫 <i>后台已进入静默抓取模式，全部完成后将发送汇总...</i>`;
+        await sendTgMessage(env, startMsg);
+        sentStartNotice = true;
+      }
+    }
+
+    // 3. 静默执行当前这个分类的抓取
+    const reqCtx = { subreqs: 0, maxSubreqs: 45, isSafeMode: true, clearCooldown: false };
+    const fallbackOrigin = env.WORKER_URL || "https://homepage.eplayerx.cc.cd";
+
+    let syncSuccess = false;
+    let count = 0;
+    let errMsg = "";
+
+    try {
+      const res = await executeSyncTask(currentTask.id, env, 60, true, reqCtx, fallbackOrigin, false, false);
+      syncSuccess = true;
+      count = res.count || 0;
+    } catch (err) {
+      errMsg = err.message || "未知错误";
+    }
+
+    // 4. 更新状态机指针
+    const nextIndex = (currentTaskIndex + 1) % totalTasks;
+    const isCycleFinished = (nextIndex === 0);
+
+    state.currentIndex = nextIndex;
+    state.lastRunTime = nowTimeStr;
+    state.lastTask = currentTask.name;
+
+    // 🌟【唯一通知点 2】：全部跑完（仅在最后一个任务执行完毕后发送）
+    let sentFinishNotice = false;
+    if (isCycleFinished) {
+      if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
+        const finishMsg = `🎉 <b>[大盘全量自动同步 · 全部完成！]</b>\n` +
+                          `═══════════════════\n` +
+                          `📊 <b>完成轮次</b>: 第 ${state.cycleCount || 1} 轮\n` +
+                          `📋 <b>任务统计</b>: 全部 ${totalTasks} 个榜单/周历已全量刷新完毕\n` +
+                          `⏱ <b>启动时间</b>: <code>${state.cycleStartTime || '未知'}</code>\n` +
+                          `⏰ <b>完成时间</b>: <code>${nowTimeStr}</code>\n` +
+                          `💤 <b>状态</b>: 本轮已结束，等待下一计划周期`;
+        await sendTgMessage(env, finishMsg);
+        sentFinishNotice = true;
+      }
+      state.cycleCount = (state.cycleCount || 1) + 1;
+    }
+
+    // 5. 保存状态到 R2
+    await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), {
+      httpMetadata: { contentType: "application/json" }
+    });
+
+    return {
+      triggerSource,
+      executedTask: `${currentTask.name} (${taskSeq}/${totalTasks})`,
+      syncSuccess,
+      itemsCount: count,
+      error: errMsg || null,
+      nextIndex,
+      sentStartNotice,
+      sentFinishNotice,
+      currentTime: nowTimeStr
+    };
+  },
+
+  // 定时器标准触发入口
   async scheduled(event, env, ctx) {
-    // 🌟 彻底禁用后台定时任务自动更新，保证数据库零重置，完全归你在控制台手动掌控！
-    return;
+    ctx.waitUntil(this.runCronLogic(env, ctx, "【CF Cron 定时器】"));
   }
 };
