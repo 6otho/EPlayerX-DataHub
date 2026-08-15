@@ -2094,35 +2094,37 @@ function extractImages(images, backdropPath, posterPath, origLang) {
     return 0; 
   };
 
-  // 1. 提取专供小卡片展示的【官方中文/原语言带字海报】
+  // 1. 竖版有字 (poster_path): 优先官方中文艺术字
   const textPosters = posters.filter(p => p.iso_639_1 && p.iso_639_1 !== 'xx')
                              .sort((a, b) => {
                                const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
                                const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
                                return scoreB - scoreA;
                              });
-
-  // 2. 提取专供大轮播图叠 Logo 的【纯净无字竖海报】
+  
+  // 2. 竖版无字 (noLogoPoster): 严格纯净无字
   const cleanPosters = posters.filter(p => !p.iso_639_1 || p.iso_639_1 === 'xx' || p.iso_639_1 === null)
                               .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
-  const noLogoPoster = cleanPosters[0]?.file_path || null;
+  
+  const officialPoster = textPosters[0]?.file_path || cleanPosters[0]?.file_path || posterPath || null;
+  const noLogoPoster = cleanPosters[0]?.file_path || textPosters[0]?.file_path || posterPath || null;
 
-  // 正标海报优先用带字版，无带字才降级用无字版
-  const officialPoster = textPosters[0]?.file_path || noLogoPoster || posterPath || null;
+  // 3. 横版有字 (thumb): 优先官方中文带字剧照
+  const textBackdrops = backdrops.filter(b => b.iso_639_1 && b.iso_639_1 !== 'xx')
+                                 .sort((a, b) => {
+                                   const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
+                                   const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
+                                   return scoreB - scoreA;
+                                 });
 
-  // 3. 提取横版剧照/背景
-  const sortedBackdrops = [...backdrops].sort((a, b) => {
-    const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
-    const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
-    return scoreB - scoreA;
-  });
-  const textThumbs = sortedBackdrops.filter(b => b.iso_639_1 !== null && b.iso_639_1 !== 'xx');
-  const cleanThumbs = sortedBackdrops.filter(b => b.iso_639_1 === null || b.iso_639_1 === 'xx');
-  const thumb = (textThumbs.length > 0 ? textThumbs[0].file_path : null) 
-             || (cleanThumbs.length > 0 ? cleanThumbs[0].file_path : null) 
-             || backdropPath || posterPath || null;
+  // 4. 横版纯净无字 (cleanBackdrop / backdrop_path): 专供 iPad / TV 轮播图
+  const cleanBackdrops = backdrops.filter(b => !b.iso_639_1 || b.iso_639_1 === 'xx' || b.iso_639_1 === null)
+                                  .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
 
-  // 4. 提取透明 Logo
+  const cleanBackdrop = cleanBackdrops[0]?.file_path || textBackdrops[0]?.file_path || backdropPath || null;
+  const thumb = textBackdrops[0]?.file_path || cleanBackdrops[0]?.file_path || backdropPath || null;
+
+  // 5. 透明 Logo
   const sortedLogos = [...logos].sort((a, b) => {
     const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
     const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
@@ -2130,7 +2132,7 @@ function extractImages(images, backdropPath, posterPath, origLang) {
   });
   const logo = sortedLogos[0]?.file_path || null;
 
-  return { thumb, logo, noLogoPoster, officialPoster };
+  return { officialPoster, noLogoPoster, thumb, cleanBackdrop, logo };
 }
 
 function deduplicateByTmdbId(items) {
@@ -2256,10 +2258,14 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
         let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
         let finalNoLogoPoster = upgradeToOriginal(oldRecord?.noLogoPoster || null);
-        let finalThumb = upgradeToOriginal(oldRecord?.thumb || oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
+        let finalThumb = upgradeToOriginal(oldRecord?.thumb || toAbs(basicData.backdrop_path || basicData.poster_path));
+        let finalBackdrop = upgradeToOriginal(oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
         let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
+
         let finalPosterSource = oldRecord?.poster_source || 'auto';
+        let finalNoLogoSource = oldRecord?.no_logo_poster_source || 'auto';
         let finalThumbSource = oldRecord?.thumb_source || 'auto';
+        let finalBackdropSource = oldRecord?.backdrop_source || 'auto';
         let finalLogoSource = oldRecord?.logo_source || 'auto';
 
         let needDetailFetch = false;
@@ -2301,18 +2307,25 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
             const ext = extractImages(detailsAndImages.images, detailsAndImages.backdrop_path, detailsAndImages.poster_path, origLang);
 
+            // 1. 透明 Logo
             if ((!finalLogo || finalLogo.includes('text_logo.svg')) && finalLogoSource !== 'manual' && ext.logo) {
                 finalLogo = toAbsLogo(ext.logo);
             }
-            if (!finalThumb && finalThumbSource !== 'manual' && ext.thumb) {
-                finalThumb = toAbs(ext.thumb);
-            }
-            // 🌟 核心：有字海报赋给 poster_path，无字海报赋给 noLogoPoster
+            // 2. 竖版带字海报
             if (ext.officialPoster && finalPosterSource !== 'manual') {
                 finalPoster = toAbs(ext.officialPoster);
             }
-            if (ext.noLogoPoster) {
+            // 3. 竖版纯净无字海报 (手机轮播)
+            if (ext.noLogoPoster && finalNoLogoSource !== 'manual') {
                 finalNoLogoPoster = toAbs(ext.noLogoPoster);
+            }
+            // 4. 横版带字剧照
+            if (ext.thumb && finalThumbSource !== 'manual') {
+                finalThumb = toAbs(ext.thumb);
+            }
+            // 5. 横版纯净无字背景 (iPad / TV 轮播图)
+            if (ext.cleanBackdrop && finalBackdropSource !== 'manual') {
+                finalBackdrop = toAbs(ext.cleanBackdrop);
             }
 
           } catch(e) {}
@@ -2358,16 +2371,18 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           popularity: basicData.popularity || oldRecord?.popularity || 0,
           original_language: origLang,
           vote_average: basicData.vote_average || oldRecord?.vote_average || 0,
-          poster_path: finalPoster,
-          noLogoPoster: finalNoLogoPoster || finalPoster, 
+          poster_path: finalPoster,                         // 1. 竖版带字海报
+          noLogoPoster: finalNoLogoPoster || finalPoster,   // 2. 竖版无字海报
           poster_source: finalPosterSource,
-          backdrop_path: oldRecord?.backdrop_path || finalThumb || finalPoster,
+          no_logo_poster_source: finalNoLogoSource,
+          backdrop_path: finalBackdrop || finalThumb || finalPoster, // 3. 🌟 横版纯净无字背景 (专供 iPad / TV 轮播图)
+          backdrop_source: finalBackdropSource,
           genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
           media_type: basicData.media_type || oldRecord?.media_type || mediaType,
           overview: oldRecord?.overview || basicData.overview || null,
-          thumb: finalThumb,
+          thumb: finalThumb,                               // 4. 横版带字剧照
           thumb_source: finalThumbSource, 
-          logo: finalLogo || fallbackLogo,
+          logo: finalLogo || fallbackLogo,                 // 5. 透明 PNG Logo
           logo_source: finalLogo ? finalLogoSource : 'auto', 
           verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
           logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
@@ -4026,11 +4041,23 @@ export default {
                                         item.verified_no_logo = true;
                                         item.logoEmptyAt = new Date().toISOString();
                                     }
-                                    if (thumbUrl) {
-                                        item.thumb = thumbUrl;
-                                        item.thumb_source = 'auto'; 
-                                        item.backdrop_path = thumbUrl;
-                                    }
+                                    let cleanBackdropUrl = null;
+                            if (ext.cleanBackdrop) {
+                                cleanBackdropUrl = ext.cleanBackdrop.startsWith('http') ? ext.cleanBackdrop : 'https://image.tmdb.org/t/p/original' + ext.cleanBackdrop;
+                            }
+
+                            if (thumbUrl && item.thumb_source !== 'manual') {
+                                item.thumb = thumbUrl; // 横版剧照
+                                item.thumb_source = 'auto'; 
+                            }
+                            if (cleanBackdropUrl && item.backdrop_source !== 'manual') {
+                                item.backdrop_path = cleanBackdropUrl; // 🌟 专供 iPad / TV 的无字背景
+                                item.backdrop_source = 'auto';
+                            }
+                            if (noLogoPosterUrl && item.no_logo_poster_source !== 'manual') {
+                                item.noLogoPoster = noLogoPosterUrl;
+                                item.no_logo_poster_source = 'auto';
+                            }
                                     if (officialPosterUrl && item.poster_source !== 'manual') {
                                         item.poster_path = officialPosterUrl;
                                         item.poster_source = 'auto';
