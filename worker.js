@@ -1289,36 +1289,49 @@ const FRONTEND_HTML_P1 = `
                 const thumbSource = item.thumb_source || 'auto';
                 const logoSource = item.logo_source || 'auto';
 
-                const posterBtnColor = posterSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-pink-600/90 hover:bg-pink-500';
-                const posterTick = posterSource === 'manual' ? '✅' : '☑️';
+                // 🌟 与右上角风格完全统一的基础样式（白字 + 阴影 + 半透边框 + 悬停微缩放）
+                const btnBase = "py-1.5 px-1 rounded-xl text-[10px] md:text-[11px] font-black text-white flex items-center justify-center gap-0.5 truncate border border-white/20 shadow-md transition-all duration-150 hover:scale-105 active:scale-95 select-none";
 
-                const noLogoBtnColor = noLogoSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-cyan-600/90 hover:bg-cyan-500';
+                // 🌟 四键统一配色：自动为紫色 (bg-purple-600)，手动自选为绿色 (bg-emerald-600)
+                const noLogoBtnBg = noLogoSource === 'manual' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-purple-600 hover:bg-purple-500';
                 const noLogoTick = noLogoSource === 'manual' ? '✅' : '☑️';
 
-                const thumbBtnColor = thumbSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-blue-600/90 hover:bg-blue-500';
+                const thumbBtnBg = thumbSource === 'manual' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-purple-600 hover:bg-purple-500';
                 const thumbTick = thumbSource === 'manual' ? '✅' : '☑️';
 
-                const logoBtnColor = logoSource === 'manual' ? 'bg-emerald-600/90 hover:bg-emerald-500' : 'bg-purple-600/90 hover:bg-purple-500';
+                const posterBtnBg = posterSource === 'manual' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-purple-600 hover:bg-purple-500';
+                const posterTick = posterSource === 'manual' ? '✅' : '☑️';
+
+                const logoBtnBg = logoSource === 'manual' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-purple-600 hover:bg-purple-500';
                 const logoTick = logoSource === 'manual' ? '✅' : '☑️';
 
-                const actionBtns = '<div class="absolute bottom-2.5 right-2.5 flex flex-col gap-1 z-30 items-end">' +
-                    '<button onclick="openCleanPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.noLogoPoster || '') + '\\', \\'' + noLogoSource + '\\', \\'' + mType + '\\')" class="' + noLogoBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选轮播海报（纯净无字版）">🎴轮播 ' + noLogoTick + '</button>' +
-                    '<button onclick="openThumbSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.thumb || '') + '\\', \\'' + thumbSource + '\\', \\'' + mType + '\\')" class="' + thumbBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选剧照/横版背景">📺剧照 ' + thumbTick + '</button>' +
-                    '<button onclick="openPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.poster_path || '') + '\\', \\'' + posterSource + '\\', \\'' + mType + '\\')" class="' + posterBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选竖版正标海报（带官方艺术字）">📇竖 ' + posterTick + '</button>' +
-                    '<button onclick="openLogoSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.logo || '') + '\\', \\'' + logoSource + '\\', \\'' + mType + '\\')" class="' + logoBtnColor + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center gap-0.5" title="手动选透明Logo">🖼️标 ' + logoTick + '</button>' +
+                const actionBtns = '<div class="grid grid-cols-2 gap-1.5 w-full pt-2 border-t border-gray-100 dark:border-zinc-700/60 mt-auto shrink-0">' +
+                    '<button onclick="openCleanPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.noLogoPoster || '') + '\\', \\'' + noLogoSource + '\\', \\'' + mType + '\\')" class="' + noLogoBtnBg + ' ' + btnBase + '" title="手动选轮播海报（纯净无字版）">🎴 轮播 ' + noLogoTick + '</button>' +
+                    '<button onclick="openThumbSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.thumb || '') + '\\', \\'' + thumbSource + '\\', \\'' + mType + '\\')" class="' + thumbBtnBg + ' ' + btnBase + '" title="手动选剧照/横版背景">📺 剧照 ' + thumbTick + '</button>' +
+                    '<button onclick="openPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.poster_path || '') + '\\', \\'' + posterSource + '\\', \\'' + mType + '\\')" class="' + posterBtnBg + ' ' + btnBase + '" title="手动选竖版正标海报（带官方艺术字）">📇 竖 ' + posterTick + '</button>' +
+                    '<button onclick="openLogoSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.logo || '') + '\\', \\'' + logoSource + '\\', \\'' + mType + '\\')" class="' + logoBtnBg + ' ' + btnBase + '" title="手动选透明Logo">🖼️ 标 ' + logoTick + '</button>' +
                 '</div>';
 
+                // 2. 只有一份正确的卡片 HTML (海报无遮挡 + 底部标题与按键)
                 const cardHtml = '<div class="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md transform-gpu border border-white/60 dark:border-zinc-700/60 rounded-2xl md:rounded-[1.5rem] shadow-sm relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-xl group flex flex-col h-full cursor-pointer" onclick="const cb = this.querySelector(\\'.logo-checkbox\\'); if(cb) { cb.checked = !cb.checked; updateLogoToolbar(); }">' +
                         '<div class="relative w-full pt-[150%] overflow-hidden rounded-t-2xl md:rounded-t-[1.5rem] bg-gray-200 dark:bg-zinc-700 shrink-0">' +
                             '<img src="' + posterUrl + '" loading="lazy" decoding="async" onerror="this.src=\\'https://via.placeholder.com/500x750?text=No+Poster\\'" alt="' + item.title + '" class="absolute top-0 left-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 md:opacity-100">' +
-                            checkboxHtml + ' ' + actionControlBtns + ' ' + ratingBadge + ' ' + yearBadge + ' ' + actionBtns +
+                            checkboxHtml + ' ' + actionControlBtns + ' ' + ratingBadge + ' ' + yearBadge +
                         '</div>' +
-                        '<div class="p-3 md:p-4 flex-1 flex items-center"><h3 class="font-black text-gray-800 dark:text-white text-xs md:text-sm line-clamp-2 leading-tight">' + item.title + '</h3></div>' +
+                        '<div class="p-2.5 md:p-3.5 flex-1 flex flex-col justify-between gap-1.5">' +
+                            '<h3 class="font-black text-gray-800 dark:text-white text-xs md:text-sm line-clamp-1 leading-snug" title="' + safeTitle + '">' + item.title + '</h3>' +
+                            actionBtns +
+                        '</div>' +
                     '</div>';
+
                 grid.insertAdjacentHTML('beforeend', cardHtml);
             });
 
-            if (pendingCheckedIds.length > 0) { document.querySelectorAll('.logo-checkbox').forEach(cb => { if (pendingCheckedIds.includes(cb.value)) cb.checked = true; }); }
+            if (pendingCheckedIds.length > 0) { 
+                document.querySelectorAll('.logo-checkbox').forEach(cb => { 
+                    if (pendingCheckedIds.includes(cb.value)) cb.checked = true; 
+                }); 
+            }
             updateLogoToolbar();
         }
 
