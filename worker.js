@@ -147,7 +147,7 @@ const FRONTEND_HTML_P1 = `
                     </div>
                 </div>
 
-                <!-- 🌟 控制栏 (合集按键全部统一高度 h-[88px]，右侧按钮精简为 默认/最新/热度) -->
+                <!-- 🌟 第二行：核心控制栏 (合集按键全部统一高度 h-[88px]，右侧按钮精简为 默认/最新/热度) -->
                 <div class="flex flex-col xl:flex-row w-full mb-8 gap-2.5 md:gap-3 justify-end items-center relative">
                     
                     <!-- 普通分类时：LED 实时电子表插槽 (放在最左边，留足超宽空间) -->
@@ -203,8 +203,8 @@ const FRONTEND_HTML_P1 = `
     <!-- 可视化选图弹窗 (竖版海报选择器) -->
     <div id="poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
-            <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="poster-select-title">选择备用竖版海报</h3>
-            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">✨ 系统已自动优先列出<span class="text-pink-600 dark:text-pink-400 font-bold">【纯净无字竖海报】</span>，搭配 Logo 叠加使用绝不重叠覆盖！</p>
+            <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="poster-select-title">选择备用【正标带字】竖海报</h3>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">✨ 系统已自动优先列出<span class="text-pink-600 dark:text-pink-400 font-bold">【官方带字海报】</span>，专供小竖屏列表卡片展示！</p>
             <div class="flex items-center gap-2 mb-4 shrink-0">
                 <input type="text" id="custom-poster-url" placeholder="或者直接输入您自定义竖海报的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-pink-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
                 <button onclick="applyCustomPoster()" class="px-5 py-2.5 bg-pink-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-pink-700 transition-colors shrink-0">直接应用</button>
@@ -212,6 +212,22 @@ const FRONTEND_HTML_P1 = `
             <div id="poster-select-grid" class="overflow-y-auto flex-1 hide-scrollbar grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-2 content-start auto-rows-max min-h-[30vh] border-y border-gray-100 dark:border-zinc-800 py-4 relative"></div>
             <div class="flex flex-wrap gap-3 justify-end shrink-0 mt-5">
                 <button onclick="closeModal('poster-select-modal')" class="flex-1 md:flex-none py-3 px-6 rounded-xl font-bold text-xs md:text-sm text-white bg-gray-400 dark:bg-zinc-700 hover:bg-gray-500 dark:hover:bg-zinc-600 transition-colors shadow-md">关闭取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 可视化选图弹窗 (纯净无字轮播竖海报选择器) -->
+    <div id="clean-poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
+        <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
+            <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="clean-poster-select-title">选择备用【纯净无字】轮播竖海报</h3>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">✨ 此处选择的海报将专门用于<span class="text-cyan-600 dark:text-cyan-400 font-bold">【大轮播图 / Hero 大卡片】</span>叠加透明 Logo 显示，绝不与小列表带字海报冲突！</p>
+            <div class="flex items-center gap-2 mb-4 shrink-0">
+                <input type="text" id="custom-clean-poster-url" placeholder="或者直接输入您自定义纯净无字竖海报的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-cyan-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
+                <button onclick="applyCustomCleanPoster()" class="px-5 py-2.5 bg-cyan-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-cyan-700 transition-colors shrink-0">直接应用</button>
+            </div>
+            <div id="clean-poster-select-grid" class="overflow-y-auto flex-1 hide-scrollbar grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-2 content-start auto-rows-max min-h-[30vh] border-y border-gray-100 dark:border-zinc-800 py-4 relative"></div>
+            <div class="flex flex-wrap gap-3 justify-end shrink-0 mt-5">
+                <button onclick="closeModal('clean-poster-select-modal')" class="flex-1 md:flex-none py-3 px-6 rounded-xl font-bold text-xs md:text-sm text-white bg-gray-400 dark:bg-zinc-700 hover:bg-gray-500 dark:hover:bg-zinc-600 transition-colors shadow-md">关闭取消</button>
             </div>
         </div>
     </div>
@@ -229,22 +245,6 @@ const FRONTEND_HTML_P1 = `
             <div class="flex flex-wrap gap-3 justify-end shrink-0 mt-5">
                 <button onclick="applyTextLogo()" class="flex-1 md:flex-none py-3 px-5 rounded-xl font-bold text-xs md:text-sm text-gray-700 bg-gray-100 border border-gray-300 hover:bg-gray-200 transition-colors">🗑️ 放弃图片，强制使用纯白文字</button>
                 <button onclick="closeModal('logo-select-modal')" class="flex-1 md:flex-none py-3 px-6 rounded-xl font-bold text-xs md:text-sm text-white bg-gray-400 dark:bg-zinc-700 hover:bg-gray-500 dark:hover:bg-zinc-600 transition-colors shadow-md">关闭取消</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 可视化选图弹窗 (纯净无字轮播竖海报选择器) -->
-    <div id="clean-poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
-        <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
-            <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="clean-poster-select-title">选择备用【纯净无字】轮播竖海报</h3>
-            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">✨ 此处选择的海报将专门用于<span class="text-cyan-600 dark:text-cyan-400 font-bold">【大轮播图 / Hero 大卡片】</span>叠加透明 Logo 显示，绝不与小列表带字海报冲突！</p>
-            <div class="flex items-center gap-2 mb-4 shrink-0">
-                <input type="text" id="custom-clean-poster-url" placeholder="或者直接输入您自定义纯净无字竖海报的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-cyan-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
-                <button onclick="applyCustomCleanPoster()" class="px-5 py-2.5 bg-cyan-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-cyan-700 transition-colors shrink-0">直接应用</button>
-            </div>
-            <div id="clean-poster-select-grid" class="overflow-y-auto flex-1 hide-scrollbar grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-2 content-start auto-rows-max min-h-[30vh] border-y border-gray-100 dark:border-zinc-800 py-4 relative"></div>
-            <div class="flex flex-wrap gap-3 justify-end shrink-0 mt-5">
-                <button onclick="closeModal('clean-poster-select-modal')" class="flex-1 md:flex-none py-3 px-6 rounded-xl font-bold text-xs md:text-sm text-white bg-gray-400 dark:bg-zinc-700 hover:bg-gray-500 dark:hover:bg-zinc-600 transition-colors shadow-md">关闭取消</button>
             </div>
         </div>
     </div>
@@ -1334,7 +1334,7 @@ const FRONTEND_HTML_P1 = `
             "home.popular_variety_shows": { en: "Popular Variety Shows", zh: "热门综艺", "zh-Hant": "熱門綜藝", ja: "人気のバラエティ", es: "Programas de Variedades", ar: "برامج منوعة شهيرة" },
             "home.popular_korean_tv_shows": { en: "Popular Korean Dramas", zh: "备受欢迎的韩剧推荐", "zh-Hant": "備受歡迎的韓劇推薦", ja: "人気の韓国ドラマ", es: "Dramas Coreanos Populares", ar: "مسلسلات كورية شهيرة" },
             "home.popular_japanese_tv_shows": { en: "Popular Japanese TV Shows", zh: "细腻又治愈的高人气日剧", "zh-Hant": "細膩又治癒的高人氣日劇", ja: "人気の国内ドラマ", es: "Dramas Japoneses Populares", ar: "مسلسلات يابانية شهيرة" },
-            "home.popular_spanish_tv_shows": { en: "Popular Spanish TV Shows", zh: "时下流行的西语剧集", "zh-Hant": "時下流行的西語劇集", ja: "人気のスペイン語ドラマ", es: "Series en Español Populares", ar: "مسلسلات إسبانية شهيرة" },
+            "home.popular_spanish_tv_shows": { en: "Popular Spanish TV Shows", zh: "时下流行的西语剧集", "zh-Hant": "時下流行的西語剧集", ja: "人気のスペイン語ドラマ", es: "Series en Español Populares", ar: "مسلسلات إسبانية شهيرة" },
             "home.popular_taiwanese_tv_shows": { en: "Popular Taiwanese TV Shows", zh: "台剧当然也不能落下", "zh-Hant": "台劇當然也不能落下", ja: "人気の台湾ドラマ", es: "Series Taiwanesas Populares", ar: "مسلسلات تايوانية شهيرة" },
             "home.popular_taiwanese_movies": { en: "Popular Taiwanese Movies", zh: "台味浓浓的宝藏台片", "zh-Hant": "台味濃濃的寶藏台片", ja: "人気の台湾映画", es: "Películas Taiwanesas Populares", ar: "أفلام تايوانية شهيرة" },
             "home.weekly_anime": { en: "Weekly Anime", zh: "动漫新番周更表", "zh-Hant": "動漫新番週更表", ja: "アニメ週間更新", es: "Anime Semanal", ar: "أنمي أسبوعي" },
@@ -1367,9 +1367,6 @@ const FRONTEND_HTML_P1 = `
             "home.netflix_minor_movies": { en: "Hidden Gem Minor Language Movies", zh: "冷门却惊艳的小语种电影", "zh-Hant": "冷門卻驚豔的小語種電影", ja: "隠れた名作外国映画", es: "Películas Sorprendentes en Otros Idiomas", ar: "أفلام بلغات أخرى" }
         };
 
-        // ==========================================
-        // 补齐缺失的 TMDB 路由参数
-        // ==========================================
         const TMDB_LIST_ROUTE_PARAMS = {
             "tmdb_popular_movies": { category: "trending", type: "movie" },
             "tmdb_popular_tv": { category: "trending", type: "tv" },
@@ -1384,9 +1381,6 @@ const FRONTEND_HTML_P1 = `
             "tmdb_anime_cn": { category: "discover", type: "tv", genre: "16", language: "zh" }
         };
 
-        // ==========================================
-        // 补齐缺失的排版全选/清空函数
-        // ==========================================
         function toggleAllLayout(check) {
             document.querySelectorAll('.layout-cb').forEach(cb => {
                 cb.checked = check;
@@ -1431,9 +1425,9 @@ const FRONTEND_HTML_P1 = `
                             (c.isCollection ? '<option value="collection-list" selected>新番日历合集</option>' : '') +
                         '</select>' +
                         (c.isStatic || c.isCollection ? '' : '<select class="text-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 outline-none font-bold text-indigo-600 dark:text-indigo-400 shadow-sm cursor-pointer focus:border-indigo-500" onchange="updateSortAndRender(\\'' + c.id + '\\', this.value)">' +
-                            '<option value="default" ' + (state.sort === 'default' ? 'selected' : '') + '>默认排位</option>' +
-                            '<option value="year" ' + (state.sort === 'year' ? 'selected' : '') + '>最新年份</option>' +
-                            '<option value="heat" ' + (state.sort === 'heat' ? 'selected' : '') + '>最高热度</option>' +
+                            '<option value="default" ' + (state.sort === 'default' ? 'selected' : '') + '>默认</option>' +
+                            '<option value="year" ' + (state.sort === 'year' ? 'selected' : '') + '>最新</option>' +
+                            '<option value="heat" ' + (state.sort === 'heat' ? 'selected' : '') + '>热度</option>' +
                         '</select>') +
                     '</div>' +
                 '</div>';
@@ -1464,7 +1458,7 @@ const FRONTEND_HTML_P1 = `
                 return '    {\\n      id: "' + c.id + '",\\n      mediaType: "' + c.type + '",\\n      titleKey: "' + c.titleKey + '",\\n      preset: "' + c.currentPreset + '",\\n      showRank: true,\\n      showOverview: true,' + (c.sort && c.sort !== 'default' && !c.isStatic ? '\\n      sort: "' + c.sort + '",' : '') + '\\n      source: ' + (c.isStatic ? c.sourceCode : '{ path: "' + originUrl + '/api/' + c.id + (c.sort && c.sort !== 'default' ? '?sort=' + c.sort : '') + '", itemEnvelope: "data" }') + '\\n    }';
             }).join(',\\n');
 
-            return 'import type { TmdbListRoute } from "../blocks/types.js";\\n\\ntype Locale = "en" | "zh" | "zh-Hant" | "ja" | "es" | "ar";\\n\\ntype HomeTitleKey =\\n  | "home.continue_watching"\\n  | "home.tmdb_popular_tv_shows"\\n  | "home.tmdb_popular_movies"\\n  | "home.popular_domestic_anime"\\n  | "home.bangumi_popular_anime"\\n  | "home.tmdb_on_the_air_tv_shows"\\n  | "home.popular_tv_shows"\\n  | "home.popular_movies"\\n  | "home.popular_variety_shows"\\n  | "home.popular_korean_tv_shows"\\n  | "home.popular_japanese_tv_shows"\\n  | "home.popular_spanish_tv_shows"\\n  | "home.popular_taiwanese_tv_shows"\\n  | "home.tmdb_discover_genres"\\n  | "home.tmdb_discover_languages"\\n  | "home.tmdb_discover_networks"\\n  | "home.tmdb_top_rated_movies"\\n  | "home.tmdb_top_rated_tv_shows"\\n  | "home.weekly_anime"\\n  | "home.weekly_drama"\\n  | "home.weekly_guoman"\\n  | "home.weekly_korean_drama"\\n  | "home.weekly_japanese_drama"\\n  | "home.weekly_sea_drama"\\n  | "home.tmdb_tv_netflix"\\n  | "home.variety_cn"\\n  | "home.variety_kr"\\n  | "home.variety_global"\\n  | "home.tmdb_tv_hbo"\\n  | "home.tmdb_tv_apple"\\n  | "home.trakt_movies"\\n  | "home.trakt_shows"\\n  | "home.tmdb_anime_jp"\\n  | "home.imdb_top_anime"\\n  | "home.prime_hot_anime"\\n  | "home.filmarks_anime_movie"\\n  | "home.netflix_hot_anime"\\n  | "home.tmdb_anime_top_ja"\\n  | "home.tmdb_anime_movie_ja"\\n  | "home.tmdb_movie_sea"\\n  | "home.tmdb_movie_hk_erotic_comedy"\\n  | "home.tmdb_tv_th"\\n  | "home.tmdb_movie_th"\\n  | "home.tmdb_tv_bl"\\n  | "home.netflix_minor_tv_shows"\\n  | "home.netflix_minor_movies"\\n  | "home.popular_taiwanese_movies";\\n\\ntype SourceQueryValue = string | number | boolean;\\n\\ninterface HomePagination {\\n  pageParam: string;\\n  startPage: number;\\n}\\n\\ninterface HomeBlockSource {\\n  id?: string;\\n  path?: string;\\n  query?: Record<string, SourceQueryValue>;\\n  itemEnvelope?: "data" | "results" | "array";\\n  pagination?: HomePagination;\\n}\\n\\ntype TmdbListRoute = {\\n  type: "tmdb-list";\\n  title: string;\\n  params: {\\n    category: "trending" | "top-rated" | "discover";\\n    type: "movie" | "tv";\\n    genre?: string;\\n    language?: string;\\n    network?: string;\\n    networkName?: string;\\n  };\\n};\\n\\ninterface HomeBlockChild {\\n  id: string;\\n  label?: string;\\n  weekday?: number;\\n  title?: string;\\n  mediaType?: "movie" | "tv";\\n  preset: string;\\n  source?: HomeBlockSource;\\n}\\n\\ninterface HomeBlock {\\n  id: string;\\n  title?: string;\\n  mediaType?: "movie" | "tv";\\n  preset: string;\\n  groupMode?: "weekday" | string;\\n  sort?: string;\\n  showRank?: boolean;\\n  showOverview?: boolean;\\n  source?: HomeBlockSource;\\n  metadata?: {\\n    isAnime?: boolean;\\n  };\\n  route?: TmdbListRoute;\\n  children?: HomeBlockChild[];\\n}\\n\\ntype TmdbListRouteParams = TmdbListRoute["params"];\\n\\ntype HomeBlockTemplate = Omit<HomeBlock, "title"> & {\\n  titleKey?: HomeTitleKey;\\n};\\n\\nexport interface DefaultHomeConfigOptions {\\n  apiBaseUrl: string;\\n  imageBaseUrl: string;\\n  language: string;\\n  timezone: string;\\n}\\n\\nexport interface DefaultHomeConfig {\\n  version: number;\\n  apiBaseUrl: string;\\n  imageBaseUrl: string;\\n  carouselSourceId: string;\\n  blocks: HomeBlock[];\\n}\\n\\nexport const HOME_CONFIG_VERSION = 1;\\n\\nconst TITLE_TRANSLATIONS = ' + JSON.stringify(TITLE_TRANSLATIONS, null, 2) + ';\\n\\nconst TMDB_LIST_ROUTE_PARAMS = ' + JSON.stringify(TMDB_LIST_ROUTE_PARAMS, null, 2) + ';\\n\\nfunction resolveLocale(language) {\\n  const normalized = language.toLowerCase();\\n  if (normalized.startsWith("zh-hant") || normalized.includes("tw") || normalized.includes("hk")) { return "zh-Hant"; }\\n  if (normalized.startsWith("zh")) return "zh";\\n  if (normalized.startsWith("ja")) return "ja";\\n  if (normalized.startsWith("es")) return "es";\\n  if (normalized.startsWith("ar")) return "ar";\\n  return "en";\\n}\\n\\nfunction resolveTitle(titleKey, language) {\\n  return TITLE_TRANSLATIONS[titleKey][resolveLocale(language)];\\n}\\n\\nfunction createTmdbListRoute(title, params) {\\n  return { type: "tmdb-list", title, params };\\n}\\n\\nfunction createDefaultBlockTemplates(language, timezone) {\\n  return [\\n' + customBlocks + '\\n  ];\\n}\\n\\nfunction resolveBlockTitle(block, language) {\\n  const { titleKey, ...rest } = block;\\n  if (!titleKey) return rest;\\n  const title = resolveTitle(titleKey, language);\\n  const routeParams = TMDB_LIST_ROUTE_PARAMS[rest.id];\\n  return { ...rest, title, ...(routeParams ? { route: createTmdbListRoute(title, routeParams) } : {}) };\\n}\\n\\nexport function createDefaultHomeConfig(options) {\\n  return {\\n    version: HOME_CONFIG_VERSION,\\n    apiBaseUrl: options.apiBaseUrl,\\n    imageBaseUrl: options.imageBaseUrl,\\n    carouselSourceId: "tmdb_popular_movies",\\n    blocks: createDefaultBlockTemplates(options.language, options.timezone).map((block) => resolveBlockTitle(block, options.language)),\\n  };\\n}';
+            return 'import type { TmdbListRoute } from "../blocks/types.js";\\n\\ntype Locale = "en" | "zh" | "zh-Hant" | "ja" | "es" | "ar";\\n\\ntype HomeTitleKey =\\n  | "home.continue_watching"\\n  | "home.tmdb_popular_tv_shows"\\n  | "home.tmdb_popular_movies"\\n  | "home.popular_domestic_anime"\\n  | "home.bangumi_popular_anime"\\n  | "home.tmdb_on_the_air_tv_shows"\\n  | "home.popular_tv_shows"\\n  | "home.popular_movies"\\n  | "home.popular_variety_shows"\\n  | "home.popular_korean_tv_shows"\\n  | "home.popular_japanese_tv_shows"\\n  | "home.popular_spanish_tv_shows"\\n  | "home.popular_taiwanese_tv_shows"\\n  | "home.popular_taiwanese_movies"\\n  | "home.tmdb_discover_genres"\\n  | "home.tmdb_discover_languages"\\n  | "home.tmdb_discover_networks"\\n  | "home.tmdb_top_rated_movies"\\n  | "home.tmdb_top_rated_tv_shows"\\n  | "home.weekly_anime"\\n  | "home.weekly_drama"\\n  | "home.weekly_guoman"\\n  | "home.weekly_korean_drama"\\n  | "home.weekly_japanese_drama"\\n  | "home.weekly_sea_drama"\\n  | "home.tmdb_tv_netflix"\\n  | "home.variety_cn"\\n  | "home.variety_kr"\\n  | "home.variety_global"\\n  | "home.tmdb_tv_hbo"\\n  | "home.tmdb_tv_apple"\\n  | "home.trakt_movies"\\n  | "home.trakt_shows"\\n  | "home.tmdb_anime_jp"\\n  | "home.imdb_top_anime"\\n  | "home.prime_hot_anime"\\n  | "home.filmarks_anime_movie"\\n  | "home.netflix_hot_anime"\\n  | "home.tmdb_anime_top_ja"\\n  | "home.tmdb_anime_movie_ja"\\n  | "home.tmdb_movie_sea"\\n  | "home.tmdb_movie_hk_erotic_comedy"\\n  | "home.tmdb_tv_th"\\n  | "home.tmdb_movie_th"\\n  | "home.tmdb_tv_bl"\\n  | "home.netflix_minor_tv_shows"\\n  | "home.netflix_minor_movies";\\n\\ntype SourceQueryValue = string | number | boolean;\\n\\ninterface HomePagination {\\n  pageParam: string;\\n  startPage: number;\\n}\\n\\ninterface HomeBlockSource {\\n  id?: string;\\n  path?: string;\\n  query?: Record<string, SourceQueryValue>;\\n  itemEnvelope?: "data" | "results" | "array";\\n  pagination?: HomePagination;\\n}\\n\\ntype TmdbListRoute = {\\n  type: "tmdb-list";\\n  title: string;\\n  params: {\\n    category: "trending" | "top-rated" | "discover";\\n    type: "movie" | "tv";\\n    genre?: string;\\n    language?: string;\\n    network?: string;\\n    networkName?: string;\\n  };\\n};\\n\\ninterface HomeBlockChild {\\n  id: string;\\n  label?: string;\\n  weekday?: number;\\n  title?: string;\\n  mediaType?: "movie" | "tv";\\n  preset: string;\\n  source?: HomeBlockSource;\\n}\\n\\ninterface HomeBlock {\\n  id: string;\\n  title?: string;\\n  mediaType?: "movie" | "tv";\\n  preset: string;\\n  groupMode?: "weekday" | string;\\n  sort?: string;\\n  showRank?: boolean;\\n  showOverview?: boolean;\\n  source?: HomeBlockSource;\\n  metadata?: {\\n    isAnime?: boolean;\\n  };\\n  route?: TmdbListRoute;\\n  children?: HomeBlockChild[];\\n}\\n\\ntype TmdbListRouteParams = TmdbListRoute["params"];\\n\\ntype HomeBlockTemplate = Omit<HomeBlock, "title"> & {\\n  titleKey?: HomeTitleKey;\\n};\\n\\nexport interface DefaultHomeConfigOptions {\\n  apiBaseUrl: string;\\n  imageBaseUrl: string;\\n  language: string;\\n  timezone: string;\\n}\\n\\nexport interface DefaultHomeConfig {\\n  version: number;\\n  apiBaseUrl: string;\\n  imageBaseUrl: string;\\n  carouselSourceId: string;\\n  blocks: HomeBlock[];\\n}\\n\\nexport const HOME_CONFIG_VERSION = 1;\\n\\nconst TITLE_TRANSLATIONS = ' + JSON.stringify(TITLE_TRANSLATIONS, null, 2) + ';\\n\\nconst TMDB_LIST_ROUTE_PARAMS = ' + JSON.stringify(TMDB_LIST_ROUTE_PARAMS, null, 2) + ';\\n\\nfunction resolveLocale(language) {\\n  const normalized = language.toLowerCase();\\n  if (normalized.startsWith("zh-hant") || normalized.includes("tw") || normalized.includes("hk")) { return "zh-Hant"; }\\n  if (normalized.startsWith("zh")) return "zh";\\n  if (normalized.startsWith("ja")) return "ja";\\n  if (normalized.startsWith("es")) return "es";\\n  if (normalized.startsWith("ar")) return "ar";\\n  return "en";\\n}\\n\\nfunction resolveTitle(titleKey, language) {\\n  return TITLE_TRANSLATIONS[titleKey][resolveLocale(language)];\\n}\\n\\nfunction createTmdbListRoute(title, params) {\\n  return { type: "tmdb-list", title, params };\\n}\\n\\nfunction createDefaultBlockTemplates(language, timezone) {\\n  return [\\n' + customBlocks + '\\n  ];\\n}\\n\\nfunction resolveBlockTitle(block, language) {\\n  const { titleKey, ...rest } = block;\\n  if (!titleKey) return rest;\\n  const title = resolveTitle(titleKey, language);\\n  const routeParams = TMDB_LIST_ROUTE_PARAMS[rest.id];\\n  return { ...rest, title, ...(routeParams ? { route: createTmdbListRoute(title, routeParams) } : {}) };\\n}\\n\\nexport function createDefaultHomeConfig(options) {\\n  return {\\n    version: HOME_CONFIG_VERSION,\\n    apiBaseUrl: options.apiBaseUrl,\\n    imageBaseUrl: options.imageBaseUrl,\\n    carouselSourceId: "tmdb_popular_movies",\\n    blocks: createDefaultBlockTemplates(options.language, options.timezone).map((block) => resolveBlockTitle(block, options.language)),\\n  };\\n}';
         }
 
         function copyGeneratedTS() {
@@ -1494,11 +1488,9 @@ const FRONTEND_HTML_P1 = `
                 const catName = catObj ? catObj.name : catId;
 
                 if (data && data.success) {
-                    showToast("✅ [" + catName + "] 数据抓取完毕！目前大盘库共 " + data.count + " 条。");
-                    fetch(ACTION_BASE + '/tg_notify', { method: 'POST', headers: { "Authorization": 'Bearer ' + sysPwd, "Content-Type": "application/json" }, body: JSON.stringify({ message: "🚀 <b>[单次定向同步] 执行完毕</b>\\n▪️ <b>" + catName + "</b> (总数:" + data.count + "条)\\n" }) });
-                } else showToast("❌ " + catName + " 失败: " + (data ? data.error : '未知错误'), true); 
-            } catch (err) { showToast("❌ 同步失败: " + err.message, true); }
-        }
+                    const st = data.stats || { logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 };
+                    showToast("✅ [" + catName + "] 抓取完毕！共 " + data.count + " 条 (标:" + (st['logos'] || 0) + " | 🎴无字竖:" + (st['noLogoPosters'] || 0) + " | 🎬无字横:" + (st['cleanBackdrops'] || 0) + ")");
+                } else showToast("❌ " + catName + " 失败: " + (data ? data.error : '未知错误'), true);
 
         async function executeBatchSync() {
             const checkboxes = document.querySelectorAll('.batch-cb:checked');
@@ -1516,7 +1508,10 @@ const FRONTEND_HTML_P1 = `
                     const res = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + sysPwd } });
                     const data = await res.json();
                     if (data.success) {
-                        showToast("✅ [" + catObj.name + "] 同步完毕！共 " + data.count + " 条。"); successList.push("▪️ <b>" + catObj.name + "</b> (共" + data.count + "条，均已更新)"); totalCount += data.count;
+                        const st = data.stats || { logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 };
+                        showToast("✅ [" + catObj.name + "] 同步完毕！共 " + data.count + " 条。");
+                        successList.push("▪️ <b>" + catObj.name + "</b> (共" + data.count + "部 | 💎标:<b>" + (st['logos'] || 0) + "</b> | 🎴无字竖:<b>" + (st['noLogoPosters'] || 0) + "</b> | 🎬无字横:<b>" + (st['cleanBackdrops'] || 0) + "</b> | 📇正标:<b>" + (st['posters'] || 0) + "</b>)"); 
+                        totalCount += data.count;
                     } else { showToast("❌ " + catObj.name + " 失败: " + data.error, true); failList.push("❌ " + catObj.name + ": " + data.error); }
                 } catch(e) { showToast("❌ " + catObj.name + " 失败", true); failList.push("❌ " + catObj.name + ": 网络异常"); }
             }
@@ -1524,7 +1519,7 @@ const FRONTEND_HTML_P1 = `
 
             const timeStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
             let tgMsg = "🚀 <b>[网页端批量同步] 执行完毕</b>\\n⏰ 时间: " + timeStr + " UTC\\n\\n";
-            if (successList.length > 0) tgMsg += "<b>执行明细:</b>\\n" + successList.join('\\n') + "\\n";
+            if (successList.length > 0) tgMsg += "<b>五维资产入库明细:</b>\\n" + successList.join('\\n') + "\\n";
             if (failList.length > 0) tgMsg += "\\n<b>失败明细:</b>\\n" + failList.join('\\n');
             await fetch(ACTION_BASE + '/tg_notify', { method: 'POST', headers: { "Authorization": 'Bearer ' + sysPwd, "Content-Type": "application/json" }, body: JSON.stringify({ message: tgMsg }) });
         }
@@ -2011,7 +2006,6 @@ async function fetchTMDBDiscoverList(type, paramsObj, env, limit = 100, reqCtx) 
     genre_ids: item.genre_ids || []
   }));
 }
-
 async function fetchTraktTrending(type, env, limit = 100, reqCtx) {
   if (!env.TRAKT_CLIENT_ID) throw new Error("缺少 TRAKT_CLIENT_ID");
   let res;
@@ -2076,7 +2070,7 @@ async function tmdbFetch(path, paramsObj, env, reqCtx) {
 }
 
 // ==========================================
-// 6. 图片清洗与去重辅助函数 (包含纯净无字海报筛选)
+// 6. 核心图层脱水提取与多语种打分算法
 // ==========================================
 function extractImages(images, backdropPath, posterPath, origLang) {
   const backdrops = (images && images.backdrops) ? images.backdrops : [];
@@ -2084,41 +2078,50 @@ function extractImages(images, backdropPath, posterPath, origLang) {
   const posters = (images && images.posters) ? images.posters : [];
 
   const getLangScore = (lang) => {
-    if (lang === 'zh') return 100;
-    if (origLang && lang === origLang) return 90;
-    if (lang === 'ja') return 85;
-    if (lang === 'ko') return 80;
-    if (lang === 'th') return 75;
-    if (lang === 'en') return 70;
-    if (lang !== null && lang !== 'xx') return 50;
+    if (!lang) return 0;
+    const l = String(lang).toLowerCase();
+    if (l === 'zh' || l === 'zh-cn' || l === 'zh-tw' || l === 'zh-hk') return 100;
+    if (origLang && l === String(origLang).toLowerCase()) return 90;
+    if (l === 'ja') return 85;
+    if (l === 'ko') return 80;
+    if (l === 'th') return 75;
+    if (l === 'en') return 70;
+    if (['es', 'fr', 'de', 'ru', 'pt', 'it', 'vi', 'id', 'tl'].includes(l)) return 60;
+    if (l !== 'null' && l !== 'xx' && l !== 'none') return 40;
     return 0; 
   };
 
-  // 1. 竖版有字 (poster_path): 优先官方中文艺术字
-  const textPosters = posters.filter(p => p.iso_639_1 && p.iso_639_1 !== 'xx')
+  const isExplicitlyClean = (item) => {
+    if (!item) return false;
+    const l = item.iso_639_1;
+    return l === null || l === undefined || l === '' || l === 'xx' || l === 'none' || l === 'null';
+  };
+
+  // 1. 竖版有字海报 (poster_path): 优先官方中文/原语言艺术字
+  const textPosters = posters.filter(p => !isExplicitlyClean(p))
                              .sort((a, b) => {
                                const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
                                const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
                                return scoreB - scoreA;
                              });
   
-  // 2. 竖版无字 (noLogoPoster): 严格纯净无字
-  const cleanPosters = posters.filter(p => !p.iso_639_1 || p.iso_639_1 === 'xx' || p.iso_639_1 === null)
+  // 2. 竖版纯净无字海报 (noLogoPoster): 严格纯净无字
+  const cleanPosters = posters.filter(p => isExplicitlyClean(p))
                               .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
   
   const officialPoster = textPosters[0]?.file_path || cleanPosters[0]?.file_path || posterPath || null;
   const noLogoPoster = cleanPosters[0]?.file_path || textPosters[0]?.file_path || posterPath || null;
 
-  // 3. 横版有字 (thumb): 优先官方中文带字剧照
-  const textBackdrops = backdrops.filter(b => b.iso_639_1 && b.iso_639_1 !== 'xx')
+  // 3. 横版有字剧照 (thumb): 优先官方中文带字剧照
+  const textBackdrops = backdrops.filter(b => !isExplicitlyClean(b))
                                  .sort((a, b) => {
                                    const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
                                    const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
                                    return scoreB - scoreA;
                                  });
 
-  // 4. 横版纯净无字 (cleanBackdrop / backdrop_path): 专供 iPad / TV 轮播图
-  const cleanBackdrops = backdrops.filter(b => !b.iso_639_1 || b.iso_639_1 === 'xx' || b.iso_639_1 === null)
+  // 4. 横版纯净无字背景 (cleanBackdrop / backdrop_path): 专供 iPad / TV 轮播图
+  const cleanBackdrops = backdrops.filter(b => isExplicitlyClean(b))
                                   .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
 
   const cleanBackdrop = cleanBackdrops[0]?.file_path || textBackdrops[0]?.file_path || backdropPath || null;
@@ -2170,8 +2173,9 @@ function deduplicateRawList(items) {
     }
     return result;
 }
+
 // ==========================================
-// 7. TMDB 详细数据加工处理（智能三全判定：新片自动提图标，老片三全彻底无视跳过）
+// 7. TMDB 详细数据加工处理（智能五维判定：新片自动提五图，老片全齐0消耗跳过）
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
@@ -2192,13 +2196,15 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
       let tmdbId = item.tmdbId || oldRecord?.tmdbId || null;
       let basicData = item;
 
-      // 1. 检查历史老数据是否已经“三全”（有真标 + 有剧照 + 有海报）
-      const hasMemoryPoster = !!(oldRecord?.poster_path || oldRecord?.noLogoPoster);
-      const hasMemoryThumb  = !!(oldRecord?.thumb || oldRecord?.backdrop_path);
+      // 检查历史老数据是否已经“五全”（正标 + 无字竖 + 剧照 + 无字横背景 + 真Logo）
+      const hasMemoryPoster = !!oldRecord?.poster_path;
+      const hasMemoryNoLogo = !!oldRecord?.noLogoPoster;
+      const hasMemoryThumb  = !!oldRecord?.thumb;
+      const hasMemoryBackdrop = !!oldRecord?.backdrop_path;
       const hasMemoryLogo   = !!(oldRecord?.logo && !oldRecord.logo.includes('text_logo.svg'));
       
-      // 🌟【老片绝对免检】：如果已是三全老片且未开启强制重刷，100% 不发搜索请求
-      const isCompleteOldItem = oldRecord && hasMemoryPoster && hasMemoryThumb && hasMemoryLogo;
+      // 🌟 老片绝对免检：五项全部完整且未开启强制重刷，100% 0请求跳过
+      const isCompleteOldItem = oldRecord && hasMemoryPoster && hasMemoryNoLogo && hasMemoryThumb && hasMemoryBackdrop && hasMemoryLogo;
 
       if (!tmdbId && !isCompleteOldItem && reqCtx.subreqs < reqCtx.maxSubreqs) {
         try {
@@ -2270,7 +2276,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
         let needDetailFetch = false;
         const isMissingDate = !oldRecord?.first_air_date && !oldRecord?.release_date;
-        const isMissingAnyImage = !finalPoster || !finalThumb || !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'));
+        const isMissingAnyImage = !finalPoster || !finalNoLogoPoster || !finalThumb || !finalBackdrop || !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'));
 
         if (reqCtx.clearCooldown) {
             needDetailFetch = true;
@@ -2307,7 +2313,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
             const ext = extractImages(detailsAndImages.images, detailsAndImages.backdrop_path, detailsAndImages.poster_path, origLang);
 
-            // 1. 透明 Logo
+            // 1. Logo
             if ((!finalLogo || finalLogo.includes('text_logo.svg')) && finalLogoSource !== 'manual' && ext.logo) {
                 finalLogo = toAbsLogo(ext.logo);
             }
@@ -2315,7 +2321,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             if (ext.officialPoster && finalPosterSource !== 'manual') {
                 finalPoster = toAbs(ext.officialPoster);
             }
-            // 3. 竖版纯净无字海报 (手机轮播)
+            // 3. 竖版无字海报 (专供手机轮播)
             if (ext.noLogoPoster && finalNoLogoSource !== 'manual') {
                 finalNoLogoPoster = toAbs(ext.noLogoPoster);
             }
@@ -2323,7 +2329,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             if (ext.thumb && finalThumbSource !== 'manual') {
                 finalThumb = toAbs(ext.thumb);
             }
-            // 5. 横版纯净无字背景 (iPad / TV 轮播图)
+            // 5. 横版纯净无字背景 (专供 iPad / TV 轮播)
             if (ext.cleanBackdrop && finalBackdropSource !== 'manual') {
                 finalBackdrop = toAbs(ext.cleanBackdrop);
             }
@@ -2375,7 +2381,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
           noLogoPoster: finalNoLogoPoster || finalPoster,   // 2. 竖版无字海报
           poster_source: finalPosterSource,
           no_logo_poster_source: finalNoLogoSource,
-          backdrop_path: finalBackdrop || finalThumb || finalPoster, // 3. 🌟 横版纯净无字背景 (专供 iPad / TV 轮播图)
+          backdrop_path: finalBackdrop || finalThumb || finalPoster, // 3. 横版无字背景 (专供 iPad/TV)
           backdrop_source: finalBackdropSource,
           genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
           media_type: basicData.media_type || oldRecord?.media_type || mediaType,
@@ -2459,6 +2465,20 @@ function determineDay(item, bgmCalendar, standardDays, overrides) {
     return 0;
 }
 
+// 统计 5 大资产入库数量的辅助函数
+function computeAssetStats(items) {
+  if (!Array.isArray(items)) return { posters: 0, noLogoPosters: 0, thumbs: 0, cleanBackdrops: 0, logos: 0 };
+  let logos = 0, noLogoPosters = 0, cleanBackdrops = 0, posters = 0, thumbs = 0;
+  items.forEach(i => {
+    if (i.logo && !i.logo.includes('text_logo.svg')) logos++;
+    if (i.noLogoPoster) noLogoPosters++;
+    if (i.backdrop_path) cleanBackdrops++;
+    if (i.poster_path) posters++;
+    if (i.thumb) thumbs++;
+  });
+  return { logos, noLogoPosters, cleanBackdrops, posters, thumbs };
+}
+
 // ==========================================
 // 8. 核心同步引擎
 // ==========================================
@@ -2533,6 +2553,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       const bgmData = bgmRes.ok ? await bgmRes.json() : [];
       
       let processedCount = 0;
+      let allDayItems = [];
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue; 
           
@@ -2569,6 +2590,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           
           processedDayData = processedDayData.filter(item => !isItemBlacklisted(item, blacklist, category));
           processedCount += processedDayData.length;
+          allDayItems.push(...processedDayData);
           
           const dayJson = { platform: "bangumi", type: "animation", count: processedDayData.length, lastUpdated: new Date().toISOString(), data: processedDayData };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -2581,11 +2603,12 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
-      return { count: processedCount, newLogos: [] };
+      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
   else if (category === "weekly_drama_collection") {
       let processedCount = 0;
+      let allDayItems = [];
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue; 
           
@@ -2607,6 +2630,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           let processed = await processItemsWithTMDB(existingItems, "tv", env, limit, processOpts(), reqCtx);
           processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
           processedCount += processed.length;
+          allDayItems.push(...processed);
           
           const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -2619,13 +2643,13 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
-      return { count: processedCount, newLogos: [] };
+      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
   else if (category === "weekly_guoman_collection") {
       const standardDays = {};
-      
       let processedCount = 0;
+      let allDayItems = [];
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue; 
           
@@ -2650,6 +2674,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
           processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
           processedCount += processed.length;
+          allDayItems.push(...processed);
           
           const dayJson = { platform: "tmdb", type: "animation", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -2662,7 +2687,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
-      return { count: processedCount, newLogos: [] };
+      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
   else if (category === "weekly_korean_drama_collection") {
@@ -2679,6 +2704,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       }, env, 60, reqCtx).catch(() => []);
 
       let processedCount = 0;
+      let allDayItems = [];
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue;
           let existingItems = [];
@@ -2695,6 +2721,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
           processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
           processedCount += processed.length;
+          allDayItems.push(...processed);
           const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -2706,7 +2733,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
-      return { count: processedCount, newLogos: [] };
+      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
   else if (category === "weekly_japanese_drama_collection") {
@@ -2723,6 +2750,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       }, env, 60, reqCtx).catch(() => []);
 
       let processedCount = 0;
+      let allDayItems = [];
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue;
           let existingItems = [];
@@ -2739,6 +2767,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
           processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
           processedCount += processed.length;
+          allDayItems.push(...processed);
           const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -2750,7 +2779,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
-      return { count: processedCount, newLogos: [] };
+      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
   else if (category === "weekly_sea_drama_collection") {
@@ -2767,6 +2796,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       }, env, 60, reqCtx).catch(() => []);
 
       let processedCount = 0;
+      let allDayItems = [];
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue;
           let existingItems = [];
@@ -2783,6 +2813,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
           processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
           processedCount += processed.length;
+          allDayItems.push(...processed);
           const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
           await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -2794,7 +2825,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
-      return { count: processedCount, newLogos: [] };
+      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
   else if (category === "tmdb_popular_tv") { processedData = await processItemsWithTMDB(await fetchTMDBTrending('tv', env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
@@ -2943,12 +2974,31 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
 
       if (combinedData.length < 25 && oldItemsList.length >= 25) {
-          return { count: oldItemsList.length, newLogos: [] };
+          return { count: oldItemsList.length, stats: computeAssetStats(oldItemsList), newLogos: [] };
       }
 
       const finalJson = { platform: config.platform, type: config.type, count: combinedData.length, lastUpdated: new Date().toISOString(), data: combinedData };
       await env.R2_BUCKET.put(config.fileName, JSON.stringify(finalJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      return { count: finalJson.count, newLogos: newLogosTracker };
+      
+      const stats = computeAssetStats(combinedData);
+      
+      // 单次同步发送详细 TG 资产报告
+      if (!quiet && env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
+        const catName = config.name || category;
+        const tgReport = `🚀 <b>[单次定向同步] 执行完毕</b>\n` +
+                         `═══════════════════\n` +
+                         `📋 <b>目标榜单</b>: ${catName}\n` +
+                         `📊 <b>大盘总数</b>: <b>${finalJson.count}</b> 部\n\n` +
+                         `✨ <b>五维资产入库明细:</b>\n` +
+                         `▪️ 💎 真实Logo: <b>${stats.logos}</b> / ${finalJson.count}\n` +
+                         `▪️ 🎴 无字竖图: <b>${stats.noLogoPosters}</b> / ${finalJson.count}\n` +
+                         `▪️ 🎬 无字横屏: <b>${stats.cleanBackdrops}</b> / ${finalJson.count}\n` +
+                         `▪️ 📇 正标海报: <b>${stats.posters}</b> / ${finalJson.count}\n` +
+                         `▪️ 📺 横版剧照: <b>${stats.thumbs}</b> / ${finalJson.count}`;
+        await sendTgMessage(env, tgReport);
+      }
+
+      return { count: finalJson.count, stats, newLogos: newLogosTracker };
   }
 }
 
@@ -3288,8 +3338,7 @@ export default {
               const safeLimit = indices.length > 3 ? 40 : 100;
 
               let header = `🚀 <b>自选列队同步执行中 [单榜最高:${safeLimit}条]</b>\n`;
-              if (reqCtx.isSafeMode) header += `🛡️ <i>多选模式开启，已成型的影片自动跳过不耗额度！</i>\n`;
-              header += `\n`;
+              if (reqCtx.isSafeMode) header += `🛡️ <i>多选模式开启，已成型的影片自动跳过不耗额度！</i>\n\n`;
 
               let statuses = indices.map(idx => `⏳ 待命: ${CATEGORY_CONFIGS[idx].name}`);
               await editTgMessage(env, chatId, msgId, header + statuses.join('\n'), reqCtx);
@@ -3312,7 +3361,11 @@ export default {
                 try {
                   const currentOrigin = new URL(request.url).origin;
                   let fetched = await executeSyncTask(catId, env, safeLimit, true, reqCtx, currentOrigin, true, true);
-                  statuses[i] = `✅ <b>${escapeHTML(CATEGORY_CONFIGS[idx].name)}</b> (已稳固更新)`;
+                  const st = (fetched && fetched.stats) ? fetched.stats : { logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 };
+                  const sLogos = st['logos'] || 0;
+                  const sNoLogoPosters = st['noLogoPosters'] || 0;
+                  const sCleanBackdrops = st['cleanBackdrops'] || 0;
+                  statuses[i] = "✅ <b>" + escapeHTML(CATEGORY_CONFIGS[idx].name) + "</b> (共" + fetched.count + "部 | 💎标:" + sLogos + " | 🎴无字竖:" + sNoLogoPosters + " | 🎬无字横:" + sCleanBackdrops + ")";
                 } catch(e) {
                   if (e.message === "CF_LIMIT") { isAbortedByLimit = true; break; }
                   statuses[i] = `❌ <b>失败:</b> ${escapeHTML(CATEGORY_CONFIGS[idx].name)}`;
@@ -3605,7 +3658,7 @@ export default {
         
         const result = await executeSyncTask(targetCat, env, limit, quiet, webCtx, currentOrigin, fetchLogo, fetchThumb);
 
-        return new Response(JSON.stringify({ success: true, count: result.count, newLogos: result.newLogos }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
+        return new Response(JSON.stringify({ success: true, count: result.count, stats: result.stats, newLogos: result.newLogos }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
       } catch (e) { return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders }); }
     }
 
@@ -3632,9 +3685,9 @@ export default {
             
             const getPosterScore = (p) => {
                 const lang = p.iso_639_1;
-                const isClean = lang === null || lang === 'xx';
+                const isClean = lang === null || lang === 'xx' || lang === 'none' || !lang;
                 let score = isClean ? 100000 : 0; 
-                if (lang === 'zh') score += 500;
+                if (lang === 'zh' || lang === 'zh-cn' || lang === 'zh-tw' || lang === 'zh-hk') score += 500;
                 else if (origLang && lang === origLang) score += 300;
                 else if (lang === 'en') score += 100;
                 return score + (p.vote_average || 0);
@@ -3647,7 +3700,7 @@ export default {
                 url: TMDB_IMG_POSTER + p.file_path,
                 file_path: p.file_path,
                 lang: p.iso_639_1,
-                isClean: p.iso_639_1 === null || p.iso_639_1 === 'xx'
+                isClean: p.iso_639_1 === null || p.iso_639_1 === 'xx' || p.iso_639_1 === 'none' || !p.iso_639_1
             }));
             
             return new Response(JSON.stringify({ success: true, posters: posterUrls }), {
@@ -3680,13 +3733,16 @@ export default {
             let logos = imagesData.logos || [];
             
             const getLangScore = (lang) => {
-                if (lang === 'zh') return 100;
-                if (origLang && lang === origLang) return 90;
-                if (lang === 'ja') return 85;
-                if (lang === 'ko') return 80;
-                if (lang === 'th') return 75;
-                if (lang === 'en') return 70;
-                if (lang !== null && lang !== 'xx') return 50;
+                if (!lang) return 0;
+                const l = String(lang).toLowerCase();
+                if (l === 'zh' || l === 'zh-cn' || l === 'zh-tw' || l === 'zh-hk') return 100;
+                if (origLang && l === String(origLang).toLowerCase()) return 90;
+                if (l === 'ja') return 85;
+                if (l === 'ko') return 80;
+                if (l === 'th') return 75;
+                if (l === 'en') return 70;
+                if (['es', 'fr', 'de', 'ru', 'pt', 'it', 'vi', 'id', 'tl'].includes(l)) return 60;
+                if (l !== 'null' && l !== 'xx' && l !== 'none') return 40;
                 return 0;
             };
 
@@ -3729,13 +3785,16 @@ export default {
             let backdrops = imagesData.backdrops || [];
             
             const getLangScore = (lang) => {
-                if (lang === 'zh') return 100;
-                if (origLang && lang === origLang) return 90;
-                if (lang === 'ja') return 85;
-                if (lang === 'ko') return 80;
-                if (lang === 'th') return 75;
-                if (lang === 'en') return 70;
-                if (lang !== null && lang !== 'xx') return 50;
+                if (!lang) return 0;
+                const l = String(lang).toLowerCase();
+                if (l === 'zh' || l === 'zh-cn' || l === 'zh-tw' || l === 'zh-hk') return 100;
+                if (origLang && l === String(origLang).toLowerCase()) return 90;
+                if (l === 'ja') return 85;
+                if (l === 'ko') return 80;
+                if (l === 'th') return 75;
+                if (l === 'en') return 70;
+                if (['es', 'fr', 'de', 'ru', 'pt', 'it', 'vi', 'id', 'tl'].includes(l)) return 60;
+                if (l !== 'null' && l !== 'xx' && l !== 'none') return 40;
                 return 0;
             };
 
@@ -3746,7 +3805,12 @@ export default {
             });
             
             const TMDB_IMG_BACKDROP = 'https://image.tmdb.org/t/p/original';
-            const thumbUrls = backdrops.map(l => ({ url: TMDB_IMG_BACKDROP + l.file_path, file_path: l.file_path, lang: l.iso_639_1 }));
+            const thumbUrls = backdrops.map(l => ({ 
+                url: TMDB_IMG_BACKDROP + l.file_path, 
+                file_path: l.file_path, 
+                lang: l.iso_639_1,
+                isClean: l.iso_639_1 === null || l.iso_639_1 === 'xx' || l.iso_639_1 === 'none' || !l.iso_639_1
+            }));
             
             return new Response(JSON.stringify({ success: true, thumbs: thumbUrls }), {
                 headers: { "Content-Type": "application/json", ...antiCacheHeaders }
@@ -3785,7 +3849,6 @@ export default {
                         oldJson.data.forEach(item => {
                             if (item.tmdbId == tmdbId) {
                                 item.poster_path = posterUrl;
-                                item.noLogoPoster = posterUrl;
                                 item.poster_source = 'manual'; 
                                 item.crawledAt = new Date().toISOString();
                                 item.image_scanned = true;
@@ -4019,10 +4082,16 @@ export default {
                                 thumbUrl = ext.thumb.startsWith('http') ? ext.thumb : 'https://image.tmdb.org/t/p/original' + ext.thumb;
                             }
 
+                            let cleanBackdropUrl = null;
+                            if (ext.cleanBackdrop) {
+                                cleanBackdropUrl = ext.cleanBackdrop.startsWith('http') ? ext.cleanBackdrop : 'https://image.tmdb.org/t/p/original' + ext.cleanBackdrop;
+                            }
+
                             let officialPosterUrl = null;
                             if (ext.officialPoster) {
                                 officialPosterUrl = ext.officialPoster.startsWith('http') ? ext.officialPoster : 'https://image.tmdb.org/t/p/original' + ext.officialPoster;
                             }
+
                             let noLogoPosterUrl = null;
                             if (ext.noLogoPoster) {
                                 noLogoPosterUrl = ext.noLogoPoster.startsWith('http') ? ext.noLogoPoster : 'https://image.tmdb.org/t/p/original' + ext.noLogoPoster;
@@ -4030,41 +4099,38 @@ export default {
 
                             oldJson.data.forEach(item => {
                                 if (item.tmdbId == tmdbId) { 
-                                    if (logoUrl) {
+                                    if (logoUrl && item.logo_source !== 'manual') {
                                         item.logo = logoUrl;
                                         item.logo_source = 'auto'; 
                                         item.verified_no_logo = false;
                                         item.logoEmptyAt = null;
-                                    } else {
+                                    } else if (!item.logo || item.logo.includes('text_logo.svg')) {
                                         item.logo = currentOrigin + '/api/text_logo.svg?v=' + Date.now() + '&text=' + encodeURIComponent(title || item.title);
                                         item.logo_source = 'auto'; 
                                         item.verified_no_logo = true;
                                         item.logoEmptyAt = new Date().toISOString();
                                     }
-                                    let cleanBackdropUrl = null;
-                            if (ext.cleanBackdrop) {
-                                cleanBackdropUrl = ext.cleanBackdrop.startsWith('http') ? ext.cleanBackdrop : 'https://image.tmdb.org/t/p/original' + ext.cleanBackdrop;
-                            }
 
-                            if (thumbUrl && item.thumb_source !== 'manual') {
-                                item.thumb = thumbUrl; // 横版剧照
-                                item.thumb_source = 'auto'; 
-                            }
-                            if (cleanBackdropUrl && item.backdrop_source !== 'manual') {
-                                item.backdrop_path = cleanBackdropUrl; // 🌟 专供 iPad / TV 的无字背景
-                                item.backdrop_source = 'auto';
-                            }
-                            if (noLogoPosterUrl && item.no_logo_poster_source !== 'manual') {
-                                item.noLogoPoster = noLogoPosterUrl;
-                                item.no_logo_poster_source = 'auto';
-                            }
+                                    if (thumbUrl && item.thumb_source !== 'manual') {
+                                        item.thumb = thumbUrl; // 横版带字剧照
+                                        item.thumb_source = 'auto'; 
+                                    }
+
+                                    if (cleanBackdropUrl && item.backdrop_source !== 'manual') {
+                                        item.backdrop_path = cleanBackdropUrl; // 🌟 专供 iPad / TV 的无字背景
+                                        item.backdrop_source = 'auto'; 
+                                    }
+
                                     if (officialPosterUrl && item.poster_source !== 'manual') {
-                                        item.poster_path = officialPosterUrl;
-                                        item.poster_source = 'auto';
+                                        item.poster_path = officialPosterUrl; // 竖版带字正标
+                                        item.poster_source = 'auto'; 
                                     }
-                                    if (noLogoPosterUrl) {
-                                        item.noLogoPoster = noLogoPosterUrl;
+
+                                    if (noLogoPosterUrl && item.no_logo_poster_source !== 'manual') {
+                                        item.noLogoPoster = noLogoPosterUrl; // 竖版无字轮播
+                                        item.no_logo_poster_source = 'auto'; 
                                     }
+
                                     item.crawledAt = new Date().toISOString();
                                     item.image_scanned = true; 
                                     changed = true;
@@ -4203,7 +4269,7 @@ export default {
       if (stateObj) state = await stateObj.json();
     } catch (e) {}
 
-    // 🌟【暂停开关拦截】：如果用户在前端点击了暂停，立即跳过执行，绝不重复拉取
+    // 🌟 暂停开关拦截
     if (state.isPaused) {
       console.log("⏸ [CRON 已暂停] 自动更新已由管理员在控制台暂停，本次计划跳过。");
       return { triggerSource, status: "PAUSED", msg: "后台自动更新已暂停" };
@@ -4219,7 +4285,7 @@ export default {
     const nowTimeStr = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false });
     const targetUrl = env.WORKER_URL || "https://homepage.eplayerx.cc.cd";
 
-    // 🌟【唯一通知点 1】：新一轮开始（仅在第 1 个任务启动时发送，中途绝不打扰）
+    // 🌟 唯一通知点 1：新一轮开始
     let sentStartNotice = false;
     if (currentTaskIndex === 0) {
       state.cycleStartTime = nowTimeStr;
@@ -4228,7 +4294,7 @@ export default {
                          `═══════════════════\n` +
                          `📊 <b>计划轮次</b>: 第 ${state.cycleCount || 1} 轮全量更新\n` +
                          `📋 <b>总任务量</b>: 共 ${totalTasks} 个分类榜单与子周历\n` +
-                         `✨ <b>脱水引擎</b>: 新片 4K Logo / 剧照 / 纯净海报 自动提取中\n` +
+                         `✨ <b>五维脱水引擎</b>: 4K Logo / 带字剧照 / 无字横图 / 正标竖图 / 纯净竖图 智能提取中\n` +
                          `⏰ <b>启动时间</b>: <code>${nowTimeStr}</code>\n` +
                          `🤫 <i>后台已进入静默抓取模式，全部完成后将发送最终明细...</i>`;
         await sendTgMessage(env, startMsg);
@@ -4236,17 +4302,19 @@ export default {
       }
     }
 
-    // 3. 静默执行当前分类抓取（开启全自动提图 fetchLogo=true, fetchThumb=true）
+    // 3. 静默执行当前分类抓取（开启全自动五维提图）
     const reqCtx = { subreqs: 0, maxSubreqs: 45, isSafeMode: true, clearCooldown: false };
 
     let syncSuccess = false;
     let count = 0;
+    let stats = null;
     let errMsg = "";
 
     try {
       const res = await executeSyncTask(currentTask.id, env, 60, true, reqCtx, targetUrl, true, true);
       syncSuccess = true;
       count = res.count || 0;
+      stats = res.stats || null;
     } catch (err) {
       errMsg = err.message || "未知错误";
     }
@@ -4260,7 +4328,7 @@ export default {
     state.lastTask = currentTask.name;
     state.lastStatus = syncSuccess ? `成功${count}部` : `异常`;
 
-    // 🌟【唯一通知点 2】：全部跑完（仅在最后一个任务执行完毕后发送，带直达链接）
+    // 🌟 唯一通知点 2：全部跑完
     let sentFinishNotice = false;
     if (isCycleFinished) {
       if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
@@ -4268,7 +4336,7 @@ export default {
                           `═══════════════════\n` +
                           `📊 <b>完成轮次</b>: 第 ${state.cycleCount || 1} 轮\n` +
                           `📋 <b>任务统计</b>: 全部 ${totalTasks} 个榜单/周历已全量刷新完毕\n` +
-                          `✨ <b>智能提取</b>: 新片 4K Logo / 带字剧照 / 无字海报 已全部入库\n` +
+                          `✨ <b>五维资产</b>: 正标 / 无字竖 / 无字横 / 剧照 / Logo 已全部深度入库\n` +
                           `⏱ <b>启动时间</b>: <code>${state.cycleStartTime || '未知'}</code>\n` +
                           `⏰ <b>完成时间</b>: <code>${nowTimeStr}</code>\n` +
                           `🌐 <b>控制中心</b>: <a href="${targetUrl}">👉 点击一键进入 EPlayerX 控制台</a>\n` +
@@ -4291,6 +4359,7 @@ export default {
       executedTask: `${currentTask.name} (${taskSeq}/${totalTasks})`,
       syncSuccess,
       itemsCount: count,
+      stats,
       error: errMsg || null,
       nextIndex,
       sentStartNotice,
