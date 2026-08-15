@@ -1488,9 +1488,11 @@ const FRONTEND_HTML_P1 = `
                 const catName = catObj ? catObj.name : catId;
 
                 if (data && data.success) {
-                    const st = data.stats || { logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 };
-                    showToast("✅ [" + catName + "] 抓取完毕！共 " + data.count + " 条 (标:" + (st['logos'] || 0) + " | 🎴无字竖:" + (st['noLogoPosters'] || 0) + " | 🎬无字横:" + (st['cleanBackdrops'] || 0) + ")");
-                } else showToast("❌ " + catName + " 失败: " + (data ? data.error : '未知错误'), true);
+                    const st = data.stats || {};
+                    showToast("✅ [" + catName + "] 抓取完毕！共 " + data.count + " 条 (标:" + (st.logos||0) + " | 🎴无字竖:" + (st.noLogoPosters||0) + " | 🎬无字横:" + (st.cleanBackdrops||0) + ")");
+                } else showToast("❌ " + catName + " 失败: " + (data ? data.error : '未知错误'), true); 
+            } catch (err) { showToast("❌ 同步失败: " + err.message, true); }
+        }
 
         async function executeBatchSync() {
             const checkboxes = document.querySelectorAll('.batch-cb:checked');
@@ -1508,9 +1510,9 @@ const FRONTEND_HTML_P1 = `
                     const res = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + sysPwd } });
                     const data = await res.json();
                     if (data.success) {
-                        const st = data.stats || { logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 };
+                        const st = data.stats || {};
                         showToast("✅ [" + catObj.name + "] 同步完毕！共 " + data.count + " 条。");
-                        successList.push("▪️ <b>" + catObj.name + "</b> (共" + data.count + "部 | 💎标:<b>" + (st['logos'] || 0) + "</b> | 🎴无字竖:<b>" + (st['noLogoPosters'] || 0) + "</b> | 🎬无字横:<b>" + (st['cleanBackdrops'] || 0) + "</b> | 📇正标:<b>" + (st['posters'] || 0) + "</b>)"); 
+                        successList.push("▪️ <b>" + catObj.name + "</b> (共" + data.count + "部 | 💎标:<b>" + (st.logos||0) + "</b> | 🎴无字竖:<b>" + (st.noLogoPosters||0) + "</b> | 🎬无字横:<b>" + (st.cleanBackdrops||0) + "</b> | 📇正标:<b>" + (st.posters||0) + "</b>)"); 
                         totalCount += data.count;
                     } else { showToast("❌ " + catObj.name + " 失败: " + data.error, true); failList.push("❌ " + catObj.name + ": " + data.error); }
                 } catch(e) { showToast("❌ " + catObj.name + " 失败", true); failList.push("❌ " + catObj.name + ": 网络异常"); }
