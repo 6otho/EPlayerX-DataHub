@@ -125,9 +125,9 @@ const FRONTEND_HTML_P1 = `
 
                 <!-- 🌟 第一行：周更合集专属状态栏 (周更时显示：左边LED表 + 右边周历；普通分类时整行收起) -->
                 <div id="status-bar-container" class="flex flex-col xl:flex-row items-center justify-between gap-3 w-full mb-6 shrink-0">
-                    <!-- 周更模式下：LED 电子表插槽 -->
-                    <div id="led-slot-weekly" class="w-full xl:w-auto shrink-0">
-                        <div id="led-monitor-box" class="w-full h-full flex items-center justify-between gap-3 px-3.5 md:px-5 py-2.5 rounded-2xl border font-mono-led select-none transition-all duration-300 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner overflow-x-auto hide-scrollbar whitespace-nowrap">
+                    <!-- 周更模式下：LED 电子表插槽 (增加 min-w-0 保证伸缩) -->
+                    <div id="led-slot-weekly" class="w-full xl:w-auto shrink-0 min-w-0">
+                        <div id="led-monitor-box" class="w-full h-full flex items-center justify-between gap-3 px-3.5 md:px-5 py-2.5 rounded-2xl border font-mono-led select-none transition-all duration-300 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner overflow-x-auto hide-scrollbar whitespace-nowrap cursor-grab active:cursor-grabbing">
                             <!-- 左侧：状态灯 + 文字（设为 shrink-0 绝不被压缩隐藏） -->
                             <div class="flex items-center gap-2 shrink-0">
                                 <span id="led-dot" class="w-2.5 h-2.5 rounded-full bg-slate-600 shrink-0"></span>
@@ -632,7 +632,8 @@ const FRONTEND_HTML_P1 = `
                         tag.innerText = 'SYNCING';
                     }
                     if (info) {
-                        info.innerHTML = '<span class="text-emerald-300 font-bold">全量同步 [' + (data.currentIndex || 0) + '/77]</span> <span class="opacity-75 text-xs text-emerald-400 ml-1 truncate">(' + (data.lastTask || '任务执行中') + ')</span>';
+                        // 🌟 核心改动：去掉 truncate，设为 shrink-0 whitespace-nowrap 保证字样完整渲染，配合鼠标左右滑动查看
+                        info.innerHTML = '<span class="text-emerald-300 font-bold shrink-0 whitespace-nowrap">全量同步 [' + (data.currentIndex || 0) + '/77]</span> <span class="opacity-80 text-xs text-emerald-400 ml-1.5 shrink-0 whitespace-nowrap">(' + (data.lastTask || '任务执行中') + ')</span>';
                     }
                 } else {
                     if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_#10b981]';
@@ -650,6 +651,61 @@ const FRONTEND_HTML_P1 = `
         }
         setInterval(pollCronStatus, 4000);
         setTimeout(pollCronStatus, 500);
+
+        // ==========================================
+        // 🌟 新增：PC 端鼠标左键按住拖拽滑动 + 滚轮横向平滑滚动引擎
+        // ==========================================
+        function enablePcDragScroll() {
+            const box = document.getElementById('led-monitor-box');
+            if (!box) return;
+
+            let isDown = false;
+            let startX = 0;
+            let scrollLeft = 0;
+
+            // 1. 鼠标按下事件（防误触：点击按钮、下拉框等控件时不启动拖拽）
+            box.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button, select, option, input, a')) return;
+                isDown = true;
+                box.classList.add('cursor-grabbing');
+                box.classList.remove('cursor-grab');
+                startX = e.pageX - box.offsetLeft;
+                scrollLeft = box.scrollLeft;
+            });
+
+            // 2. 鼠标离开/松开事件
+            box.addEventListener('mouseleave', () => {
+                isDown = false;
+                box.classList.remove('cursor-grabbing');
+                box.classList.add('cursor-grab');
+            });
+
+            box.addEventListener('mouseup', () => {
+                isDown = false;
+                box.classList.remove('cursor-grabbing');
+                box.classList.add('cursor-grab');
+            });
+
+            // 3. 鼠标按住并移动（拖拽横向滚动）
+            box.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - box.offsetLeft;
+                const walk = (x - startX) * 1.5; // 拖拽灵敏度倍率
+                box.scrollLeft = scrollLeft - walk;
+            });
+
+            // 4. 鼠标滚轮在监控栏上方滚动时，自动转换为横向左右滑动
+            box.addEventListener('wheel', (e) => {
+                if (box.scrollWidth > box.clientWidth) {
+                    e.preventDefault();
+                    box.scrollLeft += e.deltaY;
+                }
+            }, { passive: false });
+        }
+
+        // 初始化拖拽引擎
+        setTimeout(enablePcDragScroll, 300);
 
         // ==========================================
         // 🌟 新增：立即测一轮 与 修改定时时间交互函数
