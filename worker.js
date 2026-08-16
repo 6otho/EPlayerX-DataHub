@@ -1,5 +1,5 @@
 // ==========================================
-// 1. 前端 HTML 界面与拖拉拽系统 (Part 1 - 包含全页面通用左靠齐 LED 时钟、暂停开关与分类黑名单)
+// 1. 前端 HTML 界面与拖拉拽系统 (Part 1 - 包含全页面通用左靠齐 LED 时钟、暂停开关、定时选择与一键测试)
 // ==========================================
 const FRONTEND_HTML_P1 = `
 <!DOCTYPE html>
@@ -127,16 +127,39 @@ const FRONTEND_HTML_P1 = `
                 <div id="status-bar-container" class="flex flex-col xl:flex-row items-center justify-between gap-3 w-full mb-6 shrink-0">
                     <!-- 周更模式下：LED 电子表插槽 -->
                     <div id="led-slot-weekly" class="w-full xl:w-auto shrink-0">
-                        <div id="led-monitor-box" class="w-full xl:w-auto shrink-0 px-3.5 py-2 rounded-2xl flex items-center justify-between gap-3 text-xs border font-mono-led select-none transition-all duration-500 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner overflow-x-auto hide-scrollbar whitespace-nowrap">
+                        <div id="led-monitor-box" class="w-full h-full flex items-center justify-between gap-3 px-3.5 md:px-5 py-2.5 rounded-2xl border font-mono-led select-none transition-all duration-300 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner overflow-x-auto hide-scrollbar whitespace-nowrap">
+                            <!-- 左侧：状态灯 + 文字（设为 shrink-0 绝不被压缩隐藏） -->
                             <div class="flex items-center gap-2 shrink-0">
-                                <span id="led-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0"></span>
+                                <span id="led-dot" class="w-2.5 h-2.5 rounded-full bg-slate-600 shrink-0"></span>
                                 <span id="led-tag" class="font-black px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 shrink-0">IDLE</span>
-                                <span id="led-info" class="font-bold text-[11px] text-slate-300">大盘待命中</span>
+                                <span id="led-info" class="font-bold text-xs md:text-sm text-slate-200 shrink-0 flex items-center">大盘待命中</span>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0 pl-2.5 border-l border-slate-800 ml-2">
-                                <button onclick="toggleCronPause()" id="cron-pause-btn" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded text-[10px] font-bold transition-all border border-slate-700 shrink-0" title="暂停/恢复后台自动轮询">⏸ 暂停</button>
-                                <span class="text-slate-600 text-[10px] shrink-0">TIME</span>
-                                <span id="led-clock" class="font-bold text-xs tracking-wider text-slate-300 shrink-0">--:--:--</span>
+                            
+                            <!-- 右侧：三个控件统一高度 h-7 (28px)，100% 绝对齐平 -->
+                            <div class="flex items-center gap-2 shrink-0 pl-2.5 border-l border-slate-800/80">
+                                <!-- 1. 定时选择框 (h-7) -->
+                                <div class="h-7 px-2 bg-slate-900 border border-slate-700/80 rounded-lg flex items-center gap-1 shrink-0 text-xs text-slate-300 shadow-sm box-border" title="设定每日自动全量同步时间">
+                                    <span class="text-slate-400 font-bold text-[11px] leading-none">⏰</span>
+                                    <select id="cron-hour-select" onchange="changeAutoStartTime(this.value)" class="bg-transparent text-emerald-400 font-bold outline-none cursor-pointer text-xs h-full leading-none">
+                                        <option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option>
+                                        <option value="3" selected>03:00</option><option value="4">04:00</option><option value="5">05:00</option>
+                                        <option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option>
+                                        <option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option>
+                                        <option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option>
+                                        <option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option>
+                                        <option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option>
+                                        <option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option>
+                                    </select>
+                                </div>
+
+                                <!-- 2. 立即测 按钮 (h-7 基准高度) -->
+                                <button onclick="triggerCronNow()" id="cron-test-btn" class="h-7 px-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm shrink-0 flex items-center justify-center active:scale-95 leading-none" title="立即启动全量同步测试">🚀 立即测</button>
+
+                                <!-- 3. 暂停 按钮 (h-7 齐平高度) -->
+                                <button onclick="toggleCronPause()" id="cron-pause-btn" class="h-7 px-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-lg text-xs font-bold transition-all border border-slate-700 shrink-0 flex items-center justify-center leading-none" title="暂停/恢复轮询">⏸ 暂停</button>
+                                
+                                <!-- 时钟 (h-7 居中齐平) -->
+                                <span id="led-clock" class="h-7 flex items-center font-bold text-xs tracking-wider text-slate-300 shrink-0 px-1 leading-none">--:--:--</span>
                             </div>
                         </div>
                     </div>
@@ -150,8 +173,8 @@ const FRONTEND_HTML_P1 = `
                 <!-- 🌟 第二行：核心控制栏 (合集按键全部统一高度 h-[88px]，右侧按钮精简为 默认/最新/热度) -->
                 <div class="flex flex-col xl:flex-row w-full mb-8 gap-2.5 md:gap-3 justify-end items-center relative">
                     
-                    <!-- 普通分类时：LED 实时电子表插槽 (放在最左边，留足超宽空间) -->
-                    <div id="led-slot-normal" class="hidden mr-auto w-full xl:w-auto shrink-0"></div>
+                    <!-- 普通分类时：LED 实时电子表插槽 (自适应撑满左侧，与右侧 88px 按键无缝贴合) -->
+                    <div id="led-slot-normal" class="hidden flex-1 min-w-0 w-full h-[44px] shrink-0 xl:shrink"></div>
 
                     <!-- 周更分类时：追更排期强制干预 (锁定 h-[88px]，靠左) -->
                     <div id="custom-override-container" class="hidden mr-auto w-full xl:w-auto h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-5 md:px-6 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col justify-center items-start transition-all duration-200 origin-left hover:-translate-y-0.5 hover:shadow-md cursor-pointer group hover:border-purple-300 dark:hover:border-purple-700/50 ml-1 shrink-0" onclick="openOverrideModal()">
@@ -182,8 +205,8 @@ const FRONTEND_HTML_P1 = `
 
                     <!-- 2 & 3. 大数据盘 (高度锁定 h-[88px]，宽度精简收窄，居中大字号) -->
                     <div class="flex w-full xl:w-auto gap-2.5 md:gap-3 justify-center shrink-0">
-                        <div class="flex-1 max-w-sm xl:w-36 h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-4 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-transform hover:scale-[1.02]">
-                            <span class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mb-1 whitespace-nowrap text-center block w-full">当前大盘收录数</span>
+                        <div class="flex-1 max-w-sm xl:w-28 h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-2.5 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-transform hover:scale-[1.02]">
+                            <span class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider mb-1 whitespace-nowrap text-center block w-full">大盘收录</span>
                             <span id="stat-count" class="text-3xl md:text-4xl font-black text-gray-800 dark:text-white tracking-tighter text-center block w-full leading-none">0</span>
                         </div>
                         <div class="flex-1 max-w-sm xl:w-48 h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-4 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-transform hover:scale-[1.02]">
@@ -557,68 +580,117 @@ const FRONTEND_HTML_P1 = `
                 const res = await fetch('/api/cron_status?_t=' + Date.now());
                 if (!res.ok) return;
                 const data = await res.json();
+                
                 const box = document.getElementById('led-monitor-box');
                 const dot = document.getElementById('led-dot');
                 const tag = document.getElementById('led-tag');
                 const info = document.getElementById('led-info');
                 const pauseBtn = document.getElementById('cron-pause-btn');
+                const hourSelect = document.getElementById('cron-hour-select');
                 if (!box) return;
 
                 cronIsCurrentlyPaused = !!data.isPaused;
 
-                // 🟠 1. 暂停状态 (纯正暖橙色)
+                // 同步当前保存的自动定时小时到下拉选择框
+                if (hourSelect && typeof data.autoStartHour !== 'undefined') {
+                    if (document.activeElement !== hourSelect) {
+                        hourSelect.value = data.autoStartHour.toString();
+                    }
+                }
+
+                // 🟠 1. 暂停状态
                 if (cronIsCurrentlyPaused) {
                     box.classList.remove('led-active');
                     box.classList.add('led-paused');
-                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-[0_0_8px_#f59e0b]';
+                    if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0 shadow-[0_0_8px_#f59e0b]';
                     if (tag) {
                         tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0';
                         tag.innerText = 'PAUSED';
                     }
-                    if (info) info.innerHTML = '<span class="text-amber-400 font-bold">已暂停</span> <span class="opacity-70 text-[10px] ml-1 text-slate-400">(点击恢复)</span>';
+                    if (info) info.innerHTML = '<span class="text-amber-400 font-bold">已暂停</span> <span class="opacity-70 text-xs ml-1 text-slate-400">(点击恢复)</span>';
                     if (pauseBtn) {
                         pauseBtn.innerText = "▶️ 恢复";
-                        pauseBtn.className = "px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold transition-all shadow-sm shrink-0 active:scale-95";
+                        pauseBtn.className = "h-7 px-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm shrink-0 flex items-center justify-center active:scale-95 leading-none";
                     }
                     return;
                 }
 
-                // 🟢 2. 开启运行状态 (纯正翠绿色)
+                // 🟢 2. 正常运行或待命状态
                 box.classList.remove('led-paused');
                 box.classList.add('led-active');
 
                 if (pauseBtn) {
                     pauseBtn.innerText = "⏸ 暂停";
-                    pauseBtn.className = "px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded text-[10px] font-bold transition-all border border-emerald-500/30 shrink-0 active:scale-95";
+                    pauseBtn.className = "h-7 px-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-bold transition-all border border-emerald-500/30 shrink-0 flex items-center justify-center active:scale-95 leading-none";
                 }
 
-                const lastRun = data.lastRunTime ? new Date(data.lastRunTime).getTime() : 0;
-                const isRunning = (Date.now() - lastRun) < 150000;
-
-                if (isRunning) {
-                    // 正在抓取中 (呼吸绿灯)
-                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 led-blink shrink-0 shadow-[0_0_8px_#10b981]';
+                // 🌟 判断当前是正在执行中(RUNNING)还是休眠待命(IDLE)
+                if (data.status === "RUNNING") {
+                    if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 led-blink shrink-0 shadow-[0_0_8px_#10b981]';
                     if (tag) {
                         tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0';
                         tag.innerText = 'SYNCING';
                     }
-                    if (info) info.innerHTML = '<span class="text-emerald-300 font-bold">[' + (data.currentIndex || 0) + '/77] ' + (data.lastTask || '抓取中') + '</span> <span class="opacity-75 text-[10px] ml-1 text-emerald-400">(' + (data.lastStatus || '更新中') + ')</span>';
+                    if (info) {
+                        info.innerHTML = '<span class="text-emerald-300 font-bold">全量同步 [' + (data.currentIndex || 0) + '/77]</span> <span class="opacity-75 text-xs text-emerald-400 ml-1 truncate">(' + (data.lastTask || '任务执行中') + ')</span>';
+                    }
                 } else {
-                    // 等待下一任务 (常亮绿灯)
-                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_#10b981]';
+                    if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_#10b981]';
                     if (tag) {
                         tag.className = 'font-black px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0';
-                        tag.innerText = 'AUTO-ON';
+                        tag.innerText = 'STANDBY';
                     }
                     if (info) {
-                        const timeText = data.lastRunTime ? data.lastRunTime.substring(11) : '';
-                        info.innerHTML = '<span class="text-emerald-300 font-bold">运行中</span> <span class="opacity-75 text-[10px] ml-1 text-slate-400">' + (data.lastTask ? ('(最近: ' + data.lastTask + ' ' + timeText + ')') : '待命中') + '</span>';
+                        const setH = data.autoStartHour !== undefined ? data.autoStartHour : 3;
+                        const timeStr = (setH < 10 ? '0' + setH : setH) + ':00';
+                        info.innerHTML = '<span class="text-emerald-300 font-bold">待命</span> <span class="opacity-70 text-xs text-slate-400 ml-1">(' + timeStr + '更新)</span>';
                     }
                 }
             } catch(e) {}
         }
-        setInterval(pollCronStatus, 5000);
-        setTimeout(pollCronStatus, 1000);
+        setInterval(pollCronStatus, 4000);
+        setTimeout(pollCronStatus, 500);
+
+        // ==========================================
+        // 🌟 新增：立即测一轮 与 修改定时时间交互函数
+        // ==========================================
+        async function triggerCronNow() {
+            if (!sysPwd) return showToast("请先登录管理员", true);
+            if (!confirm("🚀 确认立即启动一轮全量同步测试？\\n\\n1. Telegram 将立刻收到【开始执行通知】\\n2. 系统将静默一批批跑完所有 77 个任务\\n3. 全部跑完后，Telegram 将收到【五维资产收尾总结】并自动休眠。")) return;
+            
+            showToast("⏳ 正在唤醒全量同步周期...");
+            try {
+                const res = await fetch(ACTION_BASE + '/start_cron_now', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + sysPwd }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast("🎉 全量同步已成功启动！请前往 Telegram 查看开始通知。");
+                    pollCronStatus();
+                } else {
+                    showToast("❌ 启动失败: " + data.error, true);
+                }
+            } catch(e) { showToast("❌ 网络请求异常", true); }
+        }
+
+        async function changeAutoStartTime(hour) {
+            if (!sysPwd) return showToast("请先登录管理员", true);
+            try {
+                const res = await fetch(ACTION_BASE + '/set_cron_time', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hour: parseInt(hour, 10) })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast("✅ 定时启动时间已成功更新为每日 " + (data.autoStartHour < 10 ? '0' + data.autoStartHour : data.autoStartHour) + ":00！");
+                    pollCronStatus();
+                } else {
+                    showToast("❌ 设置失败: " + data.error, true);
+                }
+            } catch(e) { showToast("❌ 网络请求异常", true); }
+        }
 
         async function toggleCronPause() {
             if (!sysPwd) return showToast("请先登录管理员", true);
@@ -1746,7 +1818,6 @@ const FRONTEND_HTML_P1 = `
 const FRONTEND_HTML_P2 = `</html>
 `;
 const FRONTEND_HTML = FRONTEND_HTML_P1 + FRONTEND_HTML_P2;
-
 // ==========================================
 // 2. 爬虫核心与全局分类字典 (Part 1 引擎配置)
 // ==========================================
@@ -1818,7 +1889,7 @@ function buildOldDataHelper(itemsArray) {
                 mapById.set(Number(item.tmdbId), item);
             }
             if (item.title) {
-                const cleanT = String(item.title).replace(/[\\s·《》\\-_]/g, "").toLowerCase();
+                const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
                 if (cleanT) mapByTitle.set(cleanT, item);
             }
         });
@@ -1831,7 +1902,7 @@ function buildOldDataHelper(itemsArray) {
                 if (mapById.has(Number(tmdbId))) return mapById.get(Number(tmdbId));
             }
             if (title) {
-                const cleanT = String(title).replace(/[\\s·《》\\-_]/g, "").toLowerCase();
+                const cleanT = String(title).replace(/[\s·《》\-_]/g, "").toLowerCase();
                 if (cleanT && mapByTitle.has(cleanT)) return mapByTitle.get(cleanT);
             }
             return null;
@@ -1872,7 +1943,7 @@ async function addToBlacklist(env, items, categoryId) {
   items.forEach(item => {
     if (item.tmdbId) idSet.add(String(item.tmdbId));
     if (item.title) {
-      const cleanT = String(item.title).replace(/[\\s·《》\\-_]/g, "").toLowerCase();
+      const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
       if (cleanT) titleSet.add(cleanT);
     }
   });
@@ -1895,14 +1966,14 @@ async function getBlacklist(env) {
         categories: {},
         global: {
           ids: new Set((data.global?.ids || data.ids || []).map(String)),
-          titles: new Set((data.global?.titles || data.titles || []).map(t => String(t).replace(/[\\s·《》\\-_]/g, "").toLowerCase()))
+          titles: new Set((data.global?.titles || data.titles || []).map(t => String(t).replace(/[\s·《》\-_]/g, "").toLowerCase()))
         }
       };
       if (data.categories) {
         for (const catKey of Object.keys(data.categories)) {
           result.categories[catKey] = {
             ids: new Set((data.categories[catKey].ids || []).map(String)),
-            titles: new Set((data.categories[catKey].titles || []).map(t => String(t).replace(/[\\s·《》\\-_]/g, "").toLowerCase()))
+            titles: new Set((data.categories[catKey].titles || []).map(t => String(t).replace(/[\s·《》\-_]/g, "").toLowerCase()))
           };
         }
       }
@@ -1917,7 +1988,7 @@ function isItemBlacklisted(item, blacklist, categoryId) {
   
   if (item.tmdbId && blacklist.global.ids.has(String(item.tmdbId))) return true;
   if (item.title) {
-    const cleanT = String(item.title).replace(/[\\s·《》\\-_]/g, "").toLowerCase();
+    const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
     if (cleanT && blacklist.global.titles.has(cleanT)) return true;
   }
 
@@ -1927,7 +1998,7 @@ function isItemBlacklisted(item, blacklist, categoryId) {
     if (catBlacklist) {
       if (item.tmdbId && catBlacklist.ids.has(String(item.tmdbId))) return true;
       if (item.title) {
-        const cleanT = String(item.title).replace(/[\\s·《》\\-_]/g, "").toLowerCase();
+        const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
         if (cleanT && catBlacklist.titles.has(cleanT)) return true;
       }
     }
@@ -2021,6 +2092,7 @@ async function fetchTMDBDiscoverList(type, paramsObj, env, limit = 100, reqCtx) 
     genre_ids: item.genre_ids || []
   }));
 }
+
 async function fetchTraktTrending(type, env, limit = 100, reqCtx) {
   if (!env.TRAKT_CLIENT_ID) throw new Error("缺少 TRAKT_CLIENT_ID");
   let res;
@@ -2163,7 +2235,7 @@ function deduplicateByTmdbId(items) {
     item.poster_path = item.poster_path || item.noLogoPoster || item.thumb || item.backdrop_path;
     if (!item.poster_path) continue;
     
-    const cleanTitle = (item.title || "").replace(/[\\s·]/g, "").toLowerCase();
+    const cleanTitle = (item.title || "").replace(/[\s·]/g, "").toLowerCase();
     
     if (seenIds.has(item.tmdbId) || (cleanTitle && seenTitles.has(cleanTitle))) {
         continue; 
@@ -3203,7 +3275,7 @@ export default {
     // 🌟【超级调试神器】：浏览器访问 /api/test_cron 即可手动触发一次定时任务并在页面看到执行结果！
     if (action === "api" && category === "test_cron") {
       try {
-        const result = await this.runCronLogic(env, ctx, "【手动浏览器触发】");
+        const result = await this.runCronLogic(env, ctx, "【手动浏览器触发】", true);
         return new Response(JSON.stringify({ success: true, debug: result }, null, 2), {
           headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders }
         });
@@ -3218,7 +3290,7 @@ export default {
     if (action === "api" && category === "cron_status" && request.method === "GET") {
       if (!env.R2_BUCKET) return new Response("{}", { headers: antiCacheHeaders });
       const obj = await env.R2_BUCKET.get("cron_state.json");
-      if (obj === null) return new Response(JSON.stringify({ status: "idle", isPaused: false }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
+      if (obj === null) return new Response(JSON.stringify({ status: "IDLE", isPaused: false, autoStartHour: 3 }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
       return new Response(obj.body, { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
     }
 
@@ -3227,7 +3299,7 @@ export default {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
         const body = await request.json();
-        let state = { currentIndex: 0, cycleCount: 1, isPaused: false };
+        let state = { currentIndex: 0, cycleCount: 1, isPaused: false, autoStartHour: 3 };
         if (env.R2_BUCKET) {
           const oldObj = await env.R2_BUCKET.get("cron_state.json");
           if (oldObj) state = await oldObj.json();
@@ -3235,6 +3307,40 @@ export default {
           await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), { httpMetadata: { contentType: "application/json" } });
         }
         return new Response(JSON.stringify({ success: true, isPaused: state.isPaused }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
+      }
+    }
+
+    // 🌟【新增】立即手动启动一轮全量同步测试（立刻发开始通知，跑完全部任务发收尾汇总）
+    if (action === "action" && category === "start_cron_now" && request.method === "POST") {
+      if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
+      try {
+        const result = await this.runCronLogic(env, ctx, "【管理员手动立即触发】", true);
+        return new Response(JSON.stringify({ success: true, message: "🚀 全量同步周期已启动！", data: result }), {
+          headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
+      }
+    }
+
+    // 🌟【新增】保存自定义每日自动启动时间接口（例如设定为 03:00、04:00 等）
+    if (action === "action" && category === "set_cron_time" && request.method === "POST") {
+      if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
+      try {
+        const body = await request.json();
+        const setHour = parseInt(body.hour, 10);
+        let state = { autoStartHour: 3 };
+        if (env.R2_BUCKET) {
+          const oldObj = await env.R2_BUCKET.get("cron_state.json");
+          if (oldObj) state = await oldObj.json();
+          state.autoStartHour = isNaN(setHour) ? 3 : setHour;
+          await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), { httpMetadata: { contentType: "application/json" } });
+        }
+        return new Response(JSON.stringify({ success: true, autoStartHour: state.autoStartHour }), { 
+          headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders } 
+        });
       } catch (e) {
         return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
       }
@@ -4252,12 +4358,12 @@ export default {
   },
 
   // ==========================================
-  // 10. 核心调度引擎 (暂停开关检测 + 纯净两头通知 + 一键直达链接)
+  // 10. 智能双模调度引擎 (支持立即手动测试 + 自定义时间 + 纯净两头通知)
   // ==========================================
-  async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】") {
+  async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】", manualForceStart = false) {
     if (!env.R2_BUCKET) throw new Error("未检测到 env.R2_BUCKET 存储桶绑定");
 
-    // 1. 构建全量任务清单（单项榜单 + 6大周更表按7天拆解，共约 77 个轻量任务）
+    // 1. 构建全量任务清单（约 77 个细分任务）
     const taskQueue = [];
     for (const cat of CATEGORY_CONFIGS) {
       if (cat.id.endsWith("_collection")) {
@@ -4274,94 +4380,121 @@ export default {
         });
       }
     }
-
     const totalTasks = taskQueue.length;
 
     // 2. 从 R2 读取轮询进度状态
-    let state = { currentIndex: 0, cycleCount: 1, cycleStartTime: null, isPaused: false };
+    let state = { 
+      status: "IDLE",                 // IDLE (休眠中), RUNNING (正在连续执行)
+      currentIndex: 0, 
+      cycleCount: 1, 
+      cycleStartTime: null, 
+      lastRunDate: null, 
+      isPaused: false,
+      autoStartHour: 3,               // 默认每日自动启动小时（北京时间 3 点）
+      totalAssets: { count: 0, logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 }
+    };
+
     try {
       const stateObj = await env.R2_BUCKET.get("cron_state.json");
-      if (stateObj) state = await stateObj.json();
+      if (stateObj) state = Object.assign(state, await stateObj.json());
     } catch (e) {}
 
-    // 🌟 暂停开关拦截
-    if (state.isPaused) {
-      console.log("⏸ [CRON 已暂停] 自动更新已由管理员在控制台暂停，本次计划跳过。");
+    // 如果处于暂停状态且不是手动强制触发，则直接拦截
+    if (state.isPaused && !manualForceStart) {
       return { triggerSource, status: "PAUSED", msg: "后台自动更新已暂停" };
     }
 
-    if (state.currentIndex >= totalTasks || state.currentIndex < 0) {
-      state.currentIndex = 0;
-    }
-
-    const currentTaskIndex = state.currentIndex;
-    const currentTask = taskQueue[currentTaskIndex];
-    const taskSeq = currentTaskIndex + 1;
-    const nowTimeStr = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false });
+    // 3. 时间与启动状态判定 (北京时间 Asia/Shanghai)
+    const now = new Date();
+    const bjDateStr = now.toLocaleDateString("zh-CN", { timeZone: "Asia/Shanghai" });
+    const bjHour = parseInt(now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour: "numeric", hour12: false }), 10);
+    const nowTimeStr = now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false });
     const targetUrl = env.WORKER_URL || "https://homepage.eplayerx.cc.cd";
 
-    // 🌟 唯一通知点 1：新一轮开始
-    let sentStartNotice = false;
-    if (currentTaskIndex === 0) {
+    // 触发启动的两种情况：① 手动点击了立即测试；② 到了每日设定的定时时间且今天还没执行过
+    const isAutoTimeReached = (state.autoStartHour === bjHour && state.lastRunDate !== bjDateStr);
+    const shouldStartNewCycle = manualForceStart || ((state.status === "IDLE" || !state.status) && isAutoTimeReached);
+
+    // 🌟【第一头】：发送开始通知并初始化周期
+    if (shouldStartNewCycle) {
+      state.status = "RUNNING";
+      state.currentIndex = 0;
       state.cycleStartTime = nowTimeStr;
+      state.lastRunDate = bjDateStr;
+      state.isPaused = false;
+      state.totalAssets = { count: 0, logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 };
+
       if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
-        const startMsg = `🚀 <b>[大盘全自动同步 · 开始执行]</b>\n` +
+        const startMsg = `🚀 <b>[大盘全量同步 · 开始执行]</b>\n` +
                          `═══════════════════\n` +
+                         `🎯 <b>触发来源</b>: ${manualForceStart ? '👑 手动立即测试' : '⏰ 计划定时启动'}\n` +
                          `📊 <b>计划轮次</b>: 第 ${state.cycleCount || 1} 轮全量更新\n` +
-                         `📋 <b>总任务量</b>: 共 ${totalTasks} 个分类榜单与子周历\n` +
-                         `✨ <b>五维脱水引擎</b>: 4K Logo / 带字剧照 / 无字横图 / 正标竖图 / 纯净竖图 智能提取中\n` +
+                         `📋 <b>总任务量</b>: 共 ${totalTasks} 个分类与子周历\n` +
                          `⏰ <b>启动时间</b>: <code>${nowTimeStr}</code>\n` +
-                         `🤫 <i>后台已进入静默抓取模式，全部完成后将发送最终明细...</i>`;
+                         `✨ <i>五维脱水引擎已开启，抓取完成后将推送完整数据明细...</i>`;
         await sendTgMessage(env, startMsg);
-        sentStartNotice = true;
       }
     }
 
-    // 3. 静默执行当前分类抓取（开启全自动五维提图）
+    // 如果处于休眠状态，直接 0 开销退出
+    if (state.status !== "RUNNING") {
+      return { triggerSource, status: "IDLE", msg: `休眠中 (每日将在 ${state.autoStartHour}:00 自动启动)` };
+    }
+
+    // 4. 单次批处理执行（每次 Cron 执行 2 个任务，防止单次超时或超限）
+    const BATCH_RUN_COUNT = 2;
     const reqCtx = { subreqs: 0, maxSubreqs: 45, isSafeMode: true, clearCooldown: false };
 
-    let syncSuccess = false;
-    let count = 0;
-    let stats = null;
-    let errMsg = "";
+    for (let step = 0; step < BATCH_RUN_COUNT; step++) {
+      if (state.currentIndex >= totalTasks) break;
 
-    try {
-      const res = await executeSyncTask(currentTask.id, env, 60, true, reqCtx, targetUrl, true, true);
-      syncSuccess = true;
-      count = res.count || 0;
-      stats = res.stats || null;
-    } catch (err) {
-      errMsg = err.message || "未知错误";
+      const currentTask = taskQueue[state.currentIndex];
+      try {
+        const res = await executeSyncTask(currentTask.id, env, 60, true, reqCtx, targetUrl, true, true);
+        if (res && res.stats) {
+          state.totalAssets.count += (res.count || 0);
+          state.totalAssets.logos += (res.stats.logos || 0);
+          state.totalAssets.noLogoPosters += (res.stats.noLogoPosters || 0);
+          state.totalAssets.cleanBackdrops += (res.stats.cleanBackdrops || 0);
+          state.totalAssets.posters += (res.stats.posters || 0);
+          state.totalAssets.thumbs += (res.stats.thumbs || 0);
+        }
+        state.lastTask = currentTask.name;
+        state.lastStatus = `成功 (${res?.count || 0}部)`;
+      } catch (err) {
+        state.lastTask = currentTask.name;
+        state.lastStatus = `异常: ${err.message}`;
+      }
+
+      state.currentIndex++;
     }
 
-    // 4. 更新状态机指针
-    const nextIndex = (currentTaskIndex + 1) % totalTasks;
-    const isCycleFinished = (nextIndex === 0);
-
-    state.currentIndex = nextIndex;
     state.lastRunTime = nowTimeStr;
-    state.lastTask = currentTask.name;
-    state.lastStatus = syncSuccess ? `成功${count}部` : `异常`;
 
-    // 🌟 唯一通知点 2：全部跑完
-    let sentFinishNotice = false;
-    if (isCycleFinished) {
+    // 🌟【第二头】：全部任务跑完，发送收尾汇总通知并休眠
+    if (state.currentIndex >= totalTasks) {
+      state.status = "IDLE"; // 任务全部完成，立即转为休眠
+      state.cycleCount = (state.cycleCount || 1) + 1;
+
       if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
-        const finishMsg = `🎉 <b>[大盘全量自动同步 · 全部圆满完成！]</b>\n` +
+        const finishMsg = `🎉 <b>[大盘全量同步 · 全部圆满完成！]</b>\n` +
                           `═══════════════════\n` +
-                          `📊 <b>完成轮次</b>: 第 ${state.cycleCount || 1} 轮\n` +
-                          `📋 <b>任务统计</b>: 全部 ${totalTasks} 个榜单/周历已全量刷新完毕\n` +
-                          `✨ <b>五维资产</b>: 正标 / 无字竖 / 无字横 / 剧照 / Logo 已全部深度入库\n` +
+                          `📊 <b>完成轮次</b>: 第 ${(state.cycleCount - 1) || 1} 轮\n` +
+                          `📋 <b>任务统计</b>: 全部 ${totalTasks} 个榜单/周历已全部刷新完毕\n` +
+                          `📦 <b>入库总量</b>: <b>${state.totalAssets.count}</b> 部影视\n\n` +
+                          `✨ <b>五维资产入库汇总:</b>\n` +
+                          `▪️ 💎 真实Logo: <b>${state.totalAssets.logos}</b>\n` +
+                          `▪️ 🎴 纯净无字竖图: <b>${state.totalAssets.noLogoPosters}</b>\n` +
+                          `▪️ 🎬 无字横屏背景: <b>${state.totalAssets.cleanBackdrops}</b>\n` +
+                          `▪️ 📇 正标艺术字海报: <b>${state.totalAssets.posters}</b>\n` +
+                          `▪️ 📺 横版带字剧照: <b>${state.totalAssets.thumbs}</b>\n\n` +
                           `⏱ <b>启动时间</b>: <code>${state.cycleStartTime || '未知'}</code>\n` +
                           `⏰ <b>完成时间</b>: <code>${nowTimeStr}</code>\n` +
-                          `🌐 <b>控制中心</b>: <a href="${targetUrl}">👉 点击一键进入 EPlayerX 控制台</a>\n` +
-                          `💤 <b>状态</b>: 本轮已结束，已进入休眠等待下一计划周期`;
-        
+                          `💤 <b>状态</b>: 本轮已收尾，已进入休眠等待下个计划周期。`;
+
         const inline_keyboard = [[{ text: "🚀 点击直达 Web 控制台", url: targetUrl }]];
         await sendTgMessage(env, finishMsg, null, { inline_keyboard });
-        sentFinishNotice = true;
       }
-      state.cycleCount = (state.cycleCount || 1) + 1;
     }
 
     // 5. 保存状态到 R2
@@ -4371,19 +4504,13 @@ export default {
 
     return {
       triggerSource,
-      executedTask: `${currentTask.name} (${taskSeq}/${totalTasks})`,
-      syncSuccess,
-      itemsCount: count,
-      stats,
-      error: errMsg || null,
-      nextIndex,
-      sentStartNotice,
-      sentFinishNotice,
+      status: state.status,
+      progress: `${state.currentIndex}/${totalTasks}`,
       currentTime: nowTimeStr
     };
   },
 
-  // 定时器标准触发入口
+  // 🌟 定时器标准触发入口
   async scheduled(event, env, ctx) {
     ctx.waitUntil(this.runCronLogic(env, ctx, "【CF Cron 定时器】"));
   }
