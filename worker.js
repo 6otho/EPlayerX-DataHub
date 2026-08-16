@@ -1937,11 +1937,25 @@ const CATEGORY_CONFIGS = [
 const CATEGORY_MAP = {};
 CATEGORY_CONFIGS.forEach(c => CATEGORY_MAP[c.id] = c);
 
-const SAFE_LANGS = "zh,en,ja,ko,th,es,fr,de,ru,pt,tl,id,vi,hi,null,xx";
+// 🌟 剔除无效的 xx，加入完整的中文变体，保证 TMDB 接口精准返回多语种 Logo
+const SAFE_LANGS = "zh,zh-CN,zh-TW,zh-HK,en,ja,ko,th,es,fr,de,ru,pt,tl,id,vi,null";
 const ALL_MASK = (1n << BigInt(CATEGORY_CONFIGS.length)) - 1n;
 const HEADERS_API = { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1", "Accept": "application/json" };
 const HEADERS_BROWSER = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" };
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// ==========================================
+// 🌟 新增：TMDB 智能搜索关键词清洗器 (解决带《书名号》、季数直接搜空导致无TMDB ID的问题)
+// ==========================================
+function cleanSearchQuery(title) {
+  if (!title) return "";
+  return String(title)
+    .replace(/[《》【】\[\]（）()]/g, " ")
+    .replace(/第[一二三四五六七八九十\d]+[季部期]/g, "")
+    .replace(/(特别篇|完结篇|剧场版|国语版|粤语版|重制版|真人版|电影版|年番)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function escapeHTML(str) {
   return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
@@ -1951,6 +1965,8 @@ function buildOldDataHelper(itemsArray) {
     const mapById = new Map();
     const mapByTitle = new Map();
 
+    const normalize = (t) => String(t || "").replace(/[\s·《》【】\[\]()（）\-_:：]/g, "").toLowerCase();
+
     if (Array.isArray(itemsArray)) {
         itemsArray.forEach(item => {
             if (item.tmdbId !== undefined && item.tmdbId !== null) {
@@ -1958,7 +1974,7 @@ function buildOldDataHelper(itemsArray) {
                 mapById.set(Number(item.tmdbId), item);
             }
             if (item.title) {
-                const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
+                const cleanT = normalize(item.title);
                 if (cleanT) mapByTitle.set(cleanT, item);
             }
         });
@@ -1971,8 +1987,13 @@ function buildOldDataHelper(itemsArray) {
                 if (mapById.has(Number(tmdbId))) return mapById.get(Number(tmdbId));
             }
             if (title) {
-                const cleanT = String(title).replace(/[\s·《》\-_]/g, "").toLowerCase();
+                const cleanT = normalize(title);
                 if (cleanT && mapByTitle.has(cleanT)) return mapByTitle.get(cleanT);
+                
+                // 深度模糊匹配（解决带副标题/季数无法命中的问题）
+                for (const [k, v] of mapByTitle.entries()) {
+                    if (k.includes(cleanT) || cleanT.includes(k)) return v;
+                }
             }
             return null;
         }
@@ -2226,70 +2247,98 @@ async function tmdbFetch(path, paramsObj, env, reqCtx) {
 }
 
 // ==========================================
-// 6. 核心图层脱水提取与多语种打分算法
+// 6. 核心图层脱水提取引擎 (纯净无字海报严格物理隔离 + 母语Logo绝对优先)
 // ==========================================
 function extractImages(images, backdropPath, posterPath, origLang) {
-  const backdrops = (images && images.backdrops) ? images.backdrops : [];
-  const logos = (images && images.logos) ? images.logos : [];
-  const posters = (images && images.posters) ? images.posters : [];
+  const backdrops = (images && Array.isArray(images.backdrops)) ? images.backdrops : [];
+  const logos = (images && Array.isArray(images.logos)) ? images.logos : [];
+  const posters = (images && Array.isArray(images.posters)) ? images.posters : [];
 
-  const getLangScore = (lang) => {
-    if (!lang) return 0;
-    const l = String(lang).toLowerCase();
-    if (l === 'zh' || l === 'zh-cn' || l === 'zh-tw' || l === 'zh-hk') return 100;
-    if (origLang && l === String(origLang).toLowerCase()) return 90;
-    if (l === 'ja') return 85;
-    if (l === 'ko') return 80;
-    if (l === 'th') return 75;
-    if (l === 'en') return 70;
-    if (['es', 'fr', 'de', 'ru', 'pt', 'it', 'vi', 'id', 'tl'].includes(l)) return 60;
-    if (l !== 'null' && l !== 'xx' && l !== 'none') return 40;
-    return 0; 
-  };
-
-  const isExplicitlyClean = (item) => {
+  // TMDB 纯净无字图官方标准：iso_639_1 必为 null、空字符串、或 xx/none
+  const isStrictClean = (item) => {
     if (!item) return false;
     const l = item.iso_639_1;
     return l === null || l === undefined || l === '' || l === 'xx' || l === 'none' || l === 'null';
   };
 
-  // 1. 竖版有字海报 (poster_path): 优先官方中文/原语言艺术字
-  const textPosters = posters.filter(p => !isExplicitlyClean(p))
-                             .sort((a, b) => {
-                               const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
-                               const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
-                               return scoreB - scoreA;
-                             });
-  
-  // 2. 竖版纯净无字海报 (noLogoPoster): 严格纯净无字
-  const cleanPosters = posters.filter(p => isExplicitlyClean(p))
-                              .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
-  
-  const officialPoster = textPosters[0]?.file_path || cleanPosters[0]?.file_path || posterPath || null;
-  const noLogoPoster = cleanPosters[0]?.file_path || textPosters[0]?.file_path || posterPath || null;
+  const targetOrig = (origLang || "").toLowerCase();
 
-  // 3. 横版有字剧照 (thumb): 优先官方中文带字剧照
-  const textBackdrops = backdrops.filter(b => !isExplicitlyClean(b))
-                                 .sort((a, b) => {
-                                   const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
-                                   const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
-                                   return scoreB - scoreA;
-                                 });
+  // ==========================================
+  // 🌟 1. 透明 Logo：严格母语第一，其次 null/en，确保 100% 命中
+  // ==========================================
+  const getLogoScore = (l) => {
+    const lang = (l.iso_639_1 || "").toLowerCase();
+    let score = 0;
+    if (targetOrig && (lang === targetOrig || (targetOrig === 'zh' && lang.startsWith('zh')))) {
+      score = 100000; // 👑 原产国母语第一
+    } else if (isStrictClean(l)) {
+      score = 80000;  // 纯净无语标第二 (大量日漫标为null)
+    } else if (lang === 'en') {
+      score = 60000;  // 通用英文第三
+    } else if (lang === 'zh' || lang.startsWith('zh')) {
+      score = 40000;  // 中文备选
+    } else {
+      score = 10000;
+    }
+    return score + ((l.vote_average || 0) * 100) + (l.vote_count || 0);
+  };
 
-  // 4. 横版纯净无字背景 (cleanBackdrop / backdrop_path): 专供 iPad / TV 轮播图
-  const cleanBackdrops = backdrops.filter(b => isExplicitlyClean(b))
-                                  .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
-
-  const cleanBackdrop = cleanBackdrops[0]?.file_path || textBackdrops[0]?.file_path || backdropPath || null;
-  const thumb = textBackdrops[0]?.file_path || cleanBackdrops[0]?.file_path || backdropPath || null;
-
-  // 5. 透明 Logo
-  const sortedLogos = [...logos].sort((a, b) => {
-    const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
-    const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
-    return scoreB - scoreA;
-  });
+  const sortedLogos = [...logos].sort((a, b) => getLogoScore(b) - getLogoScore(a));
   const logo = sortedLogos[0]?.file_path || null;
+
+  // ==========================================
+  // 🌟 2. 轮播图专属：纯净【无字】竖海报 (noLogoPoster)
+  // 🚨 核心铁律：严格只取 isStrictClean 为 true 的无字图！绝不拿带字图兜底！
+  // ==========================================
+  const cleanPosters = posters.filter(p => isStrictClean(p))
+                              .sort((a, b) => ((b.vote_average || 0) * 100 + (b.vote_count || 0)) - ((a.vote_average || 0) * 100 + (a.vote_count || 0)));
+
+  // 严格无字海报：没有无字图就返回 null，严禁回退带字海报！
+  const noLogoPoster = cleanPosters[0]?.file_path || null;
+
+  // ==========================================
+  // 🌟 3. 列表小卡片专属：官方【带字】竖海报 (poster_path)
+  // ==========================================
+  const getTextPosterScore = (p) => {
+    const lang = (p.iso_639_1 || "").toLowerCase();
+    let score = 0;
+    if (lang === 'zh' || lang.startsWith('zh')) score = 30000;
+    else if (targetOrig && (lang === targetOrig || (targetOrig === 'zh' && lang.startsWith('zh')))) score = 20000;
+    else if (lang === 'en') score = 10000;
+    else score = 1000;
+    return score + (p.vote_average || 0) * 100;
+  };
+
+  const textPosters = posters.filter(p => !isStrictClean(p))
+                             .sort((a, b) => getTextPosterScore(b) - getTextPosterScore(a));
+
+  const officialPoster = textPosters[0]?.file_path || cleanPosters[0]?.file_path || posterPath || null;
+
+  // ==========================================
+  // 🌟 4. TV/iPad 专属：纯净【无字】横屏大背景 (backdrop_path)
+  // ==========================================
+  const cleanBackdrops = backdrops.filter(b => isStrictClean(b))
+                                  .sort((a, b) => ((b.vote_average || 0) * 100 + (b.vote_count || 0)) - ((a.vote_average || 0) * 100 + (a.vote_count || 0)));
+
+  const cleanBackdrop = cleanBackdrops[0]?.file_path || null;
+
+  // ==========================================
+  // 🌟 5. 小横图专属：官方【带字】剧照 (thumb)
+  // ==========================================
+  const getTextBackdropScore = (b) => {
+    const lang = (b.iso_639_1 || "").toLowerCase();
+    let score = 0;
+    if (targetOrig && (lang === targetOrig || (targetOrig === 'zh' && lang.startsWith('zh')))) score = 30000;
+    else if (lang === 'zh' || lang.startsWith('zh')) score = 20000;
+    else if (lang === 'en') score = 10000;
+    else score = 1000;
+    return score + (b.vote_average || 0) * 100;
+  };
+
+  const textBackdrops = backdrops.filter(b => !isStrictClean(b))
+                                 .sort((a, b) => getTextBackdropScore(b) - getTextBackdropScore(a));
+
+  const thumb = textBackdrops[0]?.file_path || cleanBackdrops[0]?.file_path || backdropPath || null;
 
   return { officialPoster, noLogoPoster, thumb, cleanBackdrop, logo };
 }
@@ -2331,237 +2380,221 @@ function deduplicateRawList(items) {
 }
 
 // ==========================================
-// 7. TMDB 详细数据加工处理（智能五维判定：新片自动提五图，老片全齐0消耗跳过）
+// 7. TMDB 详细数据加工处理（彻底剔除假无字海报 + 自动自愈提取真无字图）
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
-  const limitedItems = items;
+  const limitedItems = items.slice(0, limit);
 
-  for (let i = 0; i < limitedItems.length; i += 5) {
-    const chunk = limitedItems.slice(i, i + 5);
-    const chunkPromises = chunk.map(async (item, idx) => {
-      if (idx > 0) await delay(idx * 150);
+  for (let i = 0; i < limitedItems.length; i++) {
+    const item = limitedItems[i];
+    if (i > 0) await delay(80); // 80ms 平稳请求
 
-      let titleToSearch = item.searchQuery || item.title || item.name || "";
+    let titleToSearch = item.searchQuery || item.title || item.name || "";
 
-      let oldRecord = null;
-      if (options.oldDataHelper) {
-        oldRecord = options.oldDataHelper.find(item.tmdbId, titleToSearch);
+    let oldRecord = null;
+    if (options.oldDataHelper) {
+      oldRecord = options.oldDataHelper.find(item.tmdbId, titleToSearch);
+    }
+
+    let tmdbId = item.tmdbId || oldRecord?.tmdbId || null;
+    let basicData = item;
+    let detectedType = item.media_type || oldRecord?.media_type || mediaType;
+
+    const TMDB_IMG = 'https://image.tmdb.org/t/p/original';
+    const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/original';
+    const toAbs = (p) => (!p || p.startsWith('data:')) ? null : ((p.startsWith('http') || p.startsWith('/api/')) ? p : TMDB_IMG + (p.startsWith('/') ? p : '/' + p));
+    const toAbsLogo = (p) => (!p || p.startsWith('data:')) ? null : ((p.startsWith('http') || p.startsWith('/api/')) ? p : TMDB_IMG_LOGO + (p.startsWith('/') ? p : '/' + p));
+    const upgradeToOriginal = (url) => (url && typeof url === 'string' && url.includes('image.tmdb.org')) ? url.replace(/\/w\d+/, '/original') : url;
+
+    // 🌟 1. 核心自愈防线：如果老数据中的 noLogoPoster 与 poster_path 完全相同（被旧Bug污染的假无字），直接强行清空为 null！
+    const isCorruptedFakeClean = oldRecord?.noLogoPoster && oldRecord.noLogoPoster === oldRecord.poster_path && oldRecord.no_logo_poster_source !== 'manual';
+    
+    let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
+    let finalNoLogoPoster = isCorruptedFakeClean ? null : upgradeToOriginal(oldRecord?.noLogoPoster || null);
+    let finalThumb = upgradeToOriginal(oldRecord?.thumb || toAbs(basicData.backdrop_path || basicData.poster_path));
+    let finalBackdrop = upgradeToOriginal(oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
+    let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
+
+    let finalPosterSource = oldRecord?.poster_source || 'auto';
+    let finalNoLogoSource = isCorruptedFakeClean ? 'auto' : (oldRecord?.no_logo_poster_source || 'auto');
+    let finalThumbSource = oldRecord?.thumb_source || 'auto';
+    let finalBackdropSource = oldRecord?.backdrop_source || 'auto';
+    let finalLogoSource = oldRecord?.logo_source || 'auto';
+
+    // 2. 检查老数据是否真正完备（必须有真Logo，且必须有真正的无字海报，被污染过的必须重新抓取！）
+    const hasRealLogo = !!(finalLogo && !finalLogo.includes('text_logo.svg'));
+    const hasRealClean = !!finalNoLogoPoster;
+    const isCompletelyReady = oldRecord && hasRealLogo && hasRealClean && !isCorruptedFakeClean;
+
+    // 3. TMDB 智能检索
+    if (!tmdbId && !isCompletelyReady && reqCtx.subreqs < (reqCtx.maxSubreqs - 4)) {
+      try {
+        const cleanQ = cleanSearchQuery(titleToSearch);
+        const searchParams = { query: cleanQ || titleToSearch, language: "zh-CN" };
+        if (options.include_adult) searchParams.include_adult = "true";
+
+        let data = await tmdbFetch(mediaType === "movie" ? "/search/movie" : "/search/multi", searchParams, env, reqCtx);
+        let sr = data.results || [];
+
+        if (sr.length === 0 && cleanQ !== titleToSearch) {
+          searchParams.query = titleToSearch;
+          data = await tmdbFetch(mediaType === "movie" ? "/search/movie" : "/search/multi", searchParams, env, reqCtx);
+          sr = data.results || [];
+        }
+
+        if (sr.length > 0) {
+          let matched = null;
+          if (mediaType === "tv") {
+            matched = sr.find(x => x.media_type === "tv" || x.first_air_date) || sr.find(x => x.media_type === "movie" || x.release_date) || sr[0];
+          } else {
+            matched = sr.find(x => x.media_type === "movie" || x.release_date) || sr[0];
+          }
+
+          if (matched) {
+            tmdbId = matched.id;
+            basicData = matched;
+            detectedType = matched.media_type || (matched.first_air_date ? "tv" : "movie") || mediaType;
+          }
+        }
+      } catch(e) {}
+    }
+
+    if (tmdbId && !oldRecord && options.oldDataHelper) {
+      oldRecord = options.oldDataHelper.find(tmdbId, titleToSearch);
+    }
+
+    if (tmdbId || oldRecord) {
+      let origLang = basicData.original_language || item.original_language || oldRecord?.original_language || "";
+      let originCountries = basicData.origin_country || item.origin_country || [];
+
+      if (options.isJapaneseAnimeOnly) {
+        if (origLang && origLang !== 'ja') continue;
+        if (Array.isArray(originCountries) && (originCountries.includes('CN') || originCountries.includes('TW') || originCountries.includes('HK'))) {
+          continue;
+        }
       }
 
-      let tmdbId = item.tmdbId || oldRecord?.tmdbId || null;
-      let basicData = item;
+      if (options.isDomesticDramaOnly) {
+        const genres = basicData.genre_ids || oldRecord?.genre_ids || [];
+        if (genres.some(g => [16, 10764, 10767, 99, 10763].includes(g))) {
+          continue;
+        }
+      }
 
-      // 检查历史老数据是否已经“五全”（正标 + 无字竖 + 剧照 + 无字横背景 + 真Logo）
-      const hasMemoryPoster = !!oldRecord?.poster_path;
-      const hasMemoryNoLogo = !!oldRecord?.noLogoPoster;
-      const hasMemoryThumb  = !!oldRecord?.thumb;
-      const hasMemoryBackdrop = !!oldRecord?.backdrop_path;
-      const hasMemoryLogo   = !!(oldRecord?.logo && !oldRecord.logo.includes('text_logo.svg'));
-      
-      // 🌟 老片绝对免检：五项全部完整且未开启强制重刷，100% 0请求跳过
-      const isCompleteOldItem = oldRecord && hasMemoryPoster && hasMemoryNoLogo && hasMemoryThumb && hasMemoryBackdrop && hasMemoryLogo;
+      // 4. 判定是否发起提取（只要有污染或缺失，立即发起请求）
+      let needDetailFetch = false;
+      if (reqCtx.clearCooldown || !oldRecord || !isCompletelyReady) {
+        needDetailFetch = true;
+      }
 
-      if (!tmdbId && !isCompleteOldItem && reqCtx.subreqs < reqCtx.maxSubreqs) {
+      if (needDetailFetch && reqCtx.subreqs >= (reqCtx.maxSubreqs - 3)) {
+        needDetailFetch = false;
+      }
+
+      let actualMediaType = detectedType;
+      if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
+
+      let details = null;
+      let imagesData = null;
+
+      // 🌟 5. 满血提取：分别获取基础信息和全网无过滤图库
+      if (needDetailFetch && tmdbId) {
         try {
-          const searchParams = { query: titleToSearch, language: "zh-CN" };
-          if (options.include_adult) searchParams.include_adult = "true";
-          const data = await tmdbFetch(mediaType === "movie" ? "/search/movie" : "/search/multi", searchParams, env, reqCtx);
-          let sr = data.results || [];
-          if (mediaType === "tv") sr = sr.filter(x => x.media_type === "tv" || x.first_air_date);
-          if (sr.length > 0) { tmdbId = sr[0].id; basicData = sr[0]; }
+          const apiPath = actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+
+          details = await tmdbFetch(apiPath, { language: "zh-CN" }, env, reqCtx).catch(() => null);
+          imagesData = await tmdbFetch(`${apiPath}/images`, {}, env, reqCtx).catch(() => null);
+
+          if (options.isDomesticDramaOnly && details) {
+            const genresArr = details.genres || [];
+            if (genresArr.some(g => [16, 10764, 10767, 99, 10763].includes(g.id))) continue;
+          }
+
+          if (details && imagesData) {
+            const realOrigLang = details.original_language || origLang || "";
+            const ext = extractImages(imagesData, details.backdrop_path, details.poster_path, realOrigLang);
+
+            // 资产精准覆盖
+            if (ext.logo && finalLogoSource !== 'manual') finalLogo = toAbsLogo(ext.logo);
+            if (ext.officialPoster && finalPosterSource !== 'manual') finalPoster = toAbs(ext.officialPoster);
+            
+            // 🚨 核心关键：只有从 TMDB 提取到了真正的无字海报才赋值，绝不拿带字海报当无字海报！
+            if (ext.noLogoPoster && finalNoLogoSource !== 'manual') {
+              finalNoLogoPoster = toAbs(ext.noLogoPoster);
+            }
+
+            if (ext.thumb && finalThumbSource !== 'manual') finalThumb = toAbs(ext.thumb);
+            if (ext.cleanBackdrop && finalBackdropSource !== 'manual') finalBackdrop = toAbs(ext.cleanBackdrop);
+          }
         } catch(e) {}
       }
 
-      if (tmdbId && !oldRecord && options.oldDataHelper) {
-        oldRecord = options.oldDataHelper.find(tmdbId, titleToSearch);
+      const finalTitle = oldRecord?.title || details?.title || details?.name || basicData.title || basicData.name || item.title || "未知";
+      const fallbackLogo = options.originUrl
+        ? (options.originUrl + '/api/text_logo.svg?v=' + Date.now() + '&text=' + encodeURIComponent(finalTitle))
+        : null;
+
+      let rawDate = (
+        details?.first_air_date ||
+        details?.release_date ||
+        details?.last_episode_air_date ||
+        basicData.first_air_date ||
+        basicData.release_date ||
+        oldRecord?.first_air_date ||
+        oldRecord?.release_date ||
+        oldRecord?.air_date ||
+        ""
+      ).toString().trim();
+
+      let validDate = null;
+      const dateMatch = rawDate.match(/\b(19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/);
+      if (dateMatch) {
+        const parts = dateMatch[0].split(/[-/.]/);
+        validDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      } else {
+        const yearMatch = rawDate.match(/\b(19|20)\d{2}\b/);
+        if (yearMatch) validDate = `${yearMatch[0]}-01-01`;
       }
 
-      if (tmdbId || oldRecord) {
-        let origLang = basicData.original_language || item.original_language || oldRecord?.original_language || "";
-        let originCountries = basicData.origin_country || item.origin_country || [];
+      const finalYear = validDate ? validDate.substring(0, 4) : (oldRecord?.year || null);
 
-        if (options.isJapaneseAnimeOnly) {
-            if (origLang && origLang !== 'ja') return null;
-            if (Array.isArray(originCountries) && (originCountries.includes('CN') || originCountries.includes('TW') || originCountries.includes('HK'))) {
-                return null;
-            }
-        }
+      results.push({
+        title: finalTitle,
+        tmdbId: tmdbId || oldRecord?.tmdbId,
+        release_date: validDate || basicData.release_date || oldRecord?.release_date || null,
+        first_air_date: validDate || basicData.first_air_date || oldRecord?.first_air_date || null,
+        air_date: validDate || null,
+        pubdate: validDate || null,
+        year: finalYear,
+        popularity: basicData.popularity || oldRecord?.popularity || 0,
+        original_language: origLang || details?.original_language || "",
+        vote_average: basicData.vote_average || details?.vote_average || oldRecord?.vote_average || 0,
+        poster_path: finalPoster,                         // 1. 官方带字海报（列表小竖图）
+        noLogoPoster: finalNoLogoPoster,                  // 2. 纯净无字海报（轮播图，严格存储真实无字图，无图则为null，绝不存带字假图！）
+        poster_source: finalPosterSource,
+        no_logo_poster_source: finalNoLogoSource,
+        backdrop_path: finalBackdrop || finalThumb || finalPoster, // 3. 纯净无字横图（TV/iPad大屏）
+        backdrop_source: finalBackdropSource,
+        genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
+        media_type: detectedType,
+        overview: oldRecord?.overview || details?.overview || basicData.overview || null,
+        thumb: finalThumb,                               // 4. 官方带字剧照（小横图卡片）
+        thumb_source: finalThumbSource, 
+        logo: finalLogo || fallbackLogo,                 // 5. 透明 Logo（严格母语优先）
+        logo_source: finalLogo ? finalLogoSource : 'auto', 
+        verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
+        logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
+        crawledAt: oldRecord?.crawledAt || new Date().toISOString(),
+        image_scanned: true,
+        last_episode_air_date: oldRecord?.last_episode_air_date || null,
+        next_episode_air_date: oldRecord?.next_episode_air_date || null
+      });
 
-        if (options.isDomesticDramaOnly) {
-            const genres = basicData.genre_ids || oldRecord?.genre_ids || [];
-            if (genres.some(g => [16, 10764, 10767, 99, 10763].includes(g))) {
-                return null;
-            }
-        }
-
-        const TMDB_IMG = 'https://image.tmdb.org/t/p/original';
-        const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/original';
-        const toAbs = (p) => {
-            if (!p) return null;
-            if (p.startsWith('data:')) return null;
-            if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('/api/')) return p;
-            return TMDB_IMG + p;
-        };
-        const toAbsLogo = (p) => {
-            if (!p) return null;
-            if (p.startsWith('data:')) return null;
-            if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('/api/')) return p;
-            return TMDB_IMG_LOGO + p;
-        };
-
-        const upgradeToOriginal = (url) => {
-            if (!url || typeof url !== 'string') return url;
-            if (url.includes('image.tmdb.org')) {
-                return url.replace(/\/w\d+/, '/original');
-            }
-            return url;
-        };
-
-        let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
-        let finalNoLogoPoster = upgradeToOriginal(oldRecord?.noLogoPoster || null);
-        let finalThumb = upgradeToOriginal(oldRecord?.thumb || toAbs(basicData.backdrop_path || basicData.poster_path));
-        let finalBackdrop = upgradeToOriginal(oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
-        let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
-
-        let finalPosterSource = oldRecord?.poster_source || 'auto';
-        let finalNoLogoSource = oldRecord?.no_logo_poster_source || 'auto';
-        let finalThumbSource = oldRecord?.thumb_source || 'auto';
-        let finalBackdropSource = oldRecord?.backdrop_source || 'auto';
-        let finalLogoSource = oldRecord?.logo_source || 'auto';
-
-        let needDetailFetch = false;
-        const isMissingDate = !oldRecord?.first_air_date && !oldRecord?.release_date;
-        const isMissingAnyImage = !finalPoster || !finalNoLogoPoster || !finalThumb || !finalBackdrop || !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'));
-
-        if (reqCtx.clearCooldown) {
-            needDetailFetch = true;
-        } else if (!oldRecord || isMissingDate || isMissingAnyImage) {
-            needDetailFetch = true;
-        }
-
-        let safeMargin = reqCtx.isSafeMode ? 8 : 4;
-        if (needDetailFetch && reqCtx.subreqs >= (reqCtx.maxSubreqs - safeMargin)) {
-            needDetailFetch = false; 
-        }
-
-        let actualMediaType = basicData.media_type || oldRecord?.media_type || mediaType;
-        if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
-
-        let detailsAndImages = null;
-
-        if (needDetailFetch && tmdbId) {
-          try {
-            let imgLangs = origLang && !SAFE_LANGS.includes(origLang) ? SAFE_LANGS + "," + origLang : SAFE_LANGS;
-
-            detailsAndImages = await tmdbFetch(
-              actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
-              { language: "zh-CN", append_to_response: "images", include_image_language: imgLangs },
-              env, reqCtx
-            );
-
-            if (options.isDomesticDramaOnly) {
-                const genresArr = detailsAndImages.genres || [];
-                if (genresArr.some(g => [16, 10764, 10767, 99, 10763].includes(g.id))) {
-                    return null;
-                }
-            }
-
-            const ext = extractImages(detailsAndImages.images, detailsAndImages.backdrop_path, detailsAndImages.poster_path, origLang);
-
-            // 1. Logo
-            if ((!finalLogo || finalLogo.includes('text_logo.svg')) && finalLogoSource !== 'manual' && ext.logo) {
-                finalLogo = toAbsLogo(ext.logo);
-            }
-            // 2. 竖版带字海报
-            if (ext.officialPoster && finalPosterSource !== 'manual') {
-                finalPoster = toAbs(ext.officialPoster);
-            }
-            // 3. 竖版无字海报 (专供手机轮播)
-            if (ext.noLogoPoster && finalNoLogoSource !== 'manual') {
-                finalNoLogoPoster = toAbs(ext.noLogoPoster);
-            }
-            // 4. 横版带字剧照
-            if (ext.thumb && finalThumbSource !== 'manual') {
-                finalThumb = toAbs(ext.thumb);
-            }
-            // 5. 横版纯净无字背景 (专供 iPad / TV 轮播)
-            if (ext.cleanBackdrop && finalBackdropSource !== 'manual') {
-                finalBackdrop = toAbs(ext.cleanBackdrop);
-            }
-
-          } catch(e) {}
-        }
-
-        const finalTitle = oldRecord?.title || basicData.title || basicData.name || item.title || "未知";
-        const fallbackLogo = options.originUrl
-          ? (options.originUrl + '/api/text_logo.svg?v=' + Date.now() + '&text=' + encodeURIComponent(finalTitle))
-          : null;
-
-        let rawDate = (
-            detailsAndImages?.first_air_date ||
-            detailsAndImages?.release_date ||
-            detailsAndImages?.last_episode_air_date ||
-            basicData.first_air_date ||
-            basicData.release_date ||
-            oldRecord?.first_air_date ||
-            oldRecord?.release_date ||
-            oldRecord?.air_date ||
-            ""
-        ).toString().trim();
-
-        let validDate = null;
-        const dateMatch = rawDate.match(/\b(19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/);
-        if (dateMatch) {
-            const parts = dateMatch[0].split(/[-/.]/);
-            validDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-        } else {
-            const yearMatch = rawDate.match(/\b(19|20)\d{2}\b/);
-            if (yearMatch) validDate = `${yearMatch[0]}-01-01`;
-        }
-
-        const finalYear = validDate ? validDate.substring(0, 4) : (oldRecord?.year || null);
-
-        return {
-          title: finalTitle,
-          tmdbId: tmdbId || oldRecord?.tmdbId,
-          release_date: validDate || basicData.release_date || oldRecord?.release_date || null,
-          first_air_date: validDate || basicData.first_air_date || oldRecord?.first_air_date || null,
-          air_date: validDate || null,
-          pubdate: validDate || null,
-          year: finalYear,
-          popularity: basicData.popularity || oldRecord?.popularity || 0,
-          original_language: origLang,
-          vote_average: basicData.vote_average || oldRecord?.vote_average || 0,
-          poster_path: finalPoster,                         // 1. 竖版带字海报
-          noLogoPoster: finalNoLogoPoster || finalPoster,   // 2. 竖版无字海报
-          poster_source: finalPosterSource,
-          no_logo_poster_source: finalNoLogoSource,
-          backdrop_path: finalBackdrop || finalThumb || finalPoster, // 3. 横版无字背景 (专供 iPad/TV)
-          backdrop_source: finalBackdropSource,
-          genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
-          media_type: basicData.media_type || oldRecord?.media_type || mediaType,
-          overview: oldRecord?.overview || basicData.overview || null,
-          thumb: finalThumb,                               // 4. 横版带字剧照
-          thumb_source: finalThumbSource, 
-          logo: finalLogo || fallbackLogo,                 // 5. 透明 PNG Logo
-          logo_source: finalLogo ? finalLogoSource : 'auto', 
-          verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
-          logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
-          crawledAt: oldRecord?.crawledAt || new Date().toISOString(),
-          image_scanned: true,
-          last_episode_air_date: oldRecord?.last_episode_air_date || null,
-          next_episode_air_date: oldRecord?.next_episode_air_date || null
-        };
-      }
-      return null;
-    });
-
-    const resolvedChunk = await Promise.all(chunkPromises);
-    results.push(...resolvedChunk.filter(Boolean));
-
-    if (deduplicateByTmdbId(results).length >= limit) break;
+      if (deduplicateByTmdbId(results).length >= limit) break;
+    }
   }
+
   return deduplicateByTmdbId(results).slice(0, limit);
 }
 
@@ -3923,23 +3956,19 @@ export default {
             
             let logos = imagesData.logos || [];
             
+            const origL = (origLang || "").toLowerCase();
             const getLangScore = (lang) => {
-                if (!lang) return 0;
-                const l = String(lang).toLowerCase();
-                if (l === 'zh' || l === 'zh-cn' || l === 'zh-tw' || l === 'zh-hk') return 100;
-                if (origLang && l === String(origLang).toLowerCase()) return 90;
-                if (l === 'ja') return 85;
-                if (l === 'ko') return 80;
-                if (l === 'th') return 75;
-                if (l === 'en') return 70;
-                if (['es', 'fr', 'de', 'ru', 'pt', 'it', 'vi', 'id', 'tl'].includes(l)) return 60;
-                if (l !== 'null' && l !== 'xx' && l !== 'none') return 40;
-                return 0;
+                const l = String(lang || "").toLowerCase();
+                if (origL && (l === origL || (origL === 'zh' && l.startsWith('zh')))) return 10000; // 👑 母语第一
+                if (l === 'en') return 5000; // 英语第二
+                if (l === 'zh' || l.startsWith('zh')) return 3000; // 中文第三
+                if (!l || l === 'null' || l === 'xx') return 2000;
+                return 1000;
             };
 
             logos.sort((a, b) => {
-                const scoreA = getLangScore(a.iso_639_1) * 1000 + (a.vote_average || 0);
-                const scoreB = getLangScore(b.iso_639_1) * 1000 + (b.vote_average || 0);
+                const scoreA = getLangScore(a.iso_639_1) * 100 + (a.vote_average || 0);
+                const scoreB = getLangScore(b.iso_639_1) * 100 + (b.vote_average || 0);
                 return scoreB - scoreA;
             });
             
@@ -4512,15 +4541,21 @@ export default {
       return { triggerSource, status: "IDLE", msg: `待命 (每日 ${state.autoStartHour}:00 启动)` };
     }
 
-    // 4. 🌟【连续任务推进】：单次调用全速跑最多 25 个任务（18秒内安全退出）
-    const reqCtx = { subreqs: 0, maxSubreqs: 45, isSafeMode: true, clearCooldown: false };
+    // 4. 🌟【高质量独立配额推进】：保证每个分类都拥有充足的子请求额度（至少 25 次），绝不透支额度去跑下一个分类！
+    const reqCtx = { subreqs: 0, maxSubreqs: 46, isSafeMode: false, clearCooldown: false };
     const batchStartTime = Date.now();
     let tasksExecutedThisBatch = 0;
 
-    while (state.currentIndex < totalTasks && reqCtx.subreqs < 38 && (Date.now() - batchStartTime) < 18000) {
+    while (state.currentIndex < totalTasks) {
+      // 关键防线：如果剩余子请求不足 20 次，或者本轮运行已超过 14 秒，立即退出并保存进度，交给下一分钟无缝接力
+      if (reqCtx.subreqs >= 25 || (Date.now() - batchStartTime) >= 14000) {
+        break;
+      }
+
       const currentTask = taskQueue[state.currentIndex];
       try {
-        const res = await executeSyncTask(currentTask.id, env, 60, true, reqCtx, targetUrl, true, true);
+        // 单个分类容量适度控制在 40 部，确保该分类内的每部影片都能 100% 提取到 Logo 与背景图
+        const res = await executeSyncTask(currentTask.id, env, 40, true, reqCtx, targetUrl, true, true);
         if (res && res.stats) {
           state.totalAssets.count += (res.count || 0);
           state.totalAssets.logos += (res.stats.logos || 0);
@@ -4538,6 +4573,11 @@ export default {
 
       state.currentIndex++;
       tasksExecutedThisBatch++;
+
+      // 如果当前分类是重型分类（新片多，单分类就消耗了 18 次以上子请求），立刻退出让下一分钟重新从 0 额度启动下一个分类，避免污染！
+      if (reqCtx.subreqs >= 20) {
+        break;
+      }
     }
 
     state.lastRunTime = nowTimeStr;
