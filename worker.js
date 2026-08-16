@@ -656,20 +656,33 @@ const FRONTEND_HTML_P1 = `
         // ==========================================
         async function triggerCronNow() {
             if (!sysPwd) return showToast("请先登录管理员", true);
-            if (!confirm("🚀 确认立即启动一轮全量同步测试？\\n\\n1. Telegram 将立刻收到【开始执行通知】\\n2. 系统将静默一批批跑完所有 77 个任务\\n3. 全部跑完后，Telegram 将收到【五维资产收尾总结】并自动休眠。")) return;
+            if (!confirm("🚀 确认立即启动一轮全量同步？系统将全速推进跑完所有任务并在完成时发送TG通知。")) return;
             
-            showToast("⏳ 正在唤醒全量同步周期...");
+            showToast("🚀 正在启动全量大盘同步...");
             try {
-                const res = await fetch(ACTION_BASE + '/start_cron_now', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + sysPwd }
-                });
-                const data = await res.json();
-                if (data.success) {
-                    showToast("🎉 全量同步已成功启动！请前往 Telegram 查看开始通知。");
+                let finished = false;
+                while (!finished) {
+                    const res = await fetch(ACTION_BASE + '/start_cron_now', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + sysPwd }
+                    });
+                    const data = await res.json();
+                    if (!data.success) {
+                        showToast("❌ 运行异常: " + (data.error || "未知错误"), true);
+                        break;
+                    }
+                    
                     pollCronStatus();
-                } else {
-                    showToast("❌ 启动失败: " + data.error, true);
+                    
+                    if (data.data && data.data.status === "IDLE") {
+                        finished = true;
+                        showToast("🎉 全量 77 个任务已全部跑完！请查看 Telegram 总结明细。");
+                        loadData(currentCategory);
+                        break;
+                    } else {
+                        showToast("⚡ 正在极速推进大盘任务: " + (data.data ? data.data.progress : '执行中') + " ...");
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
                 }
             } catch(e) { showToast("❌ 网络请求异常", true); }
         }
@@ -3336,6 +3349,7 @@ export default {
           const oldObj = await env.R2_BUCKET.get("cron_state.json");
           if (oldObj) state = await oldObj.json();
           state.autoStartHour = isNaN(setHour) ? 3 : setHour;
+          state.lastRunDate = null; // 🌟 关键：清除今日已运行标记，如果设定为当前小时，下次定时器立刻触发！
           await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), { httpMetadata: { contentType: "application/json" } });
         }
         return new Response(JSON.stringify({ success: true, autoStartHour: state.autoStartHour }), { 
@@ -4358,12 +4372,12 @@ export default {
   },
 
   // ==========================================
-  // 10. 智能双模调度引擎 (支持立即手动测试 + 自定义时间 + 纯净两头通知)
+  // 10. 智能极速调度引擎 (修复死循环与通知轰炸版)
   // ==========================================
-  async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】", manualForceStart = false) {
+  async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】", isManualStart = false) {
     if (!env.R2_BUCKET) throw new Error("未检测到 env.R2_BUCKET 存储桶绑定");
 
-    // 1. 构建全量任务清单（约 77 个细分任务）
+    // 1. 构建全量任务清单（77 个细分任务）
     const taskQueue = [];
     for (const cat of CATEGORY_CONFIGS) {
       if (cat.id.endsWith("_collection")) {
@@ -4382,15 +4396,15 @@ export default {
     }
     const totalTasks = taskQueue.length;
 
-    // 2. 从 R2 读取轮询进度状态
+    // 2. 从 R2 读取状态
     let state = { 
-      status: "IDLE",                 // IDLE (休眠中), RUNNING (正在连续执行)
+      status: "IDLE",
       currentIndex: 0, 
       cycleCount: 1, 
       cycleStartTime: null, 
       lastRunDate: null, 
       isPaused: false,
-      autoStartHour: 3,               // 默认每日自动启动小时（北京时间 3 点）
+      autoStartHour: 3,
       totalAssets: { count: 0, logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 }
     };
 
@@ -4399,24 +4413,25 @@ export default {
       if (stateObj) state = Object.assign(state, await stateObj.json());
     } catch (e) {}
 
-    // 如果处于暂停状态且不是手动强制触发，则直接拦截
-    if (state.isPaused && !manualForceStart) {
+    // 如果处于暂停状态且不是手动强制触发，直接退出
+    if (state.isPaused && !isManualStart) {
       return { triggerSource, status: "PAUSED", msg: "后台自动更新已暂停" };
     }
 
-    // 3. 时间与启动状态判定 (北京时间 Asia/Shanghai)
-    const now = new Date();
-    const bjDateStr = now.toLocaleDateString("zh-CN", { timeZone: "Asia/Shanghai" });
-    const bjHour = parseInt(now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour: "numeric", hour12: false }), 10);
-    const nowTimeStr = now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false });
+    // 3. 纯数学计算精确北京时间 (UTC+8)
+    const nowTimestamp = Date.now();
+    const bjTime = new Date(nowTimestamp + 8 * 3600 * 1000);
+    const bjHour = bjTime.getUTCHours();
+    const bjDateStr = bjTime.toISOString().substring(0, 10);
+    const nowTimeStr = bjTime.toISOString().replace('T', ' ').substring(0, 19);
     const targetUrl = env.WORKER_URL || "https://homepage.eplayerx.cc.cd";
 
-    // 触发启动的两种情况：① 手动点击了立即测试；② 到了每日设定的定时时间且今天还没执行过
-    const isAutoTimeReached = (state.autoStartHour === bjHour && state.lastRunDate !== bjDateStr);
-    const shouldStartNewCycle = manualForceStart || ((state.status === "IDLE" || !state.status) && isAutoTimeReached);
+    const isAutoTime = (state.autoStartHour === bjHour && state.lastRunDate !== bjDateStr);
+    
+    // 🌟【唯一启动点】：只有当状态不是 RUNNING 时，才允许初始化新周期并发送【开始通知】
+    const shouldInitNewCycle = (state.status !== "RUNNING") && (isManualStart || isAutoTime);
 
-    // 🌟【第一头】：发送开始通知并初始化周期
-    if (shouldStartNewCycle) {
+    if (shouldInitNewCycle) {
       state.status = "RUNNING";
       state.currentIndex = 0;
       state.cycleStartTime = nowTimeStr;
@@ -4427,27 +4442,26 @@ export default {
       if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
         const startMsg = `🚀 <b>[大盘全量同步 · 开始执行]</b>\n` +
                          `═══════════════════\n` +
-                         `🎯 <b>触发来源</b>: ${manualForceStart ? '👑 手动立即测试' : '⏰ 计划定时启动'}\n` +
+                         `🎯 <b>触发来源</b>: ${isManualStart ? '👑 手动立即测试' : `⏰ 定时自动启动 (${state.autoStartHour}:00)`}\n` +
                          `📊 <b>计划轮次</b>: 第 ${state.cycleCount || 1} 轮全量更新\n` +
                          `📋 <b>总任务量</b>: 共 ${totalTasks} 个分类与子周历\n` +
                          `⏰ <b>启动时间</b>: <code>${nowTimeStr}</code>\n` +
-                         `✨ <i>五维脱水引擎已开启，抓取完成后将推送完整数据明细...</i>`;
+                         `⚡ <i>全速推进中，抓取完毕后将自动推送五维资产明细...</i>`;
         await sendTgMessage(env, startMsg);
       }
     }
 
-    // 如果处于休眠状态，直接 0 开销退出
+    // 如果未处于执行状态，直接返回休眠
     if (state.status !== "RUNNING") {
-      return { triggerSource, status: "IDLE", msg: `休眠中 (每日将在 ${state.autoStartHour}:00 自动启动)` };
+      return { triggerSource, status: "IDLE", msg: `待命 (每日 ${state.autoStartHour}:00 启动)` };
     }
 
-    // 4. 单次批处理执行（每次 Cron 执行 2 个任务，防止单次超时或超限）
-    const BATCH_RUN_COUNT = 2;
+    // 4. 🌟【连续任务推进】：单次调用全速跑最多 25 个任务（18秒内安全退出）
     const reqCtx = { subreqs: 0, maxSubreqs: 45, isSafeMode: true, clearCooldown: false };
+    const batchStartTime = Date.now();
+    let tasksExecutedThisBatch = 0;
 
-    for (let step = 0; step < BATCH_RUN_COUNT; step++) {
-      if (state.currentIndex >= totalTasks) break;
-
+    while (state.currentIndex < totalTasks && reqCtx.subreqs < 38 && (Date.now() - batchStartTime) < 18000) {
       const currentTask = taskQueue[state.currentIndex];
       try {
         const res = await executeSyncTask(currentTask.id, env, 60, true, reqCtx, targetUrl, true, true);
@@ -4467,20 +4481,22 @@ export default {
       }
 
       state.currentIndex++;
+      tasksExecutedThisBatch++;
     }
 
     state.lastRunTime = nowTimeStr;
 
-    // 🌟【第二头】：全部任务跑完，发送收尾汇总通知并休眠
+    // 🌟【唯一收尾点】：77 个任务全部完成，发总结并切回 IDLE
     if (state.currentIndex >= totalTasks) {
-      state.status = "IDLE"; // 任务全部完成，立即转为休眠
+      state.status = "IDLE";
+      state.currentIndex = 0;
       state.cycleCount = (state.cycleCount || 1) + 1;
 
       if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
         const finishMsg = `🎉 <b>[大盘全量同步 · 全部圆满完成！]</b>\n` +
                           `═══════════════════\n` +
                           `📊 <b>完成轮次</b>: 第 ${(state.cycleCount - 1) || 1} 轮\n` +
-                          `📋 <b>任务统计</b>: 全部 ${totalTasks} 个榜单/周历已全部刷新完毕\n` +
+                          `📋 <b>任务统计</b>: 全部 ${totalTasks} 个榜单/周历已全部刷新入库\n` +
                           `📦 <b>入库总量</b>: <b>${state.totalAssets.count}</b> 部影视\n\n` +
                           `✨ <b>五维资产入库汇总:</b>\n` +
                           `▪️ 💎 真实Logo: <b>${state.totalAssets.logos}</b>\n` +
@@ -4490,14 +4506,14 @@ export default {
                           `▪️ 📺 横版带字剧照: <b>${state.totalAssets.thumbs}</b>\n\n` +
                           `⏱ <b>启动时间</b>: <code>${state.cycleStartTime || '未知'}</code>\n` +
                           `⏰ <b>完成时间</b>: <code>${nowTimeStr}</code>\n` +
-                          `💤 <b>状态</b>: 本轮已收尾，已进入休眠等待下个计划周期。`;
+                          `💤 <b>状态</b>: 本轮已收尾，进入休眠。`;
 
         const inline_keyboard = [[{ text: "🚀 点击直达 Web 控制台", url: targetUrl }]];
         await sendTgMessage(env, finishMsg, null, { inline_keyboard });
       }
     }
 
-    // 5. 保存状态到 R2
+    // 5. 保存最新状态到 R2
     await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), {
       httpMetadata: { contentType: "application/json" }
     });
@@ -4505,13 +4521,14 @@ export default {
     return {
       triggerSource,
       status: state.status,
+      batchRunCount: tasksExecutedThisBatch,
       progress: `${state.currentIndex}/${totalTasks}`,
       currentTime: nowTimeStr
     };
   },
 
-  // 🌟 定时器标准触发入口
+  // 🌟 CF 定时器调用时传入 false，绝不强行重置周期
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(this.runCronLogic(env, ctx, "【CF Cron 定时器】"));
+    ctx.waitUntil(this.runCronLogic(env, ctx, "【Cloudflare 定时触发】", false));
   }
 };
