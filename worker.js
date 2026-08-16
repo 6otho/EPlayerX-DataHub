@@ -1306,10 +1306,10 @@ const FRONTEND_HTML_P1 = `
                 const logoTick = logoSource === 'manual' ? '✅' : '☑️';
 
                 const actionBtns = '<div class="grid grid-cols-2 gap-1.5 w-full pt-2 border-t border-gray-100 dark:border-zinc-700/60 mt-auto shrink-0">' +
-                    '<button onclick="openCleanPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.noLogoPoster || '') + '\\', \\'' + noLogoSource + '\\', \\'' + mType + '\\')" class="' + noLogoBtnBg + ' ' + btnBase + '" title="手动选轮播海报（纯净无字版）">🎴 轮播 ' + noLogoTick + '</button>' +
-                    '<button onclick="openThumbSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.thumb || '') + '\\', \\'' + thumbSource + '\\', \\'' + mType + '\\')" class="' + thumbBtnBg + ' ' + btnBase + '" title="手动选剧照/横版背景">📺 剧照 ' + thumbTick + '</button>' +
-                    '<button onclick="openPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.poster_path || '') + '\\', \\'' + posterSource + '\\', \\'' + mType + '\\')" class="' + posterBtnBg + ' ' + btnBase + '" title="手动选竖版正标海报（带官方艺术字）">📇 竖 ' + posterTick + '</button>' +
-                    '<button onclick="openLogoSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.logo || '') + '\\', \\'' + logoSource + '\\', \\'' + mType + '\\')" class="' + logoBtnBg + ' ' + btnBase + '" title="手动选透明Logo">🖼️ 标 ' + logoTick + '</button>' +
+                    '<button onclick="openCleanPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.noLogoPoster || '') + '\\', \\'' + noLogoSource + '\\', \\'' + mType + '\\')" class="' + noLogoBtnBg + ' ' + btnBase + '" title="手动选轮播海报（纯净无字版）">轮播 ' + noLogoTick + '</button>' +
+                    '<button onclick="openThumbSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.thumb || '') + '\\', \\'' + thumbSource + '\\', \\'' + mType + '\\')" class="' + thumbBtnBg + ' ' + btnBase + '" title="手动选剧照/横版背景">剧照 ' + thumbTick + '</button>' +
+                    '<button onclick="openPosterSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.poster_path || '') + '\\', \\'' + posterSource + '\\', \\'' + mType + '\\')" class="' + posterBtnBg + ' ' + btnBase + '" title="手动选竖版正标海报（带官方艺术字）">竖 ' + posterTick + '</button>' +
+                    '<button onclick="openLogoSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.logo || '') + '\\', \\'' + logoSource + '\\', \\'' + mType + '\\')" class="' + logoBtnBg + ' ' + btnBase + '" title="手动选透明Logo">标 ' + logoTick + '</button>' +
                 '</div>';
 
                 // 2. 只有一份正确的卡片 HTML (海报无遮挡 + 底部标题与按键)
