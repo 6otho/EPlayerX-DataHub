@@ -435,6 +435,7 @@ const FRONTEND_HTML_P1 = `
             }).catch(()=>{});
         }
 
+        // 🌟 1. 全局 CATEGORIES 字典：默认全面支持 V2 标准 (全改为 poster-list / hero-list / collection-list)
         const CATEGORIES = [
             { id: 'weekly_drama_collection', titleKey: 'home.weekly_drama', name: '🇨🇳 国产追剧周更表 (合集)', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'collection-list', type: 'tv', isCollection: true },
             { id: 'weekly_guoman_collection', titleKey: 'home.weekly_guoman', name: '🇨🇳 国漫追番周历表 (合集)', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z', preset: 'collection-list', type: 'tv', isCollection: true },
@@ -443,38 +444,38 @@ const FRONTEND_HTML_P1 = `
             { id: 'weekly_japanese_drama_collection', titleKey: 'home.weekly_japanese_drama', name: '🇯🇵 日剧追剧周更表 (合集)', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1v4a1 1 0 001 1m-6 0h6', preset: 'collection-list', type: 'tv', isCollection: true },
             { id: 'weekly_sea_drama_collection', titleKey: 'home.weekly_sea_drama', name: '🇹🇭 东南亚剧周更表 (合集)', icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9', preset: 'collection-list', type: 'tv', isCollection: true },
 
-            { id: 'tmdb_popular_movies', titleKey: 'home.tmdb_popular_movies', name: '今日热门电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'thumb-list', type: 'movie' },
+            { id: 'tmdb_popular_movies', titleKey: 'home.tmdb_popular_movies', name: '今日热门电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' },
             { id: 'tmdb_popular_tv', titleKey: 'home.tmdb_popular_tv_shows', name: '今日热门电视剧', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'hero-list', type: 'tv' },
-            { id: 'bangumi_airing', titleKey: 'home.bangumi_popular_anime', name: '今日热门番剧', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', preset: 'thumb-list', type: 'tv' },
-            { id: 'douban_tv_custom', titleKey: 'home.popular_tv_shows', name: '时下热门国产剧', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'thumb-list', type: 'tv' },
+            { id: 'bangumi_airing', titleKey: 'home.bangumi_popular_anime', name: '今日热门番剧', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', preset: 'poster-list', type: 'tv' },
+            { id: 'douban_tv_custom', titleKey: 'home.popular_tv_shows', name: '时下热门国产剧', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'poster-list', type: 'tv' },
             { id: 'tmdb_tv_netflix', titleKey: 'home.tmdb_tv_netflix', name: 'Netflix 全球热播好剧', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'poster-list', type: 'tv' },
-            { id: 'variety_cn', titleKey: 'home.variety_cn', name: '热门国产综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'thumb-list', type: 'tv' },
-            { id: 'variety_kr', titleKey: 'home.variety_kr', name: '爆款韩国综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'thumb-list', type: 'tv' },
-            { id: 'variety_global', titleKey: 'home.variety_global', name: '全球流媒体新热综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'thumb-list', type: 'tv' },
+            { id: 'variety_cn', titleKey: 'home.variety_cn', name: '热门国产综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'poster-list', type: 'tv' },
+            { id: 'variety_kr', titleKey: 'home.variety_kr', name: '爆款韩国综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'poster-list', type: 'tv' },
+            { id: 'variety_global', titleKey: 'home.variety_global', name: '全球流媒体新热综艺', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z', preset: 'poster-list', type: 'tv' },
             { id: 'tmdb_tv_hbo', titleKey: 'home.tmdb_tv_hbo', name: 'HBO 高分神剧', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z', preset: 'poster-list', type: 'tv' },
             { id: 'tmdb_tv_apple', titleKey: 'home.tmdb_tv_apple', name: 'Apple TV+ 原创精品', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1v4a1 1 0 001 1m-6 0h6', preset: 'poster-list', type: 'tv' },
-            { id: 'trakt_movies', titleKey: 'home.trakt_movies', name: '火爆全球欧美大片', icon: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z', preset: 'thumb-list', type: 'movie' },
-            { id: 'tmdb_anime_cn', titleKey: 'home.popular_domestic_anime', name: '热门国产动漫', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z', preset: 'thumb-list', type: 'tv' },
-            { id: 'trakt_shows', titleKey: 'home.trakt_shows', name: '时下热播欧美剧集', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z', preset: 'thumb-list', type: 'tv' },
-            { id: 'douban_movies', titleKey: 'home.popular_movies', name: '实时热门电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'thumb-list', type: 'movie' },
-            { id: 'douban_korean_tv', titleKey: 'home.popular_korean_tv_shows', name: '备受欢迎的韩剧推荐', icon: 'M4 6h16M4 12h16M4 18h7', preset: 'thumb-list', type: 'tv' },
-            { id: 'tmdb_tv_ja', titleKey: 'home.popular_japanese_tv_shows', name: '细腻又治愈的高人气日剧', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1v4a1 1 0 001 1m-6 0h6', preset: 'thumb-list', type: 'tv' },
+            { id: 'trakt_movies', titleKey: 'home.trakt_movies', name: '火爆全球欧美大片', icon: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z', preset: 'poster-list', type: 'movie' },
+            { id: 'tmdb_anime_cn', titleKey: 'home.popular_domestic_anime', name: '热门国产动漫', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z', preset: 'poster-list', type: 'tv' },
+            { id: 'trakt_shows', titleKey: 'home.trakt_shows', name: '时下热播欧美剧集', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z', preset: 'poster-list', type: 'tv' },
+            { id: 'douban_movies', titleKey: 'home.popular_movies', name: '实时热门电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' },
+            { id: 'douban_korean_tv', titleKey: 'home.popular_korean_tv_shows', name: '备受欢迎的韩剧推荐', icon: 'M4 6h16M4 12h16M4 18h7', preset: 'poster-list', type: 'tv' },
+            { id: 'tmdb_tv_ja', titleKey: 'home.popular_japanese_tv_shows', name: '细腻又治愈的高人气日剧', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1v4a1 1 0 001 1m-6 0h6', preset: 'poster-list', type: 'tv' },
             { id: 'tmdb_anime_jp', titleKey: 'home.tmdb_anime_jp', name: '近期热门日本动漫', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', preset: 'poster-list', type: 'tv' },
             { id: 'imdb_top_anime', titleKey: 'home.imdb_top_anime', name: 'IMDb 史诗动漫神作', icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z', preset: 'poster-list', type: 'tv' },
-            { id: 'prime_hot_anime', titleKey: 'home.prime_hot_anime', name: 'Prime Video 热门日漫', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'thumb-list', type: 'tv' },
+            { id: 'prime_hot_anime', titleKey: 'home.prime_hot_anime', name: 'Prime Video 热门日漫', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z', preset: 'poster-list', type: 'tv' },
             { id: 'filmarks_anime_movie', titleKey: 'home.filmarks_anime_movie', name: 'Filmarks 高分剧场版', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' },
-            { id: 'netflix_hot_anime', titleKey: 'home.netflix_hot_anime', name: 'Netflix 独播霸榜日漫', icon: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z', preset: 'thumb-list', type: 'tv' },
+            { id: 'netflix_hot_anime', titleKey: 'home.netflix_hot_anime', name: 'Netflix 独播霸榜日漫', icon: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z', preset: 'poster-list', type: 'tv' },
             { id: 'tmdb_anime_top_ja', titleKey: 'home.tmdb_anime_top_ja', name: 'TMDB 高分神作日漫', icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z', preset: 'poster-list', type: 'tv' },
-            { id: 'tmdb_anime_movie_ja', titleKey: 'home.tmdb_anime_movie_ja', name: '备受好评的动画电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'thumb-list', type: 'movie' },
+            { id: 'tmdb_anime_movie_ja', titleKey: 'home.tmdb_anime_movie_ja', name: '备受好评的动画电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' },
             { id: 'tmdb_tv_es', titleKey: 'home.popular_spanish_tv_shows', name: '时下流行的西语剧集', icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9', preset: 'poster-list', type: 'tv' },
-            { id: 'tmdb_tv_tw', titleKey: 'home.popular_taiwanese_tv_shows', name: '台剧当然也不能落下', icon: 'M4 6h16M4 12h16M4 18h7', preset: 'thumb-list', type: 'tv' },
+            { id: 'tmdb_tv_tw', titleKey: 'home.popular_taiwanese_tv_shows', name: '台剧当然也不能落下', icon: 'M4 6h16M4 12h16M4 18h7', preset: 'poster-list', type: 'tv' },
             { id: 'tmdb_movie_tw', titleKey: 'home.popular_taiwanese_movies', name: '台味浓浓的宝藏台片', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' },
             { id: 'tmdb_movie_sea', titleKey: 'home.tmdb_movie_sea', name: '荷尔模超标的东南亚', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z', preset: 'poster-list', type: 'movie' },
             { id: 'tmdb_movie_hk_erotic_comedy', titleKey: 'home.tmdb_movie_hk_erotic_comedy', name: '港产经典风月喜剧', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' },
-            { id: 'tmdb_tv_th', titleKey: 'home.tmdb_tv_th', name: '狗血上头的爆款泰剧', icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9', preset: 'thumb-list', type: 'tv' },
+            { id: 'tmdb_tv_th', titleKey: 'home.tmdb_tv_th', name: '狗血上头的爆款泰剧', icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9', preset: 'poster-list', type: 'tv' },
             { id: 'tmdb_movie_th', titleKey: 'home.tmdb_movie_th', name: '不止鬼片的泰国电影', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', preset: 'poster-list', type: 'movie' },
-            { id: 'tmdb_tv_bl', titleKey: 'home.tmdb_tv_bl', name: '暧昧拉扯到极致的亚洲耽美神作', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z', preset: 'thumb-list', type: 'tv' },
-            { id: 'netflix_tv_minor', titleKey: 'home.netflix_minor_tv_shows', name: 'Netflix 小语种神剧', icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9', preset: 'thumb-list', type: 'tv' },
+            { id: 'tmdb_tv_bl', titleKey: 'home.tmdb_tv_bl', name: '暧昧拉扯到极致的亚洲耽美神作', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z', preset: 'poster-list', type: 'tv' },
+            { id: 'netflix_tv_minor', titleKey: 'home.netflix_minor_tv_shows', name: 'Netflix 小语种神剧', icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9', preset: 'poster-list', type: 'tv' },
             { id: 'netflix_movie_minor', titleKey: 'home.netflix_minor_movies', name: '冷门却惊艳的小语种电影', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', preset: 'poster-list', type: 'movie' }
         ];
 
@@ -567,7 +568,6 @@ const FRONTEND_HTML_P1 = `
             if(categoryOrder.length > 0) switchCategory(categoryOrder[0]);
         }
 
-        // 🌟 电子时钟走字与后台自动轮询监控引擎
         setInterval(() => {
             const clockEl = document.getElementById('led-clock');
             if (clockEl) clockEl.innerText = new Date().toTimeString().substring(0, 8);
@@ -591,14 +591,12 @@ const FRONTEND_HTML_P1 = `
 
                 cronIsCurrentlyPaused = !!data.isPaused;
 
-                // 同步当前保存的自动定时小时到下拉选择框
                 if (hourSelect && typeof data.autoStartHour !== 'undefined') {
                     if (document.activeElement !== hourSelect) {
                         hourSelect.value = data.autoStartHour.toString();
                     }
                 }
 
-                // 🟠 1. 暂停状态
                 if (cronIsCurrentlyPaused) {
                     box.classList.remove('led-active');
                     box.classList.add('led-paused');
@@ -615,7 +613,6 @@ const FRONTEND_HTML_P1 = `
                     return;
                 }
 
-                // 🟢 2. 正常运行或待命状态
                 box.classList.remove('led-paused');
                 box.classList.add('led-active');
 
@@ -624,7 +621,6 @@ const FRONTEND_HTML_P1 = `
                     pauseBtn.className = "h-7 px-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-bold transition-all border border-emerald-500/30 shrink-0 flex items-center justify-center active:scale-95 leading-none";
                 }
 
-                // 🌟 判断当前是正在执行中(RUNNING)还是休眠待命(IDLE)
                 if (data.status === "RUNNING") {
                     if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 led-blink shrink-0 shadow-[0_0_8px_#10b981]';
                     if (tag) {
@@ -632,7 +628,6 @@ const FRONTEND_HTML_P1 = `
                         tag.innerText = 'SYNCING';
                     }
                     if (info) {
-                        // 🌟 核心改动：去掉 truncate，设为 shrink-0 whitespace-nowrap 保证字样完整渲染，配合鼠标左右滑动查看
                         info.innerHTML = '<span class="text-emerald-300 font-bold shrink-0 whitespace-nowrap">全量同步 [' + (data.currentIndex || 0) + '/77]</span> <span class="opacity-80 text-xs text-emerald-400 ml-1.5 shrink-0 whitespace-nowrap">(' + (data.lastTask || '任务执行中') + ')</span>';
                     }
                 } else {
@@ -652,9 +647,6 @@ const FRONTEND_HTML_P1 = `
         setInterval(pollCronStatus, 4000);
         setTimeout(pollCronStatus, 500);
 
-        // ==========================================
-        // 🌟 新增：PC 端鼠标左键按住拖拽滑动 + 滚轮横向平滑滚动引擎
-        // ==========================================
         function enablePcDragScroll() {
             const box = document.getElementById('led-monitor-box');
             if (!box) return;
@@ -663,7 +655,6 @@ const FRONTEND_HTML_P1 = `
             let startX = 0;
             let scrollLeft = 0;
 
-            // 1. 鼠标按下事件（防误触：点击按钮、下拉框等控件时不启动拖拽）
             box.addEventListener('mousedown', (e) => {
                 if (e.target.closest('button, select, option, input, a')) return;
                 isDown = true;
@@ -673,7 +664,6 @@ const FRONTEND_HTML_P1 = `
                 scrollLeft = box.scrollLeft;
             });
 
-            // 2. 鼠标离开/松开事件
             box.addEventListener('mouseleave', () => {
                 isDown = false;
                 box.classList.remove('cursor-grabbing');
@@ -686,16 +676,14 @@ const FRONTEND_HTML_P1 = `
                 box.classList.add('cursor-grab');
             });
 
-            // 3. 鼠标按住并移动（拖拽横向滚动）
             box.addEventListener('mousemove', (e) => {
                 if (!isDown) return;
                 e.preventDefault();
                 const x = e.pageX - box.offsetLeft;
-                const walk = (x - startX) * 1.5; // 拖拽灵敏度倍率
+                const walk = (x - startX) * 1.5;
                 box.scrollLeft = scrollLeft - walk;
             });
 
-            // 4. 鼠标滚轮在监控栏上方滚动时，自动转换为横向左右滑动
             box.addEventListener('wheel', (e) => {
                 if (box.scrollWidth > box.clientWidth) {
                     e.preventDefault();
@@ -704,12 +692,8 @@ const FRONTEND_HTML_P1 = `
             }, { passive: false });
         }
 
-        // 初始化拖拽引擎
         setTimeout(enablePcDragScroll, 300);
 
-        // ==========================================
-        // 🌟 新增：立即测一轮 与 修改定时时间交互函数
-        // ==========================================
         async function triggerCronNow() {
             if (!sysPwd) return showToast("请先登录管理员", true);
             if (!confirm("🚀 确认立即启动一轮全量同步？系统将全速推进跑完所有任务并在完成时发送TG通知。")) return;
@@ -1230,7 +1214,6 @@ const FRONTEND_HTML_P1 = `
             } catch(e) { showToast("❌ 请求异常", true); }
         }
 
-        // 🌟 纯净无字轮播海报自选逻辑
         let activeCleanPosterSelectTmdbId = null, activeCleanPosterSelectTitle = "", activeCleanPosterCurrent = null, activeCleanPosterSource = 'auto';
         async function openCleanPosterSelector(e, tmdbId, title, currentCleanPoster, source, mType) {
             e.stopPropagation(); activeCleanPosterSelectTmdbId = tmdbId; activeCleanPosterSelectTitle = title; activeCleanPosterCurrent = currentCleanPoster; activeCleanPosterSource = source || 'auto';
@@ -1419,7 +1402,29 @@ const FRONTEND_HTML_P1 = `
                     '</button>' +
                 '</div>';
                 
-                const ratingBadge = item.vote_average ? '<div class="absolute top-2.5 right-2.5 bg-black/80 text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 z-20 shadow-sm border border-white/20"><span class="text-yellow-400 text-[10px]">★</span>' + item.vote_average.toFixed(1) + '</div>' : '';
+                const r = item.ratings || {};
+                const tmdbVal = r.tmdb || item.vote_average;
+                const imdbVal = r.imdb || item.imdb_rating || item.imdbRating;
+                const traktVal = r.trakt || item.trakt_rating;
+                const rtVal = r.rotten_tomatoes || item.rotten_tomatoes || item.tomato_rating;
+
+                let badgeItems = [];
+                if (tmdbVal && tmdbVal > 0) {
+                    badgeItems.push('<span class="flex items-center gap-0.5"><span class="text-yellow-400">★</span>' + Number(tmdbVal).toFixed(1) + '</span>');
+                }
+                if (imdbVal && imdbVal > 0) {
+                    badgeItems.push('<span class="flex items-center gap-0.5"><span class="text-yellow-500 font-black">IMDb</span>' + Number(imdbVal).toFixed(1) + '</span>');
+                }
+                if (traktVal && traktVal > 0) {
+                    badgeItems.push('<span class="flex items-center gap-0.5"><span class="text-red-400 font-black">Trakt</span>' + Number(traktVal).toFixed(1) + '</span>');
+                }
+                if (rtVal && rtVal > 0) {
+                    badgeItems.push('<span class="flex items-center gap-0.5"><span>🍅</span>' + rtVal + '%</span>');
+                }
+
+                const ratingBadge = badgeItems.length > 0 
+                    ? '<div class="absolute top-2.5 right-2.5 bg-black/80 backdrop-blur-md text-white text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1.5 z-20 shadow-md border border-white/20 select-none">' + badgeItems.join('<span class="text-white/30 text-[9px]">|</span>') + '</div>' 
+                    : '';
                 
                 const yearInfo = extractYearAndDate(item);
                 const displayYearStr = yearInfo.isUpcoming ? '待播' : (yearInfo.year > 0 ? yearInfo.year : '');
@@ -1430,10 +1435,8 @@ const FRONTEND_HTML_P1 = `
                 const thumbSource = item.thumb_source || 'auto';
                 const logoSource = item.logo_source || 'auto';
 
-                // 🌟 与右上角风格完全统一的基础样式（白字 + 阴影 + 半透边框 + 悬停微缩放）
                 const btnBase = "py-1.5 px-1 rounded-xl text-[10px] md:text-[11px] font-black text-white flex items-center justify-center gap-0.5 truncate border border-white/20 shadow-md transition-all duration-150 hover:scale-105 active:scale-95 select-none";
 
-                // 🌟 四键统一配色：自动为紫色 (bg-purple-600)，手动自选为绿色 (bg-emerald-600)
                 const noLogoBtnBg = noLogoSource === 'manual' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-purple-600 hover:bg-purple-500';
                 const noLogoTick = noLogoSource === 'manual' ? '✅' : '☑️';
 
@@ -1453,7 +1456,6 @@ const FRONTEND_HTML_P1 = `
                     '<button onclick="openLogoSelector(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\', \\'' + (item.logo || '') + '\\', \\'' + logoSource + '\\', \\'' + mType + '\\')" class="' + logoBtnBg + ' ' + btnBase + '" title="手动选透明Logo">标 ' + logoTick + '</button>' +
                 '</div>';
 
-                // 2. 只有一份正确的卡片 HTML (海报无遮挡 + 底部标题与按键)
                 const cardHtml = '<div class="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md transform-gpu border border-white/60 dark:border-zinc-700/60 rounded-2xl md:rounded-[1.5rem] shadow-sm relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-xl group flex flex-col h-full cursor-pointer" onclick="const cb = this.querySelector(\\'.logo-checkbox\\'); if(cb) { cb.checked = !cb.checked; updateLogoToolbar(); }">' +
                         '<div class="relative w-full pt-[150%] overflow-hidden rounded-t-2xl md:rounded-t-[1.5rem] bg-gray-200 dark:bg-zinc-700 shrink-0">' +
                             '<img src="' + posterUrl + '" loading="lazy" decoding="async" onerror="this.src=\\'https://via.placeholder.com/500x750?text=No+Poster\\'" alt="' + item.title + '" class="absolute top-0 left-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 md:opacity-100">' +
@@ -1551,6 +1553,7 @@ const FRONTEND_HTML_P1 = `
             renderLayoutModal(); document.getElementById('layout-modal').classList.remove('hidden');
         }
 
+        // 🌟 2. 修改排版弹窗下拉选项：只保留 V2 客户端合法支持的预设，并自动把历史 thumb-list 映射至 poster-list
         function renderLayoutModal() {
             const container = document.getElementById('layout-checkboxes'); container.innerHTML = '';
             categoryOrder.forEach((id, index) => {
@@ -1571,11 +1574,8 @@ const FRONTEND_HTML_P1 = `
                     '</label>' +
                     '<div class="shrink-0 flex items-center gap-1.5 md:gap-2">' +
                         '<select class="text-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 outline-none font-bold text-gray-600 dark:text-gray-300 shadow-sm cursor-pointer focus:border-blue-500" onchange="modalLayoutState[\\'' + c.id + '\\'].preset = this.value">' +
-                            '<option value="poster-list" ' + (state.preset === 'poster-list' ? 'selected' : '') + '>竖版海报</option>' +
-                            '<option value="thumb-list" ' + (state.preset === 'thumb-list' ? 'selected' : '') + '>横版小图</option>' +
+                            '<option value="poster-list" ' + ((state.preset === 'poster-list' || state.preset === 'thumb-list') ? 'selected' : '') + '>竖版海报</option>' +
                             '<option value="hero-list" ' + (state.preset === 'hero-list' ? 'selected' : '') + '>精选大图 (精选卡片)</option>' +
-                            '<option value="banner" ' + (state.preset === 'banner' ? 'selected' : '') + '>横幅 (Banner)</option>' +
-                            '<option value="ranking" ' + (state.preset === 'ranking' ? 'selected' : '') + '>排行榜</option>' +
                             (c.isCollection ? '<option value="collection-list" selected>新番日历合集</option>' : '') +
                         '</select>' +
                         (c.isStatic || c.isCollection ? '' : '<select class="text-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 outline-none font-bold text-indigo-600 dark:text-indigo-400 shadow-sm cursor-pointer focus:border-indigo-500" onchange="updateSortAndRender(\\'' + c.id + '\\', this.value)">' +
@@ -1589,6 +1589,7 @@ const FRONTEND_HTML_P1 = `
             });
         }
 
+        // 🌟 3. 修改前端 TS 代码生成器：强制加上防 thumb-list 过滤锁
         function generateTSCode() {
             localStorage.setItem('saved_layout_v2', JSON.stringify(modalLayoutState));
             const selectedCats = [];
@@ -1603,16 +1604,252 @@ const FRONTEND_HTML_P1 = `
                 }
             });
             
-            const originUrl = window.location.origin;
+            const myR2 = "https://r2.eplayerx.cc.cd";
+            const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
             
             let customBlocks = selectedCats.map(c => {
+                const catCfg = CATEGORY_CONFIGS.find(cfg => cfg.id === c.id);
+                const fileName = catCfg ? catCfg.fileName : (c.id + '.json');
+                
+                // 🌟 核心防错锁：只要不是 hero-list，全部强制设为 poster-list，绝不输出 thumb-list！
+                const safePreset = (c.currentPreset === 'hero-list') ? 'hero-list' : 'poster-list';
+
                 if (c.isCollection) {
-                    return '    {\\n      id: "' + c.id + '",\\n      mediaType: "' + c.type + '",\\n      titleKey: "' + c.titleKey + '",\\n      preset: "collection-list",\\n      groupMode: "weekday",\\n      children: [\\n        { id: "' + c.id + '-1", label: "周一", weekday: 1, title: "周一", mediaType: "' + c.type + '", preset: "thumb-list", source: { path: "' + originUrl + '/blocks/public/' + c.id + '-1.json", itemEnvelope: "data" } },\\n        { id: "' + c.id + '-2", label: "周二", weekday: 2, title: "周二", mediaType: "' + c.type + '", preset: "thumb-list", source: { path: "' + originUrl + '/blocks/public/' + c.id + '-2.json", itemEnvelope: "data" } },\\n        { id: "' + c.id + '-3", label: "周三", weekday: 3, title: "周三", mediaType: "' + c.type + '", preset: "thumb-list", source: { path: "' + originUrl + '/blocks/public/' + c.id + '-3.json", itemEnvelope: "data" } },\\n        { id: "' + c.id + '-4", label: "周四", weekday: 4, title: "周四", mediaType: "' + c.type + '", preset: "thumb-list", source: { path: "' + originUrl + '/blocks/public/' + c.id + '-4.json", itemEnvelope: "data" } },\\n        { id: "' + c.id + '-5", label: "周五", weekday: 5, title: "周五", mediaType: "' + c.type + '", preset: "thumb-list", source: { path: "' + originUrl + '/blocks/public/' + c.id + '-5.json", itemEnvelope: "data" } },\\n        { id: "' + c.id + '-6", label: "周六", weekday: 6, title: "周六", mediaType: "' + c.type + '", preset: "thumb-list", source: { path: "' + originUrl + '/blocks/public/' + c.id + '-6.json", itemEnvelope: "data" } },\\n        { id: "' + c.id + '-7", label: "周日", weekday: 7, title: "周日", mediaType: "' + c.type + '", preset: "thumb-list", source: { path: "' + originUrl + '/blocks/public/' + c.id + '-7.json", itemEnvelope: "data" } }\\n      ]\\n    }';
+                    // 🌟 自动剥离国旗 Emoji 以及 (合集) 后缀
+                    const cleanTitle = (c.name || '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]/g, '').replace(/\s*[(（].*?[)）]\s*/g, '').trim();
+                    const childrenStr = [1, 2, 3, 4, 5, 6, 7].map(d => {
+                        return '        {\\n' +
+                               '          id: "' + c.id + '-' + d + '",\\n' +
+                               '          label: "周' + weekdays[d - 1] + '",\\n' +
+                               '          weekday: ' + d + ',\\n' +
+                               '          title: "周' + weekdays[d - 1] + '",\\n' +
+                               '          mediaType: "' + c.type + '",\\n' +
+                               '          preset: "poster-list",\\n' +
+                               '          source: { path: "' + myR2 + '/' + c.id + '-' + d + '.json", itemEnvelope: "data" }\\n' +
+                               '        }';
+                    }).join(',\\n');
+
+                    return '    {\\n' +
+                           '      id: "' + c.id + '",\\n' +
+                           '      title: "' + cleanTitle + '",\\n' +
+                           '      mediaType: "' + c.type + '",\\n' +
+                           '      preset: COLLECTION_PRESET,\\n' +
+                           '      style: "image-landscape",\\n' +
+                           '      groupMode: "weekday",\\n' +
+                           '      children: [\\n' +
+                           childrenStr + '\\n' +
+                           '      ]\\n' +
+                           '    } as unknown as HomeBlockTemplate';
                 }
-                return '    {\\n      id: "' + c.id + '",\\n      mediaType: "' + c.type + '",\\n      titleKey: "' + c.titleKey + '",\\n      preset: "' + c.currentPreset + '",\\n      showRank: true,\\n      showOverview: true,' + (c.sort && c.sort !== 'default' && !c.isStatic ? '\\n      sort: "' + c.sort + '",' : '') + '\\n      source: ' + (c.isStatic ? c.sourceCode : '{ path: "' + originUrl + '/api/' + c.id + (c.sort && c.sort !== 'default' ? '?sort=' + c.sort : '') + '", itemEnvelope: "data" }') + '\\n    }';
+                return '    {\\n' +
+                       '      id: "' + c.id + '",\\n' +
+                       '      mediaType: "' + c.type + '",\\n' +
+                       '      titleKey: "' + c.titleKey + '",\\n' +
+                       '      preset: "' + safePreset + '",\\n' +
+                       '      showRank: true,\\n' +
+                       '      showOverview: true,\\n' +
+                       '      source: { path: "' + myR2 + '/' + fileName + '", itemEnvelope: "data" }\\n' +
+                       '    }';
             }).join(',\\n');
 
-            return 'import type { TmdbListRoute } from "../blocks/types.js";\\n\\ntype Locale = "en" | "zh" | "zh-Hant" | "ja" | "es" | "ar";\\n\\ntype HomeTitleKey =\\n  | "home.continue_watching"\\n  | "home.tmdb_popular_tv_shows"\\n  | "home.tmdb_popular_movies"\\n  | "home.popular_domestic_anime"\\n  | "home.bangumi_popular_anime"\\n  | "home.tmdb_on_the_air_tv_shows"\\n  | "home.popular_tv_shows"\\n  | "home.popular_movies"\\n  | "home.popular_variety_shows"\\n  | "home.popular_korean_tv_shows"\\n  | "home.popular_japanese_tv_shows"\\n  | "home.popular_spanish_tv_shows"\\n  | "home.popular_taiwanese_tv_shows"\\n  | "home.popular_taiwanese_movies"\\n  | "home.tmdb_discover_genres"\\n  | "home.tmdb_discover_languages"\\n  | "home.tmdb_discover_networks"\\n  | "home.tmdb_top_rated_movies"\\n  | "home.tmdb_top_rated_tv_shows"\\n  | "home.weekly_anime"\\n  | "home.weekly_drama"\\n  | "home.weekly_guoman"\\n  | "home.weekly_korean_drama"\\n  | "home.weekly_japanese_drama"\\n  | "home.weekly_sea_drama"\\n  | "home.tmdb_tv_netflix"\\n  | "home.variety_cn"\\n  | "home.variety_kr"\\n  | "home.variety_global"\\n  | "home.tmdb_tv_hbo"\\n  | "home.tmdb_tv_apple"\\n  | "home.trakt_movies"\\n  | "home.trakt_shows"\\n  | "home.tmdb_anime_jp"\\n  | "home.imdb_top_anime"\\n  | "home.prime_hot_anime"\\n  | "home.filmarks_anime_movie"\\n  | "home.netflix_hot_anime"\\n  | "home.tmdb_anime_top_ja"\\n  | "home.tmdb_anime_movie_ja"\\n  | "home.tmdb_movie_sea"\\n  | "home.tmdb_movie_hk_erotic_comedy"\\n  | "home.tmdb_tv_th"\\n  | "home.tmdb_movie_th"\\n  | "home.tmdb_tv_bl"\\n  | "home.netflix_minor_tv_shows"\\n  | "home.netflix_minor_movies";\\n\\ntype SourceQueryValue = string | number | boolean;\\n\\ninterface HomePagination {\\n  pageParam: string;\\n  startPage: number;\\n}\\n\\ninterface HomeBlockSource {\\n  id?: string;\\n  path?: string;\\n  query?: Record<string, SourceQueryValue>;\\n  itemEnvelope?: "data" | "results" | "array";\\n  pagination?: HomePagination;\\n}\\n\\ntype TmdbListRoute = {\\n  type: "tmdb-list";\\n  title: string;\\n  params: {\\n    category: "trending" | "top-rated" | "discover";\\n    type: "movie" | "tv";\\n    genre?: string;\\n    language?: string;\\n    network?: string;\\n    networkName?: string;\\n  };\\n};\\n\\ninterface HomeBlockChild {\\n  id: string;\\n  label?: string;\\n  weekday?: number;\\n  title?: string;\\n  mediaType?: "movie" | "tv";\\n  preset: string;\\n  source?: HomeBlockSource;\\n}\\n\\ninterface HomeBlock {\\n  id: string;\\n  title?: string;\\n  mediaType?: "movie" | "tv";\\n  preset: string;\\n  groupMode?: "weekday" | string;\\n  sort?: string;\\n  showRank?: boolean;\\n  showOverview?: boolean;\\n  source?: HomeBlockSource;\\n  metadata?: {\\n    isAnime?: boolean;\\n  };\\n  route?: TmdbListRoute;\\n  children?: HomeBlockChild[];\\n}\\n\\ntype TmdbListRouteParams = TmdbListRoute["params"];\\n\\ntype HomeBlockTemplate = Omit<HomeBlock, "title"> & {\\n  titleKey?: HomeTitleKey;\\n};\\n\\nexport interface DefaultHomeConfigOptions {\\n  apiBaseUrl: string;\\n  imageBaseUrl: string;\\n  language: string;\\n  timezone: string;\\n}\\n\\nexport interface DefaultHomeConfig {\\n  version: number;\\n  apiBaseUrl: string;\\n  imageBaseUrl: string;\\n  carouselSourceId: string;\\n  blocks: HomeBlock[];\\n}\\n\\nexport const HOME_CONFIG_VERSION = 1;\\n\\nconst TITLE_TRANSLATIONS = ' + JSON.stringify(TITLE_TRANSLATIONS, null, 2) + ';\\n\\nconst TMDB_LIST_ROUTE_PARAMS = ' + JSON.stringify(TMDB_LIST_ROUTE_PARAMS, null, 2) + ';\\n\\nfunction resolveLocale(language) {\\n  const normalized = language.toLowerCase();\\n  if (normalized.startsWith("zh-hant") || normalized.includes("tw") || normalized.includes("hk")) { return "zh-Hant"; }\\n  if (normalized.startsWith("zh")) return "zh";\\n  if (normalized.startsWith("ja")) return "ja";\\n  if (normalized.startsWith("es")) return "es";\\n  if (normalized.startsWith("ar")) return "ar";\\n  return "en";\\n}\\n\\nfunction resolveTitle(titleKey, language) {\\n  return TITLE_TRANSLATIONS[titleKey][resolveLocale(language)];\\n}\\n\\nfunction createTmdbListRoute(title, params) {\\n  return { type: "tmdb-list", title, params };\\n}\\n\\nfunction createDefaultBlockTemplates(language, timezone) {\\n  return [\\n' + customBlocks + '\\n  ];\\n}\\n\\nfunction resolveBlockTitle(block, language) {\\n  const { titleKey, ...rest } = block;\\n  if (!titleKey) return rest;\\n  const title = resolveTitle(titleKey, language);\\n  const routeParams = TMDB_LIST_ROUTE_PARAMS[rest.id];\\n  return { ...rest, title, ...(routeParams ? { route: createTmdbListRoute(title, routeParams) } : {}) };\\n}\\n\\nexport function createDefaultHomeConfig(options) {\\n  return {\\n    version: HOME_CONFIG_VERSION,\\n    apiBaseUrl: options.apiBaseUrl,\\n    imageBaseUrl: options.imageBaseUrl,\\n    carouselSourceId: "tmdb_popular_movies",\\n    blocks: createDefaultBlockTemplates(options.language, options.timezone).map((block) => resolveBlockTitle(block, options.language)),\\n  };\\n}';
+            return '/// <reference types="@cloudflare/workers-types" />\\n' +
+                'import { getCommunityBlocksByIds } from "../blocks/storage.js";\\n' +
+                'import {\\n' +
+                '  COLLECTION_PRESET,\\n' +
+                '  type CollectionBlock,\\n' +
+                '  type TmdbListRoute,\\n' +
+                '} from "../blocks/types.js";\\n\\n' +
+                'type Locale = "en" | "zh" | "zh-Hant" | "ja" | "es" | "ar";\\n\\n' +
+                'type HomeTitleKey =\\n' +
+                '  | "home.continue_watching"\\n' +
+                '  | "home.tmdb_popular_tv_shows"\\n' +
+                '  | "home.tmdb_popular_movies"\\n' +
+                '  | "home.popular_domestic_anime"\\n' +
+                '  | "home.bangumi_popular_anime"\\n' +
+                '  | "home.tmdb_on_the_air_tv_shows"\\n' +
+                '  | "home.popular_tv_shows"\\n' +
+                '  | "home.popular_movies"\\n' +
+                '  | "home.popular_variety_shows"\\n' +
+                '  | "home.popular_korean_tv_shows"\\n' +
+                '  | "home.popular_japanese_tv_shows"\\n' +
+                '  | "home.popular_spanish_tv_shows"\\n' +
+                '  | "home.popular_taiwanese_tv_shows"\\n' +
+                '  | "home.popular_taiwanese_movies"\\n' +
+                '  | "home.tmdb_discover_genres"\\n' +
+                '  | "home.tmdb_discover_languages"\\n' +
+                '  | "home.tmdb_discover_networks"\\n' +
+                '  | "home.classic_decades"\\n' +
+                '  | "home.tmdb_top_rated_movies"\\n' +
+                '  | "home.tmdb_top_rated_tv_shows"\\n' +
+                '  | "home.weekly_anime"\\n' +
+                '  | "home.weekly_drama"\\n' +
+                '  | "home.weekly_guoman"\\n' +
+                '  | "home.weekly_korean_drama"\\n' +
+                '  | "home.weekly_japanese_drama"\\n' +
+                '  | "home.weekly_sea_drama"\\n' +
+                '  | "home.tmdb_tv_netflix"\\n' +
+                '  | "home.variety_cn"\\n' +
+                '  | "home.variety_kr"\\n' +
+                '  | "home.variety_global"\\n' +
+                '  | "home.tmdb_tv_hbo"\\n' +
+                '  | "home.tmdb_tv_apple"\\n' +
+                '  | "home.trakt_movies"\\n' +
+                '  | "home.trakt_shows"\\n' +
+                '  | "home.tmdb_anime_jp"\\n' +
+                '  | "home.imdb_top_anime"\\n' +
+                '  | "home.prime_hot_anime"\\n' +
+                '  | "home.filmarks_anime_movie"\\n' +
+                '  | "home.netflix_hot_anime"\\n' +
+                '  | "home.tmdb_anime_top_ja"\\n' +
+                '  | "home.tmdb_anime_movie_ja"\\n' +
+                '  | "home.tmdb_movie_sea"\\n' +
+                '  | "home.tmdb_movie_hk_erotic_comedy"\\n' +
+                '  | "home.tmdb_tv_th"\\n' +
+                '  | "home.tmdb_movie_th"\\n' +
+                '  | "home.tmdb_tv_bl"\\n' +
+                '  | "home.netflix_minor_tv_shows"\\n' +
+                '  | "home.netflix_minor_movies";\\n\\n' +
+                'type SourceQueryValue = string | number | boolean;\\n\\n' +
+                'interface HomePagination {\\n' +
+                '  pageParam: string;\\n' +
+                '  startPage: number;\\n' +
+                '}\\n\\n' +
+                'interface HomeBlockSource {\\n' +
+                '  id?: string;\\n' +
+                '  path?: string;\\n' +
+                '  query?: Record<string, SourceQueryValue>;\\n' +
+                '  itemEnvelope?: "data" | "results" | "array";\\n' +
+                '  pagination?: HomePagination;\\n' +
+                '}\\n\\n' +
+                'export interface HomeConfigV2MediaBlock {\\n' +
+                '  id: string;\\n' +
+                '  title?: string;\\n' +
+                '  mediaType?: "movie" | "tv";\\n' +
+                '  preset: string;\\n' +
+                '  showRank?: boolean;\\n' +
+                '  showOverview?: boolean;\\n' +
+                '  source?: HomeBlockSource;\\n' +
+                '  metadata?: {\\n' +
+                '    isAnime?: boolean;\\n' +
+                '  };\\n' +
+                '  route?: TmdbListRoute;\\n' +
+                '}\\n\\n' +
+                'export type HomeConfigV2Block = HomeConfigV2MediaBlock | CollectionBlock;\\n\\n' +
+                'type TmdbListRouteParams = TmdbListRoute["params"];\\n\\n' +
+                'type HomeBlockTemplate = Omit<HomeConfigV2MediaBlock, "title"> & {\\n' +
+                '  titleKey?: HomeTitleKey;\\n' +
+                '  title?: string;\\n' +
+                '  groupMode?: string;\\n' +
+                '  style?: string;\\n' +
+                '  sort?: string;\\n' +
+                '  children?: any[];\\n' +
+                '};\\n\\n' +
+                'type DecadesCollectionSlot = { type: "decades-collection" };\\n\\n' +
+                'type V2Section = HomeBlockTemplate | DecadesCollectionSlot;\\n\\n' +
+                'export interface HomeConfigV2Options {\\n' +
+                '  apiBaseUrl: string;\\n' +
+                '  imageBaseUrl: string;\\n' +
+                '  language: string;\\n' +
+                '  timezone: string;\\n' +
+                '  db?: D1Database;\\n' +
+                '}\\n\\n' +
+                'export interface HomeConfigV2 {\\n' +
+                '  version: number;\\n' +
+                '  apiBaseUrl: string;\\n' +
+                '  imageBaseUrl: string;\\n' +
+                '  carouselSourceId: string;\\n' +
+                '  blocks: HomeConfigV2Block[];\\n' +
+                '}\\n\\n' +
+                'export const HOME_CONFIG_V2_VERSION = 2;\\n\\n' +
+                'const TITLE_TRANSLATIONS: Record<string, Record<Locale, string>> = ' + JSON.stringify(TITLE_TRANSLATIONS, null, 2) + ';\\n\\n' +
+                'const TMDB_LIST_ROUTE_PARAMS: Partial<Record<string, TmdbListRouteParams>> = ' + JSON.stringify(TMDB_LIST_ROUTE_PARAMS, null, 2) + ';\\n\\n' +
+                'const DECADES_COLLECTION_ID = "col-9e37cdc1f13d";\\n\\n' +
+                'function resolveLocale(language: string): Locale {\\n' +
+                '  const normalized = (language || "").toLowerCase();\\n' +
+                '  if (normalized.startsWith("zh-hant") || normalized.includes("tw") || normalized.includes("hk")) return "zh-Hant";\\n' +
+                '  if (normalized.startsWith("zh")) return "zh";\\n' +
+                '  if (normalized.startsWith("ja")) return "ja";\\n' +
+                '  if (normalized.startsWith("es")) return "es";\\n' +
+                '  if (normalized.startsWith("ar")) return "ar";\\n' +
+                '  return "en";\\n' +
+                '}\\n\\n' +
+                'function resolveTitle(titleKey: string, language: string): string {\\n' +
+                '  if (!titleKey) return "";\\n' +
+                '  const trans = TITLE_TRANSLATIONS[titleKey];\\n' +
+                '  if (!trans) return titleKey;\\n' +
+                '  return trans[resolveLocale(language)] || trans["zh"] || trans["en"] || titleKey;\\n' +
+                '}\\n\\n' +
+                'function createTmdbListRoute(title: string, params: TmdbListRouteParams): TmdbListRoute {\\n' +
+                '  return { type: "tmdb-list", title, params };\\n' +
+                '}\\n\\n' +
+                'function isDecadesCollectionSlot(section: V2Section): section is DecadesCollectionSlot {\\n' +
+                '  return "type" in section && section.type === "decades-collection";\\n' +
+                '}\\n\\n' +
+                'function createV2BlockTemplates(language: string, timezone: string): V2Section[] {\\n' +
+                '  const chineseOnly = (language || "").toLowerCase().startsWith("zh");\\n' +
+                '  const doubanHeadBlocks: V2Section[] = chineseOnly ? [\\n' +
+                '    { id: "douban-popular-tv-shows", mediaType: "tv", titleKey: "home.popular_tv_shows", preset: "poster-list", showRank: true, source: { path: "/crawler/popular/douban/tv", query: { language }, itemEnvelope: "data" } },\\n' +
+                '    { id: "douban-popular-movies", mediaType: "movie", titleKey: "home.popular_movies", preset: "poster-list", showRank: true, source: { path: "/crawler/popular/douban/movies", itemEnvelope: "data" } }\\n' +
+                '  ] : [];\\n\\n' +
+                '  const chineseAnimeBlocks: V2Section[] = chineseOnly ? [\\n' +
+                '    { id: "douban-popular-anime", mediaType: "tv", titleKey: "home.popular_domestic_anime", preset: "poster-list", showRank: true, source: { path: "/crawler/popular/douban/animation", query: { language }, itemEnvelope: "data" }, metadata: { isAnime: true } },\\n' +
+                '    { id: "bangumi-popular-anime", mediaType: "tv", titleKey: "home.bangumi_popular_anime", preset: "poster-list", showRank: true, source: { path: "/crawler/popular/bangumi/animation", query: { language }, itemEnvelope: "data" }, metadata: { isAnime: true } }\\n' +
+                '  ] : [];\\n\\n' +
+                '  return [\\n' +
+                '    ...doubanHeadBlocks,\\n' +
+                '    { id: "tmdb-discover-genres", titleKey: "home.tmdb_discover_genres", preset: "genres-list", source: { path: "/crawler/discover/genres", query: { language }, itemEnvelope: "data" } },\\n' +
+                '    { type: "decades-collection" },\\n' +
+                '    { id: "tmdb-discover-networks", titleKey: "home.tmdb_discover_networks", preset: "networks-list", source: { path: "/crawler/discover/tv-by-network", itemEnvelope: "data" } },\\n' +
+                '    { id: "tmdb-discover-tv-by-language", titleKey: "home.tmdb_discover_languages", preset: "languages-list", source: { path: "https://api.eplayerx.com/crawler/discover/tv-by-language/v2", query: { language }, itemEnvelope: "data" } },\\n' +
+                '    { id: "tmdb-on-the-air-tv-shows", mediaType: "tv", titleKey: "home.tmdb_on_the_air_tv_shows", preset: "hero-list", source: { path: "/tmdb/tv/on_the_air", query: { language, timezone }, itemEnvelope: "results" } },\\n' +
+                '    ...chineseAnimeBlocks,\\n' +
+                '    { id: "tmdb-top-rated-movies", titleKey: "home.tmdb_top_rated_movies", mediaType: "movie", preset: "poster-list", source: { path: "/tmdb/movie/top_rated", query: { language, page: 1, limit: 20 }, itemEnvelope: "results", pagination: { pageParam: "page", startPage: 1 } } },\\n' +
+                '    { id: "tmdb-top-rated-tv-shows", titleKey: "home.tmdb_top_rated_tv_shows", mediaType: "tv", preset: "poster-list", source: { path: "/tmdb/tv/top_rated", query: { language, page: 1, limit: 20 }, itemEnvelope: "results", pagination: { pageParam: "page", startPage: 1 } } }' +
+                (customBlocks ? ',\\n' + customBlocks : '') + '\\n' +
+                '  ];\\n' +
+                '}\\n\\n' +
+                'function resolveMediaBlock(block: HomeBlockTemplate, language: string): HomeConfigV2MediaBlock {\\n' +
+                '  const { titleKey, ...rest } = block;\\n' +
+                '  if (!titleKey) return rest as HomeConfigV2MediaBlock;\\n' +
+                '  const title = resolveTitle(titleKey, language);\\n' +
+                '  const routeParams = TMDB_LIST_ROUTE_PARAMS[rest.id];\\n' +
+                '  return { ...rest, title, ...(routeParams ? { route: createTmdbListRoute(title, routeParams) } : {}) } as HomeConfigV2MediaBlock;\\n' +
+                '}\\n\\n' +
+                'function parseDecadesCollection(blockId: string, blockJson: string, language: string): CollectionBlock | null {\\n' +
+                '  try {\\n' +
+                '    const parsed = JSON.parse(blockJson) as CollectionBlock;\\n' +
+                '    if (parsed.preset !== COLLECTION_PRESET) return null;\\n' +
+                '    if (!Array.isArray(parsed.children) || parsed.children.length < 2) return null;\\n' +
+                '    return { ...parsed, id: parsed.id || blockId, title: resolveTitle("home.classic_decades", language), style: "image-landscape" };\\n' +
+                '  } catch { return null; }\\n' +
+                '}\\n\\n' +
+                'async function resolveDecadesCollection(db: D1Database | undefined, language: string): Promise<CollectionBlock | null> {\\n' +
+                '  if (!db) return null;\\n' +
+                '  try {\\n' +
+                '    const rows = await getCommunityBlocksByIds(db, [DECADES_COLLECTION_ID]);\\n' +
+                '    const row = rows.get(DECADES_COLLECTION_ID);\\n' +
+                '    if (!row) return null;\\n' +
+                '    return parseDecadesCollection(DECADES_COLLECTION_ID, row.block_json, language);\\n' +
+                '  } catch { return null; }\\n' +
+                '}\\n\\n' +
+                'export async function createHomeConfigV2(options: HomeConfigV2Options): Promise<HomeConfigV2> {\\n' +
+                '  const decades = await resolveDecadesCollection(options.db, options.language);\\n' +
+                '  const blocks: HomeConfigV2Block[] = [];\\n' +
+                '  for (const section of createV2BlockTemplates(options.language, options.timezone)) {\\n' +
+                '    if (isDecadesCollectionSlot(section)) {\\n' +
+                '      if (decades) blocks.push(decades);\\n' +
+                '      continue;\\n' +
+                '    }\\n' +
+                '    blocks.push(resolveMediaBlock(section as HomeBlockTemplate, options.language) as HomeConfigV2Block);\\n' +
+                '  }\\n' +
+                '  return {\\n' +
+                '    version: HOME_CONFIG_V2_VERSION,\\n' +
+                '    apiBaseUrl: options.apiBaseUrl,\\n' +
+                '    imageBaseUrl: options.imageBaseUrl,\\n' +
+                '    carouselSourceId: "tmdb_popular_movies",\\n' +
+                '    blocks,\\n' +
+                '  };\\n' +
+                '}';
         }
 
         function copyGeneratedTS() {
@@ -1632,7 +1869,7 @@ const FRONTEND_HTML_P1 = `
 
         async function runSyncTask(catId, limit) {
             try {
-                const url = ACTION_BASE + '/sync/' + catId + '?limit=' + limit + '&fetch_logo=1&fetch_thumb=1&clear_cooldown=0';
+                const url = ACTION_BASE + '/sync/' + catId + '?limit=' + limit + '&fetch_logo=1&fetch_thumb=1&clear_cooldown=1';
                 const res = await fetch(url, { method: 'POST', headers: { "Authorization": 'Bearer ' + sysPwd } });
                 const data = await res.json().catch(() => null);
                 if (!res.ok) throw new Error((data && data.error) ? data.error : "云端超时或触发限制");
@@ -1771,7 +2008,6 @@ const FRONTEND_HTML_P1 = `
             const overrideBox = document.getElementById("custom-override-container");
 
             if (isCol) {
-                // 🌟 周更合集 UI：第一行展开显示 LED 与 周历；第二行展示追更干预 (全部统一等高)
                 if (statusBar) {
                     statusBar.classList.remove("hidden");
                     statusBar.classList.add("flex");
@@ -1786,7 +2022,6 @@ const FRONTEND_HTML_P1 = `
                     slotNormal.classList.add("hidden");
                 }
             } else {
-                // 🌟 普通分类 UI：第一行收起；第二行最左侧放置 LED 电子表
                 if (statusBar) {
                     statusBar.classList.remove("flex");
                     statusBar.classList.add("hidden");
@@ -1887,6 +2122,7 @@ const FRONTEND_HTML_P1 = `
 const FRONTEND_HTML_P2 = `</html>
 `;
 const FRONTEND_HTML = FRONTEND_HTML_P1 + FRONTEND_HTML_P2;
+
 // ==========================================
 // 2. 爬虫核心与全局分类字典 (Part 1 引擎配置)
 // ==========================================
@@ -1937,16 +2173,12 @@ const CATEGORY_CONFIGS = [
 const CATEGORY_MAP = {};
 CATEGORY_CONFIGS.forEach(c => CATEGORY_MAP[c.id] = c);
 
-// 🌟 剔除无效的 xx，加入完整的中文变体，保证 TMDB 接口精准返回多语种 Logo
 const SAFE_LANGS = "zh,zh-CN,zh-TW,zh-HK,en,ja,ko,th,es,fr,de,ru,pt,tl,id,vi,null";
 const ALL_MASK = (1n << BigInt(CATEGORY_CONFIGS.length)) - 1n;
 const HEADERS_API = { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1", "Accept": "application/json" };
 const HEADERS_BROWSER = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" };
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ==========================================
-// 🌟 新增：TMDB 智能搜索关键词清洗器 (解决带《书名号》、季数直接搜空导致无TMDB ID的问题)
-// ==========================================
 function cleanSearchQuery(title) {
   if (!title) return "";
   return String(title)
@@ -1990,7 +2222,6 @@ function buildOldDataHelper(itemsArray) {
                 const cleanT = normalize(title);
                 if (cleanT && mapByTitle.has(cleanT)) return mapByTitle.get(cleanT);
                 
-                // 深度模糊匹配（解决带副标题/季数无法命中的问题）
                 for (const [k, v] of mapByTitle.entries()) {
                     if (k.includes(cleanT) || cleanT.includes(k)) return v;
                 }
@@ -2247,14 +2478,13 @@ async function tmdbFetch(path, paramsObj, env, reqCtx) {
 }
 
 // ==========================================
-// 6. 核心图层脱水提取引擎 (纯净无字海报严格物理隔离 + 母语Logo绝对优先)
+// 6. 核心图层脱水提取引擎
 // ==========================================
 function extractImages(images, backdropPath, posterPath, origLang) {
   const backdrops = (images && Array.isArray(images.backdrops)) ? images.backdrops : [];
   const logos = (images && Array.isArray(images.logos)) ? images.logos : [];
   const posters = (images && Array.isArray(images.posters)) ? images.posters : [];
 
-  // TMDB 纯净无字图官方标准：iso_639_1 必为 null、空字符串、或 xx/none
   const isStrictClean = (item) => {
     if (!item) return false;
     const l = item.iso_639_1;
@@ -2263,24 +2493,23 @@ function extractImages(images, backdropPath, posterPath, origLang) {
 
   const targetOrig = (origLang || "").toLowerCase();
 
-  // ==========================================
-  // 🌟 1. 透明 Logo：严格母语第一，其次 null/en，确保 100% 命中
-  // ==========================================
   const getLogoScore = (l) => {
     const lang = (l.iso_639_1 || "").toLowerCase();
     let score = 0;
     if (targetOrig && (lang === targetOrig || (targetOrig === 'zh' && lang.startsWith('zh')))) {
-      score = 100000; // 👑 原产国母语第一
+      score = 100000;
     } else if (isStrictClean(l)) {
-      score = 80000;  // 纯净无语标第二 (大量日漫标为null)
+      score = 80000;
     } else if (lang === 'en') {
-      score = 60000;  // 通用英文第三
+      score = 60000;
     } else if (lang === 'zh' || lang.startsWith('zh')) {
-      score = 40000;  // 中文备选
+      score = 40000;
     } else {
       score = 10000;
     }
-    return score + ((l.vote_average || 0) * 100) + (l.vote_count || 0);
+    return score + ((l.vote_average || 0) * 
+
+100) + (l.vote_count || 0);
   };
 
   const sortedLogos = [...logos].sort((a, b) => getLogoScore(b) - getLogoScore(a));
@@ -2293,7 +2522,6 @@ function extractImages(images, backdropPath, posterPath, origLang) {
   const cleanPosters = posters.filter(p => isStrictClean(p))
                               .sort((a, b) => ((b.vote_average || 0) * 100 + (b.vote_count || 0)) - ((a.vote_average || 0) * 100 + (a.vote_count || 0)));
 
-  // 严格无字海报：没有无字图就返回 null，严禁回退带字海报！
   const noLogoPoster = cleanPosters[0]?.file_path || null;
 
   // ==========================================
@@ -2379,8 +2607,103 @@ function deduplicateRawList(items) {
     return result;
 }
 
+async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
+  let traktScore = null;
+  let imdbScore = null;
+  let rtScore = null;
+
+  if (reqCtx.subreqs >= reqCtx.maxSubreqs - 2) {
+    return { traktScore, imdbScore, rtScore };
+  }
+
+  // 🌟 1. 优先使用 MDBList（电影与电视剧通杀，官方规范 API 地址）
+  if (env.MDBLIST_API_KEY && (tmdbId || imdbId)) {
+    try {
+      const isTv = mediaType === 'tv' || mediaType === 'tv_series';
+      const mType = isTv ? 'show' : 'movie';
+      
+      // MDBList 官方标准直接请求路径
+      const mUrl = tmdbId 
+        ? `https://api.mdblist.com/tmdb/${mType}/${tmdbId}?apikey=${env.MDBLIST_API_KEY}`
+        : `https://api.mdblist.com/imdb/${imdbId}?apikey=${env.MDBLIST_API_KEY}`;
+      
+      const mRes = await safeFetch(mUrl, { headers: { "Accept": "application/json", "User-Agent": "Mozilla/5.0" } }, reqCtx);
+      if (mRes.ok) {
+        const mData = await mRes.json();
+        if (mData && Array.isArray(mData.ratings)) {
+          mData.ratings.forEach(r => {
+            const src = String(r.source || "").toLowerCase();
+            // IMDb (0-10)
+            if (src === 'imdb' && typeof r.value === 'number') {
+              imdbScore = r.value <= 10 ? r.value : Number((r.value / 10).toFixed(1));
+            }
+            // Trakt (0-10)
+            if (src === 'trakt' && typeof r.value === 'number') {
+              traktScore = r.value <= 10 ? Number(r.value.toFixed(1)) : Number((r.value / 10).toFixed(1));
+            }
+            // 烂番茄 (Tomatometer % 影评人指数，电影和剧集均有)
+            if ((src === 'tomatoes' || src === 'rottentomatoes') && (r.score || r.value)) {
+              rtScore = parseInt(r.score || r.value, 10);
+            }
+          });
+
+          if (imdbScore || traktScore || rtScore) {
+            return { traktScore, imdbScore, rtScore };
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  // 🌟 2. 兜底备用：未配 MDBLIST 时回退使用 OMDb
+  if (env.OMDB_API_KEY && imdbId && reqCtx.subreqs < reqCtx.maxSubreqs - 2) {
+    try {
+      const omdbRes = await safeFetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${env.OMDB_API_KEY}&tomatoes=true`, {}, reqCtx);
+      if (omdbRes.ok) {
+        const oData = await omdbRes.json();
+        if (oData && oData.Response === "True") {
+          if (!imdbScore && oData.imdbRating && oData.imdbRating !== "N/A") {
+            imdbScore = parseFloat(oData.imdbRating);
+          }
+          const rtObj = (oData.Ratings || []).find(r => r.Source === "Rotten Tomatoes");
+          if (!rtScore && rtObj && rtObj.Value) {
+            rtScore = parseInt(rtObj.Value.replace('%', ''), 10);
+          } else if (!rtScore && oData.tomatoMeter && oData.tomatoMeter !== "N/A") {
+            rtScore = parseInt(oData.tomatoMeter, 10);
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  // 🌟 3. 兜底备用：未配 MDBLIST 时回退使用 Trakt
+  if (!traktScore && env.TRAKT_CLIENT_ID && reqCtx.subreqs < reqCtx.maxSubreqs - 2) {
+    try {
+      const traktType = (mediaType === 'movie') ? 'movies' : 'shows';
+      const targetId = imdbId || tmdbId;
+      if (targetId) {
+        const traktRes = await safeFetch(`https://api.trakt.tv/${traktType}/${targetId}/ratings`, {
+          headers: {
+            "Content-Type": "application/json",
+            "trakt-api-version": "2",
+            "trakt-api-key": env.TRAKT_CLIENT_ID,
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          }
+        }, reqCtx);
+        if (traktRes.ok) {
+          const tData = await traktRes.json();
+          if (tData && typeof tData.rating === 'number') {
+            traktScore = Number(tData.rating.toFixed(1));
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  return { traktScore, imdbScore, rtScore };
+}
 // ==========================================
-// 7. TMDB 详细数据加工处理（彻底剔除假无字海报 + 自动自愈提取真无字图）
+// 7. TMDB 详细数据加工处理
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
@@ -2388,7 +2711,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
   for (let i = 0; i < limitedItems.length; i++) {
     const item = limitedItems[i];
-    if (i > 0) await delay(80); // 80ms 平稳请求
+    if (i > 0) await delay(80);
 
     let titleToSearch = item.searchQuery || item.title || item.name || "";
 
@@ -2407,7 +2730,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
     const toAbsLogo = (p) => (!p || p.startsWith('data:')) ? null : ((p.startsWith('http') || p.startsWith('/api/')) ? p : TMDB_IMG_LOGO + (p.startsWith('/') ? p : '/' + p));
     const upgradeToOriginal = (url) => (url && typeof url === 'string' && url.includes('image.tmdb.org')) ? url.replace(/\/w\d+/, '/original') : url;
 
-    // 🌟 1. 核心自愈防线：如果老数据中的 noLogoPoster 与 poster_path 完全相同（被旧Bug污染的假无字），直接强行清空为 null！
     const isCorruptedFakeClean = oldRecord?.noLogoPoster && oldRecord.noLogoPoster === oldRecord.poster_path && oldRecord.no_logo_poster_source !== 'manual';
     
     let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
@@ -2422,12 +2744,18 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
     let finalBackdropSource = oldRecord?.backdrop_source || 'auto';
     let finalLogoSource = oldRecord?.logo_source || 'auto';
 
-    // 2. 检查老数据是否真正完备（必须有真Logo，且必须有真正的无字海报，被污染过的必须重新抓取！）
+    // 2. 检查老数据是否真正完备（只要缺少烂番茄/Trakt/IMDb任何一个，立刻触发强制抓取）
     const hasRealLogo = !!(finalLogo && !finalLogo.includes('text_logo.svg'));
     const hasRealClean = !!finalNoLogoPoster;
-    const isCompletelyReady = oldRecord && hasRealLogo && hasRealClean && !isCorruptedFakeClean;
+    
+    // 🌟 核心防死锁：只要配置了 MDBList/OMDb/Trakt 且旧数据中没有烂番茄，绝对不算完备，必须重新联网抓取！
+    const needsRt = !!((env.MDBLIST_API_KEY || env.OMDB_API_KEY) && !oldRecord?.ratings?.rotten_tomatoes && !oldRecord?.rotten_tomatoes && !oldRecord?.tomato_rating);
+    const needsTrakt = !!(env.TRAKT_CLIENT_ID && !oldRecord?.ratings?.trakt && !oldRecord?.trakt_rating);
+    const needsImdb = !!(env.OMDB_API_KEY && !oldRecord?.ratings?.imdb && !oldRecord?.imdb_rating);
+    const hasRatings = !needsRt && !needsTrakt && !needsImdb && !!oldRecord?.ratings?.tmdb;
+    
+    const isCompletelyReady = oldRecord && hasRealLogo && hasRealClean && !isCorruptedFakeClean && hasRatings;
 
-    // 3. TMDB 智能检索
     if (!tmdbId && !isCompletelyReady && reqCtx.subreqs < (reqCtx.maxSubreqs - 4)) {
       try {
         const cleanQ = cleanSearchQuery(titleToSearch);
@@ -2482,7 +2810,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         }
       }
 
-      // 4. 判定是否发起提取（只要有污染或缺失，立即发起请求）
       let needDetailFetch = false;
       if (reqCtx.clearCooldown || !oldRecord || !isCompletelyReady) {
         needDetailFetch = true;
@@ -2498,12 +2825,10 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
       let details = null;
       let imagesData = null;
 
-      // 🌟 5. 满血提取：分别获取基础信息和全网无过滤图库
       if (needDetailFetch && tmdbId) {
         try {
           const apiPath = actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
-
-          details = await tmdbFetch(apiPath, { language: "zh-CN" }, env, reqCtx).catch(() => null);
+          details = await tmdbFetch(apiPath, { language: "zh-CN", append_to_response: "external_ids" }, env, reqCtx).catch(() => null);
           imagesData = await tmdbFetch(`${apiPath}/images`, {}, env, reqCtx).catch(() => null);
 
           if (options.isDomesticDramaOnly && details) {
@@ -2515,11 +2840,9 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
             const realOrigLang = details.original_language || origLang || "";
             const ext = extractImages(imagesData, details.backdrop_path, details.poster_path, realOrigLang);
 
-            // 资产精准覆盖
             if (ext.logo && finalLogoSource !== 'manual') finalLogo = toAbsLogo(ext.logo);
             if (ext.officialPoster && finalPosterSource !== 'manual') finalPoster = toAbs(ext.officialPoster);
             
-            // 🚨 核心关键：只有从 TMDB 提取到了真正的无字海报才赋值，绝不拿带字海报当无字海报！
             if (ext.noLogoPoster && finalNoLogoSource !== 'manual') {
               finalNoLogoPoster = toAbs(ext.noLogoPoster);
             }
@@ -2559,9 +2882,62 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
       const finalYear = validDate ? validDate.substring(0, 4) : (oldRecord?.year || null);
 
+      const resolvedImdbId = details?.external_ids?.imdb_id || details?.imdb_id || basicData.imdb_id || item.imdbId || oldRecord?.imdbId || null;
+      const resolvedTvdbId = details?.external_ids?.tvdb_id || details?.tvdb_id || basicData.tvdb_id || item.tvdbId || oldRecord?.tvdbId || null;
+
+      // 🌟 1. 继承老数据评分（确保已有数据 100% 继承，0 消耗 MDBList 额度）
+      let extraRatings = { 
+        traktScore: oldRecord?.trakt_rating || oldRecord?.traktRating || oldRecord?.ratings?.trakt || null, 
+        imdbScore: oldRecord?.imdb_rating || oldRecord?.imdbRating || oldRecord?.ratings?.imdb || null, 
+        rtScore: oldRecord?.rotten_tomatoes || oldRecord?.rottenTomatoes || oldRecord?.tomato_rating || oldRecord?.tomatoRating || oldRecord?.tomatoMeter || oldRecord?.tomatoes || oldRecord?.rt || oldRecord?.ratings?.rotten_tomatoes || oldRecord?.ratings?.rottenTomatoes || null 
+      };
+
+      if (needDetailFetch) {
+        extraRatings = await fetchFourRatings(tmdbId, resolvedImdbId, actualMediaType, env, reqCtx);
+      }
+
+      const tmdbScore = Number((basicData.vote_average || details?.vote_average || oldRecord?.vote_average || 0).toFixed(1));
+      const imdbScore = extraRatings.imdbScore ? Number(Number(extraRatings.imdbScore).toFixed(1)) : (oldRecord?.imdb_rating ? Number(oldRecord.imdb_rating) : undefined);
+      const traktScore = extraRatings.traktScore ? Number(Number(extraRatings.traktScore).toFixed(1)) : (oldRecord?.trakt_rating ? Number(oldRecord.trakt_rating) : undefined);
+      const rtScore = extraRatings.rtScore ? parseInt(extraRatings.rtScore, 10) : (oldRecord?.rotten_tomatoes ? parseInt(oldRecord.rotten_tomatoes, 10) : (oldRecord?.rottenTomatoes ? parseInt(oldRecord.rottenTomatoes, 10) : undefined));
+
+      // 🌟 2. 顶级全兼容字段注入（全格式别名通杀，确保客户端 100% 亮起）
       results.push({
+        id: tmdbId || oldRecord?.tmdbId || Math.floor(Math.random() * 1000000),
+        name: finalTitle,
         title: finalTitle,
         tmdbId: tmdbId || oldRecord?.tmdbId,
+        imdbId: resolvedImdbId,
+        tvdbId: resolvedTvdbId,
+        
+        // 🌟 顶层全兼容字段
+        vote_average: tmdbScore,
+        imdb_rating: imdbScore || undefined,
+        imdbRating: imdbScore || undefined,
+        trakt_rating: traktScore || undefined,
+        traktRating: traktScore || undefined,
+        rotten_tomatoes: rtScore || undefined,
+        rottenTomatoes: rtScore || undefined,
+        tomato_rating: rtScore || undefined,
+        tomatoRating: rtScore || undefined,
+        tomatoMeter: rtScore || undefined,
+        tomatoes: rtScore || undefined,
+        rt: rtScore || undefined,
+        
+        // 🌟 聚合评分对象 (全兼容别名)
+        ratings: {
+          tmdb: tmdbScore > 0 ? tmdbScore : undefined,
+          imdb: imdbScore || undefined,
+          trakt: traktScore || undefined,
+          rotten_tomatoes: rtScore || undefined,
+          rottenTomatoes: rtScore || undefined,
+          tomato_rating: rtScore || undefined,
+          tomatoRating: rtScore || undefined,
+          tomatoMeter: rtScore || undefined,
+          tomatoes: rtScore || undefined,
+          rt: rtScore || undefined
+        },
+
         release_date: validDate || basicData.release_date || oldRecord?.release_date || null,
         first_air_date: validDate || basicData.first_air_date || oldRecord?.first_air_date || null,
         air_date: validDate || null,
@@ -2569,19 +2945,18 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
         year: finalYear,
         popularity: basicData.popularity || oldRecord?.popularity || 0,
         original_language: origLang || details?.original_language || "",
-        vote_average: basicData.vote_average || details?.vote_average || oldRecord?.vote_average || 0,
-        poster_path: finalPoster,                         // 1. 官方带字海报（列表小竖图）
-        noLogoPoster: finalNoLogoPoster,                  // 2. 纯净无字海报（轮播图，严格存储真实无字图，无图则为null，绝不存带字假图！）
+        poster_path: finalPoster,
+        noLogoPoster: finalNoLogoPoster,
         poster_source: finalPosterSource,
         no_logo_poster_source: finalNoLogoSource,
-        backdrop_path: finalBackdrop || finalThumb || finalPoster, // 3. 纯净无字横图（TV/iPad大屏）
+        backdrop_path: finalBackdrop || finalThumb || finalPoster,
         backdrop_source: finalBackdropSource,
         genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
         media_type: detectedType,
         overview: oldRecord?.overview || details?.overview || basicData.overview || null,
-        thumb: finalThumb,                               // 4. 官方带字剧照（小横图卡片）
+        thumb: finalThumb,
         thumb_source: finalThumbSource, 
-        logo: finalLogo || fallbackLogo,                 // 5. 透明 Logo（严格母语优先）
+        logo: finalLogo || fallbackLogo,
         logo_source: finalLogo ? finalLogoSource : 'auto', 
         verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
         logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
@@ -2654,7 +3029,6 @@ function determineDay(item, bgmCalendar, standardDays, overrides) {
     return 0;
 }
 
-// 统计 5 大资产入库数量的辅助函数
 function computeAssetStats(items) {
   if (!Array.isArray(items)) return { posters: 0, noLogoPosters: 0, thumbs: 0, cleanBackdrops: 0, logos: 0 };
   let logos = 0, noLogoPosters = 0, cleanBackdrops = 0, posters = 0, thumbs = 0;
@@ -2788,7 +3162,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       if (targetDay === null) {
           const colJson = {
               id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "thumb-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
+              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -2828,7 +3202,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       if (targetDay === null) {
           const colJson = {
               id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "thumb-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
+              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -2872,7 +3246,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       if (targetDay === null) {
           const colJson = {
               id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "thumb-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
+              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -2918,7 +3292,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       if (targetDay === null) {
           const colJson = {
               id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "thumb-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
+              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -2964,7 +3338,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       if (targetDay === null) {
           const colJson = {
               id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "thumb-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
+              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -3010,7 +3384,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       if (targetDay === null) {
           const colJson = {
               id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "thumb-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
+              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
           };
           await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       }
@@ -3171,7 +3545,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       
       const stats = computeAssetStats(combinedData);
       
-      // 单次同步发送详细 TG 资产报告
       if (!quiet && env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
         const catName = config.name || category;
         const tgReport = `🚀 <b>[单次定向同步] 执行完毕</b>\n` +
@@ -3219,55 +3592,18 @@ function isAdmin(request, env) {
   return (env.ADMIN_SECRET && token === env.ADMIN_SECRET) || (env.SYNC_SECRET && token === env.SYNC_SECRET);
 }
 
+// 🌟 4. 后端推送时终极拦截锁：无论前端传递什么，只要不是 hero-list 全部锁定为 poster-list
 function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl, fallbackTsCode) {
-  if (!existingText || !existingText.includes("createDefaultBlockTemplates")) {
+  if (!existingText || (!existingText.includes("createV2BlockTemplates") && !existingText.includes("createDefaultBlockTemplates"))) {
     return fallbackTsCode;
   }
 
   let updatedText = existingText;
-  let domainToUse = "https://homepage.eplayerx.cc.cd";
-  if (existingText) {
-    const domainMatch = existingText.match(/path:\s*["'](https?:\/\/[^\/\s"']+)/);
-    if (domainMatch && domainMatch[1]) {
-      domainToUse = domainMatch[1];
-    } else if (fallbackOriginUrl) {
-      domainToUse = fallbackOriginUrl;
-    }
+  const myR2 = "https://r2.eplayerx.cc.cd";
+
+  if (updatedText.includes("HOME_CONFIG_VERSION = 1")) {
+    updatedText = updatedText.replace("export const HOME_CONFIG_VERSION = 1;", "export const HOME_CONFIG_V2_VERSION = 2;");
   }
-
-  const versionRegex = /(export\s+const\s+HOME_CONFIG_VERSION\s*=\s*)(\d+)(;)/;
-  const matchVer = updatedText.match(versionRegex);
-  if (matchVer) {
-    const nextVer = parseInt(matchVer[2], 10) + 1;
-    updatedText = updatedText.replace(versionRegex, `$1${nextVer}$3`);
-  }
-
-  const newTitleKeys = ["home.weekly_korean_drama", "home.weekly_japanese_drama", "home.weekly_sea_drama"];
-  newTitleKeys.forEach(key => {
-    if (!updatedText.includes(`"${key}"`) && updatedText.includes("type HomeTitleKey =")) {
-      const typeRegex = /(type\s+HomeTitleKey\s*=[\s\S]*?)(;\n)/;
-      updatedText = updatedText.replace(typeRegex, `$1\n  | "${key}"$2`);
-    }
-  });
-
-  const newTranslations = [
-    { key: "home.weekly_korean_drama", val: '  "home.weekly_korean_drama": { en: "Weekly Korean Dramas", zh: "韩剧追剧周更表", "zh-Hant": "韓劇追劇周更表", ja: "韓国ドラマ週間更新", es: "Dramas Coreanos Semanales", ar: "دراما كورية أ週間" },' },
-    { key: "home.weekly_japanese_drama", val: '  "home.weekly_japanese_drama": { en: "Weekly Japanese Dramas", zh: "日剧追剧周更表", "zh-Hant": "日劇追劇周更表", ja: "日本ドラマ週間更新", es: "Dramas Japoneses Semanales", ar: "دراما يابانية أ週間" },' },
-    { key: "home.weekly_sea_drama", val: '  "home.weekly_sea_drama": { en: "Weekly Southeast Asian Dramas", zh: "东南亚剧周更表", "zh-Hant": "東南亞劇周更表", ja: "東南アジアドラマ週間更新", es: "Dramas del Sudeste Asiático Semanales", ar: "دراما جنوب شرق آسيا" },' }
-  ];
-
-  newTranslations.forEach(item => {
-    if (!updatedText.includes(`"${item.key}":`)) {
-      const closeIdx = updatedText.lastIndexOf("};");
-      if (closeIdx !== -1) {
-        let beforeClose = updatedText.substring(0, closeIdx).trimEnd();
-        if (!beforeClose.endsWith(',')) {
-          beforeClose += ',';
-        }
-        updatedText = beforeClose + '\n' + item.val + '\n' + updatedText.substring(closeIdx);
-      }
-    }
-  });
 
   function findBlockBounds(text, blockId) {
     const idRegex = new RegExp(`id:\\s*["']${blockId}["']`);
@@ -3321,17 +3657,18 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
 
   for (const c of selectedCats) {
     let newBlockCode = "";
-    if (c.isCollection) {
-      newBlockCode = `    {\n      id: "${c.id}",\n      mediaType: "${c.type}",\n      titleKey: "${c.titleKey}",\n      preset: "collection-list",\n      groupMode: "weekday",\n      children: [\n        { id: "${c.id}-1", label: "周一", weekday: 1, title: "周一", mediaType: "${c.type}", preset: "thumb-list", source: { path: "${domainToUse}/blocks/public/${c.id}-1.json", itemEnvelope: "data" } },\n        { id: "${c.id}-2", label: "周二", weekday: 2, title: "周二", mediaType: "${c.type}", preset: "thumb-list", source: { path: "${domainToUse}/blocks/public/${c.id}-2.json", itemEnvelope: "data" } },\n        { id: "${c.id}-3", label: "周三", weekday: 3, title: "周三", mediaType: "${c.type}", preset: "thumb-list", source: { path: "${domainToUse}/blocks/public/${c.id}-3.json", itemEnvelope: "data" } },\n        { id: "${c.id}-4", label: "周四", weekday: 4, title: "周四", mediaType: "${c.type}", preset: "thumb-list", source: { path: "${domainToUse}/blocks/public/${c.id}-4.json", itemEnvelope: "data" } },\n        { id: "${c.id}-5", label: "周五", weekday: 5, title: "周五", mediaType: "${c.type}", preset: "thumb-list", source: { path: "${domainToUse}/blocks/public/${c.id}-5.json", itemEnvelope: "data" } },\n        { id: "${c.id}-6", label: "周六", weekday: 6, title: "周六", mediaType: "${c.type}", preset: "thumb-list", source: { path: "${domainToUse}/blocks/public/${c.id}-6.json", itemEnvelope: "data" } },\n        { id: "${c.id}-7", label: "周日", weekday: 7, title: "周日", mediaType: "${c.type}", preset: "thumb-list", source: { path: "${domainToUse}/blocks/public/${c.id}-7.json", itemEnvelope: "data" } }\n      ]\n    }`;
-    } else {
-      newBlockCode = `    {\n      id: "${c.id}",\n      mediaType: "${c.type}",\n      titleKey: "${c.titleKey}",\n      preset: "${c.currentPreset}",\n      showRank: true,\n      showOverview: true,${c.sort && c.sort !== 'default' && !c.isStatic ? `\n      sort: "${c.sort}",` : ''}\n      source: ${c.isStatic ? c.sourceCode : `{ path: "${domainToUse}/api/${c.id}${c.sort && c.sort !== 'default' ? `?sort=${c.sort}` : ''}", itemEnvelope: "data" }`}\n    }`;
-    }
+    const catCfg = CATEGORY_CONFIGS.find(cfg => cfg.id === c.id);
+    const fileName = catCfg ? catCfg.fileName : `${c.id}.json`;
+    
+    // 🌟 后端终极拦截：无论前端传什么，只要不是 hero-list 全部锁定为 poster-list
+    const safePreset = (c.currentPreset === 'hero-list') ? 'hero-list' : 'poster-list';
 
-    const bounds = findBlockBounds(updatedText, c.id);
-    if (bounds) {
-      updatedText = updatedText.substring(0, bounds.start) + newBlockCode.trim() + updatedText.substring(bounds.end);
+    if (c.isCollection) {
+      // 🌟 推送到 GitHub 前自动清理国旗 Emoji 以及 (合集) 后缀
+      const cleanTitle = (c.name || '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]/g, '').replace(/\s*[(（].*?[)）]\s*/g, '').trim();
+      newBlockCode = `    {\n      id: "${c.id}",\n      title: "${cleanTitle}",\n      mediaType: "${c.type}",\n      preset: COLLECTION_PRESET,\n      style: "image-landscape",\n      groupMode: "weekday",\n      children: [1, 2, 3, 4, 5, 6, 7].map(d => ({\n        id: \`${c.id}-\${d}\`,\n        label: \`周\${["一", "二", "三", "四", "五", "六", "日"][d - 1]}\`,\n        weekday: d,\n        title: \`周\${["一", "二", "三", "四", "五", "六", "日"][d - 1]}\`,\n        mediaType: "${c.type}",\n        preset: "poster-list",\n        source: { path: \`${myR2}/${c.id}-\${d}.json\`, itemEnvelope: "data" }\n      }))\n    } as unknown as HomeBlockTemplate`;
     } else {
-      const returnArrRegex = /(function\s+createDefaultBlockTemplates[\s\S]*?return\s*\[)([\s\S]*?)(\];)/;
+      const returnArrRegex = /(function\s+createV2BlockTemplates[\s\S]*?return\s*\[)([\s\S]*?)(\];)/;
       const match = updatedText.match(returnArrRegex);
       if (match) {
         let innerArray = match[2].trim();
@@ -3374,7 +3711,6 @@ export default {
     const action = pathParts[0];
     const category = pathParts[1];
 
-    // 🌟【超级调试神器】：浏览器访问 /api/test_cron 即可手动触发一次定时任务并在页面看到执行结果！
     if (action === "api" && category === "test_cron") {
       try {
         const result = await this.runCronLogic(env, ctx, "【手动浏览器触发】", true);
@@ -3388,7 +3724,6 @@ export default {
       }
     }
 
-    // 🌟 读取后台定时任务实时状态（用于前端 LED 电子时钟监控屏）
     if (action === "api" && category === "cron_status" && request.method === "GET") {
       if (!env.R2_BUCKET) return new Response("{}", { headers: antiCacheHeaders });
       const obj = await env.R2_BUCKET.get("cron_state.json");
@@ -3396,7 +3731,6 @@ export default {
       return new Response(obj.body, { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
     }
 
-    // 🌟 前端「一键暂停/恢复」后台自动更新接口
     if (action === "action" && category === "toggle_cron" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
@@ -3414,7 +3748,6 @@ export default {
       }
     }
 
-    // 🌟【新增】立即手动启动一轮全量同步测试（立刻发开始通知，跑完全部任务发收尾汇总）
     if (action === "action" && category === "start_cron_now" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
@@ -3427,7 +3760,6 @@ export default {
       }
     }
 
-    // 🌟【新增】保存自定义每日自动启动时间接口（例如设定为 03:00、04:00 等）
     if (action === "action" && category === "set_cron_time" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
@@ -3438,7 +3770,7 @@ export default {
           const oldObj = await env.R2_BUCKET.get("cron_state.json");
           if (oldObj) state = await oldObj.json();
           state.autoStartHour = isNaN(setHour) ? 3 : setHour;
-          state.lastRunDate = null; // 🌟 关键：清除今日已运行标记，如果设定为当前小时，下次定时器立刻触发！
+          state.lastRunDate = null;
           await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), { httpMetadata: { contentType: "application/json" } });
         }
         return new Response(JSON.stringify({ success: true, autoStartHour: state.autoStartHour }), { 
@@ -3959,9 +4291,9 @@ export default {
             const origL = (origLang || "").toLowerCase();
             const getLangScore = (lang) => {
                 const l = String(lang || "").toLowerCase();
-                if (origL && (l === origL || (origL === 'zh' && l.startsWith('zh')))) return 10000; // 👑 母语第一
-                if (l === 'en') return 5000; // 英语第二
-                if (l === 'zh' || l.startsWith('zh')) return 3000; // 中文第三
+                if (origL && (l === origL || (origL === 'zh' && l.startsWith('zh')))) return 10000;
+                if (l === 'en') return 5000;
+                if (l === 'zh' || l.startsWith('zh')) return 3000;
                 if (!l || l === 'null' || l === 'xx') return 2000;
                 return 1000;
             };
@@ -4332,22 +4664,22 @@ export default {
                                     }
 
                                     if (thumbUrl && item.thumb_source !== 'manual') {
-                                        item.thumb = thumbUrl; // 横版带字剧照
+                                        item.thumb = thumbUrl;
                                         item.thumb_source = 'auto'; 
                                     }
 
                                     if (cleanBackdropUrl && item.backdrop_source !== 'manual') {
-                                        item.backdrop_path = cleanBackdropUrl; // 🌟 专供 iPad / TV 的无字背景
+                                        item.backdrop_path = cleanBackdropUrl;
                                         item.backdrop_source = 'auto'; 
                                     }
 
                                     if (officialPosterUrl && item.poster_source !== 'manual') {
-                                        item.poster_path = officialPosterUrl; // 竖版带字正标
+                                        item.poster_path = officialPosterUrl;
                                         item.poster_source = 'auto'; 
                                     }
 
                                     if (noLogoPosterUrl && item.no_logo_poster_source !== 'manual') {
-                                        item.noLogoPoster = noLogoPosterUrl; // 竖版无字轮播
+                                        item.noLogoPoster = noLogoPosterUrl;
                                         item.no_logo_poster_source = 'auto'; 
                                     }
 
@@ -4462,7 +4794,6 @@ export default {
   async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】", isManualStart = false) {
     if (!env.R2_BUCKET) throw new Error("未检测到 env.R2_BUCKET 存储桶绑定");
 
-    // 1. 构建全量任务清单（77 个细分任务）
     const taskQueue = [];
     for (const cat of CATEGORY_CONFIGS) {
       if (cat.id.endsWith("_collection")) {
@@ -4481,7 +4812,6 @@ export default {
     }
     const totalTasks = taskQueue.length;
 
-    // 2. 从 R2 读取状态
     let state = { 
       status: "IDLE",
       currentIndex: 0, 
@@ -4498,12 +4828,10 @@ export default {
       if (stateObj) state = Object.assign(state, await stateObj.json());
     } catch (e) {}
 
-    // 如果处于暂停状态且不是手动强制触发，直接退出
     if (state.isPaused && !isManualStart) {
       return { triggerSource, status: "PAUSED", msg: "后台自动更新已暂停" };
     }
 
-    // 3. 纯数学计算精确北京时间 (UTC+8)
     const nowTimestamp = Date.now();
     const bjTime = new Date(nowTimestamp + 8 * 3600 * 1000);
     const bjHour = bjTime.getUTCHours();
@@ -4512,8 +4840,6 @@ export default {
     const targetUrl = env.WORKER_URL || "https://homepage.eplayerx.cc.cd";
 
     const isAutoTime = (state.autoStartHour === bjHour && state.lastRunDate !== bjDateStr);
-    
-    // 🌟【唯一启动点】：只有当状态不是 RUNNING 时，才允许初始化新周期并发送【开始通知】
     const shouldInitNewCycle = (state.status !== "RUNNING") && (isManualStart || isAutoTime);
 
     if (shouldInitNewCycle) {
@@ -4536,25 +4862,21 @@ export default {
       }
     }
 
-    // 如果未处于执行状态，直接返回休眠
     if (state.status !== "RUNNING") {
       return { triggerSource, status: "IDLE", msg: `待命 (每日 ${state.autoStartHour}:00 启动)` };
     }
 
-    // 4. 🌟【高质量独立配额推进】：保证每个分类都拥有充足的子请求额度（至少 25 次），绝不透支额度去跑下一个分类！
     const reqCtx = { subreqs: 0, maxSubreqs: 46, isSafeMode: false, clearCooldown: false };
     const batchStartTime = Date.now();
     let tasksExecutedThisBatch = 0;
 
     while (state.currentIndex < totalTasks) {
-      // 关键防线：如果剩余子请求不足 20 次，或者本轮运行已超过 14 秒，立即退出并保存进度，交给下一分钟无缝接力
       if (reqCtx.subreqs >= 25 || (Date.now() - batchStartTime) >= 14000) {
         break;
       }
 
       const currentTask = taskQueue[state.currentIndex];
       try {
-        // 单个分类容量适度控制在 40 部，确保该分类内的每部影片都能 100% 提取到 Logo 与背景图
         const res = await executeSyncTask(currentTask.id, env, 40, true, reqCtx, targetUrl, true, true);
         if (res && res.stats) {
           state.totalAssets.count += (res.count || 0);
@@ -4574,7 +4896,6 @@ export default {
       state.currentIndex++;
       tasksExecutedThisBatch++;
 
-      // 如果当前分类是重型分类（新片多，单分类就消耗了 18 次以上子请求），立刻退出让下一分钟重新从 0 额度启动下一个分类，避免污染！
       if (reqCtx.subreqs >= 20) {
         break;
       }
@@ -4582,7 +4903,6 @@ export default {
 
     state.lastRunTime = nowTimeStr;
 
-    // 🌟【唯一收尾点】：77 个任务全部完成，发总结并切回 IDLE
     if (state.currentIndex >= totalTasks) {
       state.status = "IDLE";
       state.currentIndex = 0;
@@ -4609,7 +4929,6 @@ export default {
       }
     }
 
-    // 5. 保存最新状态到 R2
     await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), {
       httpMetadata: { contentType: "application/json" }
     });
@@ -4623,7 +4942,6 @@ export default {
     };
   },
 
-  // 🌟 CF 定时器调用时传入 false，绝不强行重置周期
   async scheduled(event, env, ctx) {
     ctx.waitUntil(this.runCronLogic(env, ctx, "【Cloudflare 定时触发】", false));
   }
