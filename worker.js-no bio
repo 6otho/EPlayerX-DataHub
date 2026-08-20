@@ -104,8 +104,8 @@ const FRONTEND_HTML_P1 = `
                              <button onclick="openConfirmModal('tg-webhook')" title="绑定Telegram机器人" class="w-10 h-10 md:w-12 md:h-12 shrink-0 bg-[#0088cc] text-white rounded-xl md:rounded-[1rem] flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 border border-white/20">
                                  <svg class="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0zm5.58 8.68l-1.92 9.07c-.14.64-.52.8-1.06.49l-2.92-2.15-1.41 1.35c-.16.16-.29.29-.59.29l.21-3 5.46-4.93c.24-.21-.05-.33-.37-.11l-6.75 4.24-2.9-.9c-.64-.2-.64-.64.13-.9l11.35-4.38c.53-.2 1.01.12.83.92z"/></svg>
                              </button>
-                             <button id="extract-btn" onclick="batchForceLogos()" title="对勾选的数据进行深度脱水强制提取最优Logo和剧照！" class="px-2 md:px-3 h-10 md:h-12 shrink-0 bg-purple-600 text-white font-bold rounded-xl md:rounded-[1rem] text-xs md:text-sm shadow-md transition-all hover:scale-105 active:scale-95 border border-white/20 whitespace-nowrap">
-                                🎯 提取图/标
+                             <button id="extract-btn" onclick="batchForceLogos()" title="对勾选的数据定向提取最新分级、烂番茄/Trakt评分、Logo和剧照，并一键清空简介！" class="px-2 md:px-3 h-10 md:h-12 shrink-0 bg-purple-600 text-white font-bold rounded-xl md:rounded-[1rem] text-xs md:text-sm shadow-md transition-all hover:scale-105 active:scale-95 border border-white/20 whitespace-nowrap">
+                                🎯 提取评分/图标/去简介
                              </button>
                              <button onclick="openLayoutModal()" class="px-3 md:px-4 h-10 md:h-12 bg-emerald-500 text-white font-bold rounded-xl md:rounded-[1rem] text-xs md:text-sm shadow-md transition-all hover:scale-105 active:scale-95 border border-white/20 whitespace-nowrap">
                                 🎨 排版与智能同步
@@ -125,19 +125,15 @@ const FRONTEND_HTML_P1 = `
 
                 <!-- 🌟 第一行：周更合集专属状态栏 (周更时显示：左边LED表 + 右边周历；普通分类时整行收起) -->
                 <div id="status-bar-container" class="flex flex-col xl:flex-row items-center justify-between gap-3 w-full mb-6 shrink-0">
-                    <!-- 周更模式下：LED 电子表插槽 (增加 min-w-0 保证伸缩) -->
                     <div id="led-slot-weekly" class="w-full xl:w-auto shrink-0 min-w-0">
                         <div id="led-monitor-box" class="w-full h-full flex items-center justify-between gap-3 px-3.5 md:px-5 py-2.5 rounded-2xl border font-mono-led select-none transition-all duration-300 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner overflow-x-auto hide-scrollbar whitespace-nowrap cursor-grab active:cursor-grabbing">
-                            <!-- 左侧：状态灯 + 文字（设为 shrink-0 绝不被压缩隐藏） -->
                             <div class="flex items-center gap-2 shrink-0">
                                 <span id="led-dot" class="w-2.5 h-2.5 rounded-full bg-slate-600 shrink-0"></span>
                                 <span id="led-tag" class="font-black px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 shrink-0">IDLE</span>
                                 <span id="led-info" class="font-bold text-xs md:text-sm text-slate-200 shrink-0 flex items-center">大盘待命中</span>
                             </div>
                             
-                            <!-- 右侧：三个控件统一高度 h-7 (28px)，100% 绝对齐平 -->
                             <div class="flex items-center gap-2 shrink-0 pl-2.5 border-l border-slate-800/80">
-                                <!-- 1. 定时选择框 (h-7) -->
                                 <div class="h-7 px-2 bg-slate-900 border border-slate-700/80 rounded-lg flex items-center gap-1 shrink-0 text-xs text-slate-300 shadow-sm box-border" title="设定每日自动全量同步时间">
                                     <span class="text-slate-400 font-bold text-[11px] leading-none">⏰</span>
                                     <select id="cron-hour-select" onchange="changeAutoStartTime(this.value)" class="bg-transparent text-emerald-400 font-bold outline-none cursor-pointer text-xs h-full leading-none">
@@ -152,31 +148,22 @@ const FRONTEND_HTML_P1 = `
                                     </select>
                                 </div>
 
-                                <!-- 2. 立即测 按钮 (h-7 基准高度) -->
                                 <button onclick="triggerCronNow()" id="cron-test-btn" class="h-7 px-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm shrink-0 flex items-center justify-center active:scale-95 leading-none" title="立即启动全量同步测试">🚀 立即测</button>
-
-                                <!-- 3. 暂停 按钮 (h-7 齐平高度) -->
                                 <button onclick="toggleCronPause()" id="cron-pause-btn" class="h-7 px-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-lg text-xs font-bold transition-all border border-slate-700 shrink-0 flex items-center justify-center leading-none" title="暂停/恢复轮询">⏸ 暂停</button>
-                                
-                                <!-- 时钟 (h-7 居中齐平) -->
                                 <span id="led-clock" class="h-7 flex items-center font-bold text-xs tracking-wider text-slate-300 shrink-0 px-1 leading-none">--:--:--</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 周日~周六卡片 (仅周更分类激活) -->
                     <div id="weekday-tabs-container" class="hidden flex-1 justify-center items-center w-full">
                         <div id="weekday-buttons" class="flex bg-white/50 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-white/60 dark:border-zinc-700/60 shadow-inner justify-between gap-1 w-full max-w-xl"></div>
                     </div>
                 </div>
 
-                <!-- 🌟 第二行：核心控制栏 (合集按键全部统一高度 h-[88px]，右侧按钮精简为 默认/最新/热度) -->
+                <!-- 🌟 第二行：核心控制栏 -->
                 <div class="flex flex-col xl:flex-row w-full mb-8 gap-2.5 md:gap-3 justify-end items-center relative">
-                    
-                    <!-- 普通分类时：LED 实时电子表插槽 (自适应撑满左侧，与右侧 88px 按键无缝贴合) -->
                     <div id="led-slot-normal" class="hidden flex-1 min-w-0 w-full h-[44px] shrink-0 xl:shrink"></div>
 
-                    <!-- 周更分类时：追更排期强制干预 (锁定 h-[88px]，靠左) -->
                     <div id="custom-override-container" class="hidden mr-auto w-full xl:w-auto h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-5 md:px-6 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col justify-center items-start transition-all duration-200 origin-left hover:-translate-y-0.5 hover:shadow-md cursor-pointer group hover:border-purple-300 dark:hover:border-purple-700/50 ml-1 shrink-0" onclick="openOverrideModal()">
                         <div class="flex items-center gap-2 mb-1.5">
                             <div class="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-105 transition-transform">
@@ -190,7 +177,6 @@ const FRONTEND_HTML_P1 = `
                         </div>
                     </div>
 
-                    <!-- 1. 当前榜单排序 (高度锁定 h-[88px]，按钮精简为 默认 / 最新 / 热度) -->
                     <div class="w-full xl:w-auto h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-3.5 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col justify-center items-center xl:items-start transition-transform hover:scale-[1.02] shrink-0">
                         <span class="text-[10px] md:text-xs text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1 whitespace-nowrap">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
@@ -203,7 +189,6 @@ const FRONTEND_HTML_P1 = `
                         </div>
                     </div>
 
-                    <!-- 2 & 3. 大数据盘 (高度锁定 h-[88px]，宽度精简收窄，居中大字号) -->
                     <div class="flex w-full xl:w-auto gap-2.5 md:gap-3 justify-center shrink-0">
                         <div class="flex-1 max-w-sm xl:w-28 h-[88px] bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md rounded-2xl px-2.5 shadow-sm border border-white dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-transform hover:scale-[1.02]">
                             <span class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider mb-1 whitespace-nowrap text-center block w-full">大盘收录</span>
@@ -214,7 +199,6 @@ const FRONTEND_HTML_P1 = `
                             <span id="stat-time" class="text-sm md:text-base mt-1 font-black text-gray-800 dark:text-white tracking-tight text-center block w-full">--:--</span>
                         </div>
                     </div>
-
                 </div>
 
                 <div id="movie-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-6 relative"></div>
@@ -1167,13 +1151,23 @@ const FRONTEND_HTML_P1 = `
                 });
                 const data = await res.json();
                 if (data.success) {
-                    const processedIds = data.results.map(r => r.tmdbId.toString());
-                    const originalIds = itemsToProcess.map(i => i.id.toString());
+                    const successList = (data.results || []).filter(r => r.success);
+                    const failList = (data.results || []).filter(r => !r.success);
+                    const processedIds = successList.map(r => String(r.tmdbId));
+                    const originalIds = itemsToProcess.map(i => String(i.id));
                     pendingCheckedIds = originalIds.filter(id => !processedIds.includes(id));
-                    if (pendingCheckedIds.length > 0) showToast("✅ 已安全提取前 " + processedIds.length + " 个！触发防封禁保护，剩余 " + pendingCheckedIds.length + " 个已自动保留勾选，请再次点击继续！", false);
-                    else showToast("✅ 全部 " + originalIds.length + " 部影片提取完毕！主库已更新最优图/标。");
+                    
+                    if (failList.length > 0 && successList.length === 0) {
+                        showToast("❌ 提取失败: " + (failList[0].error || "未能匹配到 TMDB 数据"), true);
+                    } else if (pendingCheckedIds.length > 0) {
+                        showToast("✅ 已提取前 " + processedIds.length + " 个并清空简介！剩余 " + pendingCheckedIds.length + " 个已保留勾选，可再次点击！", false);
+                    } else {
+                        showToast("✅ 全部 " + originalIds.length + " 部影片提取完毕！评分/图标已入库，简介已彻底清空。");
+                    }
                     loadData(currentCategory);
-                } else showToast("❌ 提取失败: " + data.error, true);
+                } else {
+                    showToast("❌ 提取失败: " + data.error, true);
+                }
             } catch(e) { showToast("❌ 网络异常", true); }
         }
 
@@ -1485,7 +1479,7 @@ const FRONTEND_HTML_P1 = `
             "home.popular_domestic_anime": { en: "Popular Domestic Anime", zh: "热门国产动漫", "zh-Hant": "熱門國產動漫", ja: "人気の国産アニメ", es: "Anime Doméstico Popular", ar: "أنمي محلي شهير" },
             "home.bangumi_popular_anime": { en: "Trending Anime", zh: "今日热门番剧", "zh-Hant": "今日熱門新番", ja: "注目のアニメ", es: "Anime en Tendencia", ar: "أنمي رائج" },
             "home.tmdb_on_the_air_tv_shows": { en: "TV Shows On The Air", zh: "正在热播电视剧", "zh-Hant": "現正播出電視劇", ja: "放送中のテレビ番組", es: "Series al Aire", ar: "مسلسلات تُعرض حالياً" },
-            "home.popular_tv_shows": { en: "Popular Chinese TV Shows", zh: "时下热门国产剧", "zh-Hant": "時下熱門國產劇", ja: "中国ドラマ", es: "Dramas Populares", ar: "مسلسلات صينية شهيرة" },
+            "home.popular_tv_shows": { en: "Popular Chinese TV Shows", zh: "时下热门国产剧", "zh-Hant": "時下熱門國產剧", ja: "中国ドラマ", es: "Dramas Populares", ar: "مسلسلات صينية شهيرة" },
             "home.popular_movies": { en: "Popular Chinese Movies", zh: "实时热门电影", "zh-Hant": "實時熱門電影", ja: "人気の中国映画", es: "Películas Populares", ar: "أفلام صينية شهيرة" },
             "home.popular_variety_shows": { en: "Popular Variety Shows", zh: "热门综艺", "zh-Hant": "熱門綜藝", ja: "人気のバラエティ", es: "Programas de Variedades", ar: "برامج منوعة شهيرة" },
             "home.popular_korean_tv_shows": { en: "Popular Korean Dramas", zh: "备受欢迎的韩剧推荐", "zh-Hant": "備受歡迎的韓劇推薦", ja: "人気の韓国ドラマ", es: "Dramas Coreanos Populares", ar: "مسلسلات كورية شهيرة" },
@@ -1589,7 +1583,7 @@ const FRONTEND_HTML_P1 = `
             });
         }
 
-        // 🌟 3. 修改前端 TS 代码生成器：强制加上防 thumb-list 过滤锁
+        // 🌟 3. 修改前端 TS 代码生成器：安全生成，彻底移除后端未定义变量
         function generateTSCode() {
             localStorage.setItem('saved_layout_v2', JSON.stringify(modalLayoutState));
             const selectedCats = [];
@@ -1608,14 +1602,11 @@ const FRONTEND_HTML_P1 = `
             const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
             
             let customBlocks = selectedCats.map(c => {
-                const catCfg = CATEGORY_CONFIGS.find(cfg => cfg.id === c.id);
-                const fileName = catCfg ? catCfg.fileName : (c.id + '.json');
-                
-                // 🌟 核心防错锁：只要不是 hero-list，全部强制设为 poster-list，绝不输出 thumb-list！
+                // 安全计算文件名，纯前端自包含，绝不跨作用域调用未定义变量
+                const fileName = c.isCollection ? (c.id + '.json') : (c.id.replace(/_/g, '-') + '.json');
                 const safePreset = (c.currentPreset === 'hero-list') ? 'hero-list' : 'poster-list';
 
                 if (c.isCollection) {
-                    // 🌟 自动剥离国旗 Emoji 以及 (合集) 后缀
                     const cleanTitle = (c.name || '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]/g, '').replace(/\s*[(（].*?[)）]\s*/g, '').trim();
                     const childrenStr = [1, 2, 3, 4, 5, 6, 7].map(d => {
                         return '        {\\n' +
@@ -1641,6 +1632,7 @@ const FRONTEND_HTML_P1 = `
                            '      ]\\n' +
                            '    } as unknown as HomeBlockTemplate';
                 }
+                const sortQuery = (c.sort && c.sort !== 'default') ? ('?sort=' + c.sort) : '';
                 return '    {\\n' +
                        '      id: "' + c.id + '",\\n' +
                        '      mediaType: "' + c.type + '",\\n' +
@@ -1648,7 +1640,8 @@ const FRONTEND_HTML_P1 = `
                        '      preset: "' + safePreset + '",\\n' +
                        '      showRank: true,\\n' +
                        '      showOverview: false,\\n' +
-                       '      source: { path: "' + myR2 + '/' + fileName + '", itemEnvelope: "data" }\\n' +
+                       '      sort: "' + (c.sort || 'default') + '",\\n' +
+                       '      source: { path: "' + myR2 + '/' + fileName + sortQuery + '", itemEnvelope: "data" }\\n' +
                        '    }';
             }).join(',\\n');
 
@@ -2124,7 +2117,7 @@ const FRONTEND_HTML_P2 = `</html>
 const FRONTEND_HTML = FRONTEND_HTML_P1 + FRONTEND_HTML_P2;
 
 // ==========================================
-// 2. 爬虫核心与全局分类字典 (Part 1 引擎配置)
+// 2. 爬虫核心与全局分类字典 (引擎配置)
 // ==========================================
 const CATEGORY_CONFIGS = [
   // === 👇 动态爬虫合集 (包含六大周更表合集) 👇 ===
@@ -2478,8 +2471,60 @@ async function tmdbFetch(path, paramsObj, env, reqCtx) {
 }
 
 // ==========================================
-// 6. 核心图层脱水提取引擎
+// 6. 核心图层脱水与分级提取引擎
 // ==========================================
+
+// 🌟 提取影视内容分级（优先中文分级：限、辅15、辅12、护、普、III；无则回退 TV-MA/R）
+function extractCertification(details, mediaType) {
+  if (!details) return null;
+  const isTv = mediaType === 'tv' || mediaType === 'tv_series';
+  
+  if (isTv) {
+    const list = details.content_ratings?.results || [];
+    // 1. 优先台湾分级 ("限", "辅15", "辅12", "护", "普")
+    const tw = list.find(r => r.iso_3166_1 === 'TW');
+    if (tw && tw.rating) return tw.rating;
+    // 2. 其次香港分级 ("III", "IIB", "IIA", "I")
+    const hk = list.find(r => r.iso_3166_1 === 'HK');
+    if (hk && hk.rating) return hk.rating;
+    // 3. 其次韩国分级 ("19", "15", "12", "All")
+    const kr = list.find(r => r.iso_3166_1 === 'KR');
+    if (kr && kr.rating) return kr.rating;
+    // 4. 最后欧美分级 ("TV-MA", "TV-14", "TV-PG", "TV-G")
+    const us = list.find(r => r.iso_3166_1 === 'US');
+    if (us && us.rating) return us.rating;
+    const first = list.find(r => r.rating);
+    if (first) return first.rating;
+  } else {
+    const list = details.release_dates?.results || [];
+    // 1. 台湾电影分级
+    const tw = list.find(r => r.iso_3166_1 === 'TW');
+    if (tw && Array.isArray(tw.release_dates)) {
+      const cert = tw.release_dates.find(d => d.certification)?.certification;
+      if (cert) return cert;
+    }
+    // 2. 香港电影分级
+    const hk = list.find(r => r.iso_3166_1 === 'HK');
+    if (hk && Array.isArray(hk.release_dates)) {
+      const cert = hk.release_dates.find(d => d.certification)?.certification;
+      if (cert) return cert;
+    }
+    // 3. 欧美电影分级 ("R", "PG-13", "PG", "G", "NC-17")
+    const us = list.find(r => r.iso_3166_1 === 'US');
+    if (us && Array.isArray(us.release_dates)) {
+      const cert = us.release_dates.find(d => d.certification)?.certification;
+      if (cert) return cert;
+    }
+    for (const country of list) {
+      if (Array.isArray(country.release_dates)) {
+        const cert = country.release_dates.find(d => d.certification)?.certification;
+        if (cert) return cert;
+      }
+    }
+  }
+  return null;
+}
+
 function extractImages(images, backdropPath, posterPath, origLang) {
   const backdrops = (images && Array.isArray(images.backdrops)) ? images.backdrops : [];
   const logos = (images && Array.isArray(images.logos)) ? images.logos : [];
@@ -2507,26 +2552,17 @@ function extractImages(images, backdropPath, posterPath, origLang) {
     } else {
       score = 10000;
     }
-    return score + ((l.vote_average || 0) * 
-
-100) + (l.vote_count || 0);
+    return score + ((l.vote_average || 0) * 100) + (l.vote_count || 0);
   };
 
   const sortedLogos = [...logos].sort((a, b) => getLogoScore(b) - getLogoScore(a));
   const logo = sortedLogos[0]?.file_path || null;
 
-  // ==========================================
-  // 🌟 2. 轮播图专属：纯净【无字】竖海报 (noLogoPoster)
-  // 🚨 核心铁律：严格只取 isStrictClean 为 true 的无字图！绝不拿带字图兜底！
-  // ==========================================
   const cleanPosters = posters.filter(p => isStrictClean(p))
                               .sort((a, b) => ((b.vote_average || 0) * 100 + (b.vote_count || 0)) - ((a.vote_average || 0) * 100 + (a.vote_count || 0)));
 
   const noLogoPoster = cleanPosters[0]?.file_path || null;
 
-  // ==========================================
-  // 🌟 3. 列表小卡片专属：官方【带字】竖海报 (poster_path)
-  // ==========================================
   const getTextPosterScore = (p) => {
     const lang = (p.iso_639_1 || "").toLowerCase();
     let score = 0;
@@ -2542,17 +2578,11 @@ function extractImages(images, backdropPath, posterPath, origLang) {
 
   const officialPoster = textPosters[0]?.file_path || cleanPosters[0]?.file_path || posterPath || null;
 
-  // ==========================================
-  // 🌟 4. TV/iPad 专属：纯净【无字】横屏大背景 (backdrop_path)
-  // ==========================================
   const cleanBackdrops = backdrops.filter(b => isStrictClean(b))
                                   .sort((a, b) => ((b.vote_average || 0) * 100 + (b.vote_count || 0)) - ((a.vote_average || 0) * 100 + (a.vote_count || 0)));
 
   const cleanBackdrop = cleanBackdrops[0]?.file_path || null;
 
-  // ==========================================
-  // 🌟 5. 小横图专属：官方【带字】剧照 (thumb)
-  // ==========================================
   const getTextBackdropScore = (b) => {
     const lang = (b.iso_639_1 || "").toLowerCase();
     let score = 0;
@@ -2616,13 +2646,12 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
     return { traktScore, imdbScore, rtScore };
   }
 
-  // 🌟 1. 优先使用 MDBList（电影与电视剧通杀，官方规范 API 地址）
+  // 🌟 1. MDBList 官方接口直接请求（电影与电视剧通杀）
   if (env.MDBLIST_API_KEY && (tmdbId || imdbId)) {
     try {
       const isTv = mediaType === 'tv' || mediaType === 'tv_series';
       const mType = isTv ? 'show' : 'movie';
       
-      // MDBList 官方标准直接请求路径
       const mUrl = tmdbId 
         ? `https://api.mdblist.com/tmdb/${mType}/${tmdbId}?apikey=${env.MDBLIST_API_KEY}`
         : `https://api.mdblist.com/imdb/${imdbId}?apikey=${env.MDBLIST_API_KEY}`;
@@ -2633,15 +2662,12 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
         if (mData && Array.isArray(mData.ratings)) {
           mData.ratings.forEach(r => {
             const src = String(r.source || "").toLowerCase();
-            // IMDb (0-10)
             if (src === 'imdb' && typeof r.value === 'number') {
               imdbScore = r.value <= 10 ? r.value : Number((r.value / 10).toFixed(1));
             }
-            // Trakt (0-10)
             if (src === 'trakt' && typeof r.value === 'number') {
               traktScore = r.value <= 10 ? Number(r.value.toFixed(1)) : Number((r.value / 10).toFixed(1));
             }
-            // 烂番茄 (Tomatometer % 影评人指数，电影和剧集均有)
             if ((src === 'tomatoes' || src === 'rottentomatoes') && (r.score || r.value)) {
               rtScore = parseInt(r.score || r.value, 10);
             }
@@ -2655,7 +2681,7 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
     } catch(e) {}
   }
 
-  // 🌟 2. 兜底备用：未配 MDBLIST 时回退使用 OMDb
+  // 🌟 2. OMDb 备用
   if (env.OMDB_API_KEY && imdbId && reqCtx.subreqs < reqCtx.maxSubreqs - 2) {
     try {
       const omdbRes = await safeFetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${env.OMDB_API_KEY}&tomatoes=true`, {}, reqCtx);
@@ -2676,7 +2702,7 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
     } catch(e) {}
   }
 
-  // 🌟 3. 兜底备用：未配 MDBLIST 时回退使用 Trakt
+  // 🌟 3. Trakt 备用
   if (!traktScore && env.TRAKT_CLIENT_ID && reqCtx.subreqs < reqCtx.maxSubreqs - 2) {
     try {
       const traktType = (mediaType === 'movie') ? 'movies' : 'shows';
@@ -2702,271 +2728,187 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
 
   return { traktScore, imdbScore, rtScore };
 }
+
 // ==========================================
 // 7. TMDB 详细数据加工处理
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
-  const limitedItems = items.slice(0, limit);
+  
+  // 🌟 进入网络请求前，优先按最新年份倒序排，让新剧排在最前面拿配额
+  const sortedRawItems = [...items].sort((a, b) => {
+    const getYear = (x) => {
+      const d = String(x?.first_air_date || x?.release_date || x?.air_date || x?.year || "0000");
+      const m = d.match(/\b(19|20)\d{2}\b/);
+      return m ? parseInt(m[0], 10) : 0;
+    };
+    const yA = getYear(a);
+    const yB = getYear(b);
+    if (yB !== yA) return yB - yA;
+    return (b?.popularity || 0) - (a?.popularity || 0);
+  });
+
+  const limitedItems = sortedRawItems.slice(0, limit);
 
   for (let i = 0; i < limitedItems.length; i++) {
     const item = limitedItems[i];
-    if (i > 0) await delay(80);
+    if (i > 0) await delay(50);
 
     let titleToSearch = item.searchQuery || item.title || item.name || "";
-
-    let oldRecord = null;
-    if (options.oldDataHelper) {
-      oldRecord = options.oldDataHelper.find(item.tmdbId, titleToSearch);
-    }
+    let oldRecord = options.oldDataHelper ? options.oldDataHelper.find(item.tmdbId, titleToSearch) : null;
 
     let tmdbId = item.tmdbId || oldRecord?.tmdbId || null;
     let basicData = item;
     let detectedType = item.media_type || oldRecord?.media_type || mediaType;
 
     const TMDB_IMG = 'https://image.tmdb.org/t/p/original';
-    const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/original';
     const toAbs = (p) => (!p || p.startsWith('data:')) ? null : ((p.startsWith('http') || p.startsWith('/api/')) ? p : TMDB_IMG + (p.startsWith('/') ? p : '/' + p));
-    const toAbsLogo = (p) => (!p || p.startsWith('data:')) ? null : ((p.startsWith('http') || p.startsWith('/api/')) ? p : TMDB_IMG_LOGO + (p.startsWith('/') ? p : '/' + p));
     const upgradeToOriginal = (url) => (url && typeof url === 'string' && url.includes('image.tmdb.org')) ? url.replace(/\/w\d+/, '/original') : url;
 
-    const isCorruptedFakeClean = oldRecord?.noLogoPoster && oldRecord.noLogoPoster === oldRecord.poster_path && oldRecord.no_logo_poster_source !== 'manual';
-    
     let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
-    let finalNoLogoPoster = isCorruptedFakeClean ? null : upgradeToOriginal(oldRecord?.noLogoPoster || null);
+    let finalNoLogoPoster = upgradeToOriginal(oldRecord?.noLogoPoster || null);
     let finalThumb = upgradeToOriginal(oldRecord?.thumb || toAbs(basicData.backdrop_path || basicData.poster_path));
     let finalBackdrop = upgradeToOriginal(oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
     let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
 
     let finalPosterSource = oldRecord?.poster_source || 'auto';
-    let finalNoLogoSource = isCorruptedFakeClean ? 'auto' : (oldRecord?.no_logo_poster_source || 'auto');
+    let finalNoLogoSource = oldRecord?.no_logo_poster_source || 'auto';
     let finalThumbSource = oldRecord?.thumb_source || 'auto';
     let finalBackdropSource = oldRecord?.backdrop_source || 'auto';
     let finalLogoSource = oldRecord?.logo_source || 'auto';
 
-    // 2. 检查老数据是否真正完备（只要缺少烂番茄/Trakt/IMDb任何一个，立刻触发强制抓取）
+    let savedImdb = oldRecord?.imdb_rating || oldRecord?.imdbRating || oldRecord?.ratings?.imdb || null;
+    let savedTrakt = oldRecord?.trakt_rating || oldRecord?.traktRating || oldRecord?.ratings?.trakt || null;
+    let savedRt = oldRecord?.rotten_tomatoes || oldRecord?.rottenTomatoes || oldRecord?.tomato_rating || oldRecord?.ratings?.rotten_tomatoes || null;
+    let alreadyScanned = !!oldRecord?.ratings_scanned;
+
     const hasRealLogo = !!(finalLogo && !finalLogo.includes('text_logo.svg'));
     const hasRealClean = !!finalNoLogoPoster;
-    
-    // 🌟 核心防死锁：只要配置了 MDBList/OMDb/Trakt 且旧数据中没有烂番茄，绝对不算完备，必须重新联网抓取！
-    const needsRt = !!((env.MDBLIST_API_KEY || env.OMDB_API_KEY) && !oldRecord?.ratings?.rotten_tomatoes && !oldRecord?.rotten_tomatoes && !oldRecord?.tomato_rating);
-    const needsTrakt = !!(env.TRAKT_CLIENT_ID && !oldRecord?.ratings?.trakt && !oldRecord?.trakt_rating);
-    const needsImdb = !!(env.OMDB_API_KEY && !oldRecord?.ratings?.imdb && !oldRecord?.imdb_rating);
-    const hasRatings = !needsRt && !needsTrakt && !needsImdb && !!oldRecord?.ratings?.tmdb;
-    
-    const isCompletelyReady = oldRecord && hasRealLogo && hasRealClean && !isCorruptedFakeClean && hasRatings;
+    const hasCert = !!(oldRecord?.certification || oldRecord?.content_rating || oldRecord?.contentRating);
 
-    if (!tmdbId && !isCompletelyReady && reqCtx.subreqs < (reqCtx.maxSubreqs - 4)) {
+    let needDetailFetch = false;
+    // 🌟 缺分级/缺Logo/前35部未扫描，允许调免费的 TMDB 补全
+    if (!oldRecord || !hasRealLogo || !hasRealClean || !hasCert || (!alreadyScanned && i < 35)) {
+      needDetailFetch = true;
+    }
+
+    if (needDetailFetch && reqCtx.subreqs >= (reqCtx.maxSubreqs - 2)) {
+      needDetailFetch = false;
+    }
+
+    let actualMediaType = (detectedType === 'movie' || detectedType === 'tv') ? detectedType : mediaType;
+    let details = null;
+    let imagesData = null;
+
+    if (needDetailFetch && tmdbId) {
       try {
-        const cleanQ = cleanSearchQuery(titleToSearch);
-        const searchParams = { query: cleanQ || titleToSearch, language: "zh-CN" };
-        if (options.include_adult) searchParams.include_adult = "true";
+        const apiPath = actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+        const appendParam = actualMediaType === "movie" ? "external_ids,release_dates" : "external_ids,content_ratings";
+        details = await tmdbFetch(apiPath, { language: "zh-CN", append_to_response: appendParam }, env, reqCtx).catch(() => null);
+        imagesData = await tmdbFetch(`${apiPath}/images`, {}, env, reqCtx).catch(() => null);
 
-        let data = await tmdbFetch(mediaType === "movie" ? "/search/movie" : "/search/multi", searchParams, env, reqCtx);
-        let sr = data.results || [];
-
-        if (sr.length === 0 && cleanQ !== titleToSearch) {
-          searchParams.query = titleToSearch;
-          data = await tmdbFetch(mediaType === "movie" ? "/search/movie" : "/search/multi", searchParams, env, reqCtx);
-          sr = data.results || [];
-        }
-
-        if (sr.length > 0) {
-          let matched = null;
-          if (mediaType === "tv") {
-            matched = sr.find(x => x.media_type === "tv" || x.first_air_date) || sr.find(x => x.media_type === "movie" || x.release_date) || sr[0];
-          } else {
-            matched = sr.find(x => x.media_type === "movie" || x.release_date) || sr[0];
-          }
-
-          if (matched) {
-            tmdbId = matched.id;
-            basicData = matched;
-            detectedType = matched.media_type || (matched.first_air_date ? "tv" : "movie") || mediaType;
-          }
+        if (details && imagesData) {
+          const ext = extractImages(imagesData, details.backdrop_path, details.poster_path, details.original_language || "");
+          if (ext.logo && finalLogoSource !== 'manual') finalLogo = toAbs(ext.logo);
+          if (ext.officialPoster && finalPosterSource !== 'manual') finalPoster = toAbs(ext.officialPoster);
+          if (ext.noLogoPoster && finalNoLogoSource !== 'manual') finalNoLogoPoster = toAbs(ext.noLogoPoster);
+          if (ext.thumb && finalThumbSource !== 'manual') finalThumb = toAbs(ext.thumb);
+          if (ext.cleanBackdrop && finalBackdropSource !== 'manual') finalBackdrop = toAbs(ext.cleanBackdrop);
         }
       } catch(e) {}
     }
 
-    if (tmdbId && !oldRecord && options.oldDataHelper) {
-      oldRecord = options.oldDataHelper.find(tmdbId, titleToSearch);
+    const finalTitle = oldRecord?.title || details?.title || details?.name || basicData.title || basicData.name || item.title || "未知";
+    const resolvedImdbId = details?.external_ids?.imdb_id || details?.imdb_id || basicData.imdb_id || item.imdbId || oldRecord?.imdbId || null;
+    const resolvedTvdbId = details?.external_ids?.tvdb_id || details?.tvdb_id || basicData.tvdb_id || item.tvdbId || oldRecord?.tvdbId || null;
+
+    let extraRatings = { traktScore: savedTrakt, imdbScore: savedImdb, rtScore: savedRt };
+    if (!alreadyScanned && i < 35 && reqCtx.subreqs < reqCtx.maxSubreqs - 2) {
+      extraRatings = await fetchFourRatings(tmdbId, resolvedImdbId, actualMediaType, env, reqCtx);
     }
 
-    if (tmdbId || oldRecord) {
-      let origLang = basicData.original_language || item.original_language || oldRecord?.original_language || "";
-      let originCountries = basicData.origin_country || item.origin_country || [];
+    const tmdbScore = Number((basicData.vote_average || details?.vote_average || oldRecord?.vote_average || 0).toFixed(1));
+    const imdbScore = extraRatings.imdbScore ? Number(Number(extraRatings.imdbScore).toFixed(1)) : (savedImdb ? Number(savedImdb) : undefined);
+    const traktScore = extraRatings.traktScore ? Number(Number(extraRatings.traktScore).toFixed(1)) : (savedTrakt ? Number(savedTrakt) : undefined);
+    const rtScore = extraRatings.rtScore ? parseInt(extraRatings.rtScore, 10) : (savedRt ? parseInt(savedRt, 10) : undefined);
 
-      if (options.isJapaneseAnimeOnly) {
-        if (origLang && origLang !== 'ja') continue;
-        if (Array.isArray(originCountries) && (originCountries.includes('CN') || originCountries.includes('TW') || originCountries.includes('HK'))) {
-          continue;
-        }
-      }
+    let rawDate = (details?.first_air_date || details?.release_date || basicData.first_air_date || basicData.release_date || oldRecord?.first_air_date || oldRecord?.release_date || oldRecord?.air_date || "").toString().trim();
+    let validDate = null;
+    const dateMatch = rawDate.match(/\b(19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/);
+    if (dateMatch) {
+      const parts = dateMatch[0].split(/[-/.]/);
+      validDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    }
 
-      if (options.isDomesticDramaOnly) {
-        const genres = basicData.genre_ids || oldRecord?.genre_ids || [];
-        if (genres.some(g => [16, 10764, 10767, 99, 10763].includes(g))) {
-          continue;
-        }
-      }
+    const certValue = extractCertification(details, actualMediaType) || oldRecord?.certification || oldRecord?.content_rating || oldRecord?.contentRating || undefined;
 
-      let needDetailFetch = false;
-      if (reqCtx.clearCooldown || !oldRecord || !isCompletelyReady) {
-        needDetailFetch = true;
-      }
-
-      if (needDetailFetch && reqCtx.subreqs >= (reqCtx.maxSubreqs - 3)) {
-        needDetailFetch = false;
-      }
-
-      let actualMediaType = detectedType;
-      if (actualMediaType !== 'movie' && actualMediaType !== 'tv') actualMediaType = mediaType;
-
-      let details = null;
-      let imagesData = null;
-
-      if (needDetailFetch && tmdbId) {
-        try {
-          const apiPath = actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
-          details = await tmdbFetch(apiPath, { language: "zh-CN", append_to_response: "external_ids" }, env, reqCtx).catch(() => null);
-          imagesData = await tmdbFetch(`${apiPath}/images`, {}, env, reqCtx).catch(() => null);
-
-          if (options.isDomesticDramaOnly && details) {
-            const genresArr = details.genres || [];
-            if (genresArr.some(g => [16, 10764, 10767, 99, 10763].includes(g.id))) continue;
-          }
-
-          if (details && imagesData) {
-            const realOrigLang = details.original_language || origLang || "";
-            const ext = extractImages(imagesData, details.backdrop_path, details.poster_path, realOrigLang);
-
-            if (ext.logo && finalLogoSource !== 'manual') finalLogo = toAbsLogo(ext.logo);
-            if (ext.officialPoster && finalPosterSource !== 'manual') finalPoster = toAbs(ext.officialPoster);
-            
-            if (ext.noLogoPoster && finalNoLogoSource !== 'manual') {
-              finalNoLogoPoster = toAbs(ext.noLogoPoster);
-            }
-
-            if (ext.thumb && finalThumbSource !== 'manual') finalThumb = toAbs(ext.thumb);
-            if (ext.cleanBackdrop && finalBackdropSource !== 'manual') finalBackdrop = toAbs(ext.cleanBackdrop);
-          }
-        } catch(e) {}
-      }
-
-      const finalTitle = oldRecord?.title || details?.title || details?.name || basicData.title || basicData.name || item.title || "未知";
-      const fallbackLogo = options.originUrl
-        ? (options.originUrl + '/api/text_logo.svg?v=' + Date.now() + '&text=' + encodeURIComponent(finalTitle))
-        : null;
-
-      let rawDate = (
-        details?.first_air_date ||
-        details?.release_date ||
-        details?.last_episode_air_date ||
-        basicData.first_air_date ||
-        basicData.release_date ||
-        oldRecord?.first_air_date ||
-        oldRecord?.release_date ||
-        oldRecord?.air_date ||
-        ""
-      ).toString().trim();
-
-      let validDate = null;
-      const dateMatch = rawDate.match(/\b(19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/);
-      if (dateMatch) {
-        const parts = dateMatch[0].split(/[-/.]/);
-        validDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-      } else {
-        const yearMatch = rawDate.match(/\b(19|20)\d{2}\b/);
-        if (yearMatch) validDate = `${yearMatch[0]}-01-01`;
-      }
-
-      const finalYear = validDate ? validDate.substring(0, 4) : (oldRecord?.year || null);
-
-      const resolvedImdbId = details?.external_ids?.imdb_id || details?.imdb_id || basicData.imdb_id || item.imdbId || oldRecord?.imdbId || null;
-      const resolvedTvdbId = details?.external_ids?.tvdb_id || details?.tvdb_id || basicData.tvdb_id || item.tvdbId || oldRecord?.tvdbId || null;
-
-      // 🌟 1. 继承老数据评分（确保已有数据 100% 继承，0 消耗 MDBList 额度）
-      let extraRatings = { 
-        traktScore: oldRecord?.trakt_rating || oldRecord?.traktRating || oldRecord?.ratings?.trakt || null, 
-        imdbScore: oldRecord?.imdb_rating || oldRecord?.imdbRating || oldRecord?.ratings?.imdb || null, 
-        rtScore: oldRecord?.rotten_tomatoes || oldRecord?.rottenTomatoes || oldRecord?.tomato_rating || oldRecord?.tomatoRating || oldRecord?.tomatoMeter || oldRecord?.tomatoes || oldRecord?.rt || oldRecord?.ratings?.rotten_tomatoes || oldRecord?.ratings?.rottenTomatoes || null 
-      };
-
-      if (needDetailFetch) {
-        extraRatings = await fetchFourRatings(tmdbId, resolvedImdbId, actualMediaType, env, reqCtx);
-      }
-
-      const tmdbScore = Number((basicData.vote_average || details?.vote_average || oldRecord?.vote_average || 0).toFixed(1));
-      const imdbScore = extraRatings.imdbScore ? Number(Number(extraRatings.imdbScore).toFixed(1)) : (oldRecord?.imdb_rating ? Number(oldRecord.imdb_rating) : undefined);
-      const traktScore = extraRatings.traktScore ? Number(Number(extraRatings.traktScore).toFixed(1)) : (oldRecord?.trakt_rating ? Number(oldRecord.trakt_rating) : undefined);
-      const rtScore = extraRatings.rtScore ? parseInt(extraRatings.rtScore, 10) : (oldRecord?.rotten_tomatoes ? parseInt(oldRecord.rotten_tomatoes, 10) : (oldRecord?.rottenTomatoes ? parseInt(oldRecord.rottenTomatoes, 10) : undefined));
-
-      // 🌟 2. 顶级全兼容字段注入（全格式别名通杀，确保客户端 100% 亮起）
-      results.push({
-        id: tmdbId || oldRecord?.tmdbId || Math.floor(Math.random() * 1000000),
-        name: finalTitle,
-        title: finalTitle,
-        tmdbId: tmdbId || oldRecord?.tmdbId,
-        imdbId: resolvedImdbId,
-        tvdbId: resolvedTvdbId,
-        
-        // 🌟 顶层全兼容字段
-        vote_average: tmdbScore,
-        imdb_rating: imdbScore || undefined,
-        imdbRating: imdbScore || undefined,
-        trakt_rating: traktScore || undefined,
-        traktRating: traktScore || undefined,
+    results.push({
+      id: tmdbId || oldRecord?.tmdbId || Math.floor(Math.random() * 1000000),
+      name: finalTitle,
+      title: finalTitle,
+      tmdbId: tmdbId || oldRecord?.tmdbId,
+      imdbId: resolvedImdbId,
+      tvdbId: resolvedTvdbId,
+      
+      // 🌟 分级标签 (TV-MA/限/辅15/护/普)
+      certification: certValue,
+      content_rating: certValue,
+      contentRating: certValue,
+      
+      // 🌟 评分字段
+      vote_average: tmdbScore,
+      imdb_rating: imdbScore || undefined,
+      imdbRating: imdbScore || undefined,
+      trakt_rating: traktScore || undefined,
+      traktRating: traktScore || undefined,
+      rotten_tomatoes: rtScore || undefined,
+      rottenTomatoes: rtScore || undefined,
+      tomato_rating: rtScore || undefined,
+      tomatoRating: rtScore || undefined,
+      tomatoMeter: rtScore || undefined,
+      tomatoes: rtScore || undefined,
+      rt: rtScore || undefined,
+      
+      ratings: {
+        tmdb: tmdbScore > 0 ? tmdbScore : undefined,
+        imdb: imdbScore || undefined,
+        trakt: traktScore || undefined,
         rotten_tomatoes: rtScore || undefined,
         rottenTomatoes: rtScore || undefined,
         tomato_rating: rtScore || undefined,
         tomatoRating: rtScore || undefined,
         tomatoMeter: rtScore || undefined,
         tomatoes: rtScore || undefined,
-        rt: rtScore || undefined,
-        
-        // 🌟 聚合评分对象 (全兼容别名)
-        ratings: {
-          tmdb: tmdbScore > 0 ? tmdbScore : undefined,
-          imdb: imdbScore || undefined,
-          trakt: traktScore || undefined,
-          rotten_tomatoes: rtScore || undefined,
-          rottenTomatoes: rtScore || undefined,
-          tomato_rating: rtScore || undefined,
-          tomatoRating: rtScore || undefined,
-          tomatoMeter: rtScore || undefined,
-          tomatoes: rtScore || undefined,
-          rt: rtScore || undefined
-        },
+        rt: rtScore || undefined
+      },
 
-        release_date: validDate || basicData.release_date || oldRecord?.release_date || null,
-        first_air_date: validDate || basicData.first_air_date || oldRecord?.first_air_date || null,
-        air_date: validDate || null,
-        pubdate: validDate || null,
-        year: finalYear,
-        popularity: basicData.popularity || oldRecord?.popularity || 0,
-        original_language: origLang || details?.original_language || "",
-        poster_path: finalPoster,
-        noLogoPoster: finalNoLogoPoster,
-        poster_source: finalPosterSource,
-        no_logo_poster_source: finalNoLogoSource,
-        backdrop_path: finalBackdrop || finalThumb || finalPoster,
-        backdrop_source: finalBackdropSource,
-        genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
-        media_type: detectedType,
-        thumb: finalThumb,
-        thumb_source: finalThumbSource,
-        logo: finalLogo || fallbackLogo,
-        logo_source: finalLogo ? finalLogoSource : 'auto', 
-        verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
-        logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
-        crawledAt: oldRecord?.crawledAt || new Date().toISOString(),
-        image_scanned: true,
-        last_episode_air_date: oldRecord?.last_episode_air_date || null,
-        next_episode_air_date: oldRecord?.next_episode_air_date || null
-      });
-
-      if (deduplicateByTmdbId(results).length >= limit) break;
-    }
+      release_date: validDate || basicData.release_date || oldRecord?.release_date || null,
+      first_air_date: validDate || basicData.first_air_date || oldRecord?.first_air_date || null,
+      air_date: validDate || null,
+      pubdate: validDate || null,
+      year: validDate ? validDate.substring(0, 4) : (oldRecord?.year || null),
+      popularity: basicData.popularity || oldRecord?.popularity || 0,
+      original_language: details?.original_language || basicData.original_language || oldRecord?.original_language || "",
+      poster_path: finalPoster,
+      noLogoPoster: finalNoLogoPoster,
+      poster_source: finalPosterSource,
+      no_logo_poster_source: finalNoLogoSource,
+      backdrop_path: finalBackdrop || finalThumb || finalPoster,
+      backdrop_source: finalBackdropSource,
+      genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
+      media_type: detectedType,
+      thumb: finalThumb,
+      thumb_source: finalThumbSource, 
+      logo: finalLogo || (options.originUrl ? `${options.originUrl}/api/text_logo.svg?v=${Date.now()}&text=${encodeURIComponent(finalTitle)}` : null),
+      logo_source: finalLogo ? finalLogoSource : 'auto', 
+      verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
+      logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
+      crawledAt: oldRecord?.crawledAt || new Date().toISOString(),
+      ratings_scanned: true,
+      image_scanned: true,
+      last_episode_air_date: oldRecord?.last_episode_air_date || null,
+      next_episode_air_date: oldRecord?.next_episode_air_date || null
+    });
   }
 
   return deduplicateByTmdbId(results).slice(0, limit);
@@ -3434,7 +3376,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
     processedData = await processItemsWithTMDB(rawCn, "tv", env, limit, processOpts(), reqCtx);
   }
   else if (category === "variety_kr") {
-    const seeds = [{ title: "런닝맨", tmdbId: null }, { title: "아는 형님", tmdbId: null }, { title: "나 혼자 산다", tmdbId: null }, { title: "1박 2일", tmdbId: null }, { title: "환승연애", tmdbId: null }, { title: "놀라운 토요일", tmdbId: null }, { title: "유 퀴즈 온 더 블럭", tmdbId: null }];
+    const seeds = [{ title: "런닝맨", tmdbId: null }, { title: "아는 형님", tmdbId: null }, { title: "나 혼자 산达", tmdbId: null }, { title: "1박 2일", tmdbId: null }, { title: "환승연애", tmdbId: null }, { title: "놀라운 토요일", tmdbId: null }, { title: "유 퀴즈 온 더 블럭", tmdbId: null }];
     const tmdbKr = await fetchTMDBDiscoverList('tv', { with_genres: '10764', with_original_language: 'ko', sort_by: 'popularity.desc' }, env, limit, reqCtx).catch(() => []);
     let krList = [...seeds]; const seenKr = new Set(seeds.map(s => s.title));
     tmdbKr.forEach(item => { if (!seenKr.has(item.title)) { krList.push(item); seenKr.add(item.title); } });
@@ -3539,6 +3481,26 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           return { count: oldItemsList.length, stats: computeAssetStats(oldItemsList), newLogos: [] };
       }
 
+      // 🌟 核心修复：从 R2 读取当前分类你设定的排序规则（默认 / 最新 / 热度），在写入前物理排好序！
+      try {
+        const layoutObj = await env.R2_BUCKET.get("layout-config.json");
+        if (layoutObj) {
+          const layoutCfg = await layoutObj.json();
+          const sortRule = layoutCfg.layout?.[category]?.sort || 'default';
+
+          if (sortRule === 'year') {
+            combinedData.sort((a, b) => {
+              const yA = parseInt(a.year || (a.first_air_date ? a.first_air_date.substring(0, 4) : '0'), 10);
+              const yB = parseInt(b.year || (b.first_air_date ? b.first_air_date.substring(0, 4) : '0'), 10);
+              if (yB !== yA) return yB - yA; // 2026 -> 2025 -> 2024
+              return (b.vote_average || 0) - (a.vote_average || 0);
+            });
+          } else if (sortRule === 'heat') {
+            combinedData.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+          }
+        }
+      } catch (e) {}
+
       const finalJson = { platform: config.platform, type: config.type, count: combinedData.length, lastUpdated: new Date().toISOString(), data: combinedData };
       await env.R2_BUCKET.put(config.fileName, JSON.stringify(finalJson, null, 2), { httpMetadata: { contentType: "application/json" } });
       
@@ -3591,7 +3553,7 @@ function isAdmin(request, env) {
   return (env.ADMIN_SECRET && token === env.ADMIN_SECRET) || (env.SYNC_SECRET && token === env.SYNC_SECRET);
 }
 
-// 🌟 4. 后端推送时终极拦截锁：无论前端传递什么，只要不是 hero-list 全部锁定为 poster-list
+// 🌟 4. 后端推送时终极拦截锁：无缝安全合并
 function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl, fallbackTsCode) {
   if (!existingText || (!existingText.includes("createV2BlockTemplates") && !existingText.includes("createDefaultBlockTemplates"))) {
     return fallbackTsCode;
@@ -3633,9 +3595,18 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     }
     if (closeBracePos === -1) return null;
 
-    return { start: openBracePos, end: closeBracePos + 1 };
+    let endPos = closeBracePos + 1;
+    // 🌟 精准吞掉合集块末尾的类型断言，防止多次合并造成 TypeScript 语法破坏
+    const tailSlice = text.substring(endPos, endPos + 60);
+    const asMatch = tailSlice.match(/^\s*as\s+unknown\s+as\s+HomeBlockTemplate/);
+    if (asMatch) {
+      endPos += asMatch[0].length;
+    }
+
+    return { start: openBracePos, end: endPos };
   }
 
+  // 1. 清理取消勾选的模块
   const allCmsCatIds = CATEGORY_CONFIGS.map(c => c.id);
   const selectedCatIds = new Set(selectedCats.map(c => c.id));
   const unselectedCmsCatIds = allCmsCatIds.filter(id => !selectedCatIds.has(id));
@@ -3654,24 +3625,21 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     }
   }
 
+  // 2. 注入/更新勾选的模块
   for (const c of selectedCats) {
     let newBlockCode = "";
     const catCfg = CATEGORY_CONFIGS.find(cfg => cfg.id === c.id);
     const fileName = catCfg ? catCfg.fileName : `${c.id}.json`;
-    
-    // 🌟 后端终极拦截：无论前端传什么，只要不是 hero-list 全部锁定为 poster-list
     const safePreset = (c.currentPreset === 'hero-list') ? 'hero-list' : 'poster-list';
 
     if (c.isCollection) {
-      // 🌟 1. 合集块：推送到 GitHub 前自动清理国旗 Emoji 以及 (合集) 后缀
       const cleanTitle = (c.name || '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]/g, '').replace(/\s*[(（].*?[)）]\s*/g, '').trim();
       newBlockCode = `    {\n      id: "${c.id}",\n      title: "${cleanTitle}",\n      mediaType: "${c.type}",\n      preset: COLLECTION_PRESET,\n      style: "image-landscape",\n      groupMode: "weekday",\n      children: [1, 2, 3, 4, 5, 6, 7].map(d => ({\n        id: \`${c.id}-\${d}\`,\n        label: \`周\${["一", "二", "三", "四", "五", "六", "日"][d - 1]}\`,\n        weekday: d,\n        title: \`周\${["一", "二", "三", "四", "五", "六", "日"][d - 1]}\`,\n        mediaType: "${c.type}",\n        preset: "poster-list",\n        source: { path: \`${myR2}/${c.id}-\${d}.json\`, itemEnvelope: "data" }\n      }))\n    } as unknown as HomeBlockTemplate`;
     } else {
-      // 🌟 2. 普通单项块：带上 showOverview: false 彻底隐藏首页简介
-      newBlockCode = `    {\n      id: "${c.id}",\n      mediaType: "${c.type}",\n      titleKey: "${c.titleKey}",\n      preset: "${safePreset}",\n      showRank: true,\n      showOverview: false,\n      source: { path: "${myR2}/${fileName}", itemEnvelope: "data" }\n    }`;
+      const sortQuery = (c.sort && c.sort !== 'default') ? `?sort=${c.sort}` : '';
+      newBlockCode = `    {\n      id: "${c.id}",\n      mediaType: "${c.type}",\n      titleKey: "${c.titleKey}",\n      preset: "${safePreset}",\n      showRank: true,\n      showOverview: false,\n      sort: "${c.sort || 'default'}",\n      source: { path: "${myR2}/${fileName}${sortQuery}", itemEnvelope: "data" }\n    }`;
     }
 
-    // 🌟 3. 增量替换/追加进代码
     const bounds = findBlockBounds(updatedText, c.id);
     if (bounds) {
       updatedText = updatedText.substring(0, bounds.start) + newBlockCode.trim() + updatedText.substring(bounds.end);
@@ -4075,7 +4043,7 @@ export default {
                   return { year: y, fullDate: `${y}-${m}-${d}`, isUpcoming: false };
               }
 
-              const yearMatch = rawDateStr.match(/\b(19|20)\d{2}\b/);
+              const yearMatch = rawDateStr.match(/\b(19|20)\d{2}\\b/);
               if (yearMatch) {
                   const y = parseInt(yearMatch[0], 10);
                   return { year: y, fullDate: `${y}-01-01`, isUpcoming: false };
@@ -4231,7 +4199,8 @@ export default {
         try {
             const body = await request.json();
             const tmdbId = body.tmdbId;
-            const mediaType = body.type || 'movie';
+            const rawType = String(body.type || "").toLowerCase();
+            const mediaType = (rawType === 'movie' || rawType.includes('movie')) ? 'movie' : 'tv';
             const fctx = { subreqs: 0, maxSubreqs: 5, isSafeMode: false, clearCooldown: true };
             
             const details = await tmdbFetch(
@@ -4590,13 +4559,14 @@ export default {
 
         const results = [];
         const currentOrigin = new URL(request.url).origin;
-        
-        const fctx = { subreqs: 0, maxSubreqs: 45, isSafeMode: false, clearCooldown: true };
+        const fctx = { subreqs: 0, maxSubreqs: 48, isSafeMode: false, clearCooldown: true };
 
         if (categoryName && env.R2_BUCKET) {
             let fileName = categoryName + ".json";
             if (categoryName.endsWith("_collection")) {
                 fileName = `${categoryName}-${body.weekday || 1}.json`;
+            } else if (categoryName.includes("_collection-")) {
+                fileName = `${categoryName}.json`;
             } else {
                 const config = CATEGORY_MAP[categoryName];
                 if (config) fileName = config.fileName;
@@ -4610,55 +4580,108 @@ export default {
                     
                     for (const reqItem of itemsToProcess) {
                         const tmdbId = reqItem.id;
-                        const mediaType = reqItem.type || 'movie';
+                        
+                        // 🌟 后端合法判断：使用 CATEGORY_MAP 与 CATEGORY_CONFIGS
+                        const rawType = String(reqItem.type || "").toLowerCase();
+                        const catConfig = CATEGORY_MAP[categoryName] || CATEGORY_CONFIGS.find(c => c.id === categoryName);
+                        const catType = String(catConfig?.type || "").toLowerCase();
+                        const isMovie = rawType === 'movie' || rawType.includes('movie') || (!rawType.includes('tv') && catType.includes('movie'));
+                        const actualMediaType = isMovie ? "movie" : "tv";
 
-                        if (fctx.subreqs >= fctx.maxSubreqs - 1) {
+                        if (fctx.subreqs >= fctx.maxSubreqs - 4) {
                             break; 
                         }
                         
                         try {
                             const details = await tmdbFetch(
-                                mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
-                                { language: "zh-CN" },
+                                actualMediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
+                                { language: "zh-CN", append_to_response: actualMediaType === "movie" ? "external_ids,release_dates" : "external_ids,content_ratings" },
                                 env, fctx
                             );
                             
                             const imagesData = await tmdbFetch(
-                                mediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`,
+                                actualMediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`,
                                 {}, 
                                 env, fctx
                             );
 
+                            const resolvedImdbId = details?.external_ids?.imdb_id || details?.imdb_id || null;
+                            const resolvedTvdbId = details?.external_ids?.tvdb_id || details?.tvdb_id || null;
+
+                            // 🌟 提取评分 (IMDb + Trakt + 烂番茄)
+                            let extraRatings = { traktScore: null, imdbScore: null, rtScore: null };
+                            if (env.MDBLIST_API_KEY || env.OMDB_API_KEY || env.TRAKT_CLIENT_ID) {
+                                extraRatings = await fetchFourRatings(tmdbId, resolvedImdbId, actualMediaType, env, fctx);
+                            }
+
+                            const tmdbScore = Number((details?.vote_average || 0).toFixed(1));
+                            const imdbScore = extraRatings.imdbScore ? Number(Number(extraRatings.imdbScore).toFixed(1)) : undefined;
+                            const traktScore = extraRatings.traktScore ? Number(Number(extraRatings.traktScore).toFixed(1)) : undefined;
+                            const rtScore = extraRatings.rtScore ? parseInt(extraRatings.rtScore, 10) : undefined;
+                            const certValue = extractCertification(details, actualMediaType);
+
                             const ext = extractImages(imagesData, details.backdrop_path, details.poster_path, details.original_language || "");
                             const title = details.title || details.name || "";
                             
-                            let logoUrl = null;
-                            if (ext.logo) {
-                                logoUrl = ext.logo.startsWith('http') ? ext.logo : 'https://image.tmdb.org/t/p/original' + ext.logo;
-                            }
-                            
-                            let thumbUrl = null;
-                            if (ext.thumb) {
-                                thumbUrl = ext.thumb.startsWith('http') ? ext.thumb : 'https://image.tmdb.org/t/p/original' + ext.thumb;
-                            }
-
-                            let cleanBackdropUrl = null;
-                            if (ext.cleanBackdrop) {
-                                cleanBackdropUrl = ext.cleanBackdrop.startsWith('http') ? ext.cleanBackdrop : 'https://image.tmdb.org/t/p/original' + ext.cleanBackdrop;
-                            }
-
-                            let officialPosterUrl = null;
-                            if (ext.officialPoster) {
-                                officialPosterUrl = ext.officialPoster.startsWith('http') ? ext.officialPoster : 'https://image.tmdb.org/t/p/original' + ext.officialPoster;
-                            }
-
-                            let noLogoPosterUrl = null;
-                            if (ext.noLogoPoster) {
-                                noLogoPosterUrl = ext.noLogoPoster.startsWith('http') ? ext.noLogoPoster : 'https://image.tmdb.org/t/p/original' + ext.noLogoPoster;
-                            }
+                            let logoUrl = ext.logo ? (ext.logo.startsWith('http') ? ext.logo : 'https://image.tmdb.org/t/p/original' + ext.logo) : null;
+                            let thumbUrl = ext.thumb ? (ext.thumb.startsWith('http') ? ext.thumb : 'https://image.tmdb.org/t/p/original' + ext.thumb) : null;
+                            let cleanBackdropUrl = ext.cleanBackdrop ? (ext.cleanBackdrop.startsWith('http') ? ext.cleanBackdrop : 'https://image.tmdb.org/t/p/original' + ext.cleanBackdrop) : null;
+                            let officialPosterUrl = ext.officialPoster ? (ext.officialPoster.startsWith('http') ? ext.officialPoster : 'https://image.tmdb.org/t/p/original' + ext.officialPoster) : null;
+                            let noLogoPosterUrl = ext.noLogoPoster ? (ext.noLogoPoster.startsWith('http') ? ext.noLogoPoster : 'https://image.tmdb.org/t/p/original' + ext.noLogoPoster) : null;
 
                             oldJson.data.forEach(item => {
-                                if (item.tmdbId == tmdbId) { 
+                                if (String(item.tmdbId) === String(tmdbId) || String(item.id) === String(tmdbId)) { 
+                                    item.imdbId = resolvedImdbId || item.imdbId;
+                                    item.tvdbId = resolvedTvdbId || item.tvdbId;
+
+                                    // 🌟 1. 彻底清除剧情简介字段（只删简介，绝不删除动作/剧情等分类）
+                                    delete item.overview;
+                                    delete item.summary;
+                                    delete item.intro;
+                                    delete item.description;
+
+                                    // 🌟 2. 补齐与保留题材分类（如动作/剧情等 genre_ids 数组）
+                                    if (details.genres && Array.isArray(details.genres)) {
+                                        if (!item.genre_ids || item.genre_ids.length === 0) {
+                                            item.genre_ids = details.genres.map(g => g.id);
+                                        }
+                                    }
+
+                                    // 🌟 3. 注入分级标签
+                                    if (certValue) {
+                                        item.certification = certValue;
+                                        item.content_rating = certValue;
+                                        item.contentRating = certValue;
+                                    }
+
+                                    // 🌟 4. 注入评分数据
+                                    if (tmdbScore > 0) item.vote_average = tmdbScore;
+                                    if (imdbScore) { item.imdb_rating = imdbScore; item.imdbRating = imdbScore; }
+                                    if (traktScore) { item.trakt_rating = traktScore; item.traktRating = traktScore; }
+                                    if (rtScore) {
+                                        item.rotten_tomatoes = rtScore;
+                                        item.rottenTomatoes = rtScore;
+                                        item.tomato_rating = rtScore;
+                                        item.tomatoRating = rtScore;
+                                        item.tomatoMeter = rtScore;
+                                        item.tomatoes = rtScore;
+                                        item.rt = rtScore;
+                                    }
+
+                                    item.ratings = {
+                                        tmdb: item.vote_average || tmdbScore || undefined,
+                                        imdb: item.imdb_rating || imdbScore || undefined,
+                                        trakt: item.trakt_rating || traktScore || undefined,
+                                        rotten_tomatoes: item.rotten_tomatoes || rtScore || undefined,
+                                        rottenTomatoes: item.rottenTomatoes || rtScore || undefined,
+                                        tomato_rating: item.tomato_rating || rtScore || undefined,
+                                        tomatoRating: item.tomatoRating || rtScore || undefined,
+                                        tomatoMeter: item.tomatoMeter || rtScore || undefined,
+                                        tomatoes: item.tomatoes || rtScore || undefined,
+                                        rt: item.rt || rtScore || undefined
+                                    };
+
+                                    // 🌟 5. 注入图片资产
                                     if (logoUrl && item.logo_source !== 'manual') {
                                         item.logo = logoUrl;
                                         item.logo_source = 'auto'; 
@@ -4692,6 +4715,7 @@ export default {
                                     }
 
                                     item.crawledAt = new Date().toISOString();
+                                    item.ratings_scanned = true;
                                     item.image_scanned = true; 
                                     changed = true;
                                 }
@@ -4797,7 +4821,7 @@ export default {
   },
 
   // ==========================================
-  // 10. 智能极速调度引擎 (修复死循环与通知轰炸版)
+  // 10. 智能极速调度引擎
   // ==========================================
   async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】", isManualStart = false) {
     if (!env.R2_BUCKET) throw new Error("未检测到 env.R2_BUCKET 存储桶绑定");
@@ -4954,3 +4978,4 @@ export default {
     ctx.waitUntil(this.runCronLogic(env, ctx, "【Cloudflare 定时触发】", false));
   }
 };
+
