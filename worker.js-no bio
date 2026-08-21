@@ -134,9 +134,19 @@ const FRONTEND_HTML_P1 = `
                             </div>
                             
                             <div class="flex items-center gap-2 shrink-0 pl-2.5 border-l border-slate-800/80">
-                                <div class="h-7 px-2 bg-slate-900 border border-slate-700/80 rounded-lg flex items-center gap-1 shrink-0 text-xs text-slate-300 shadow-sm box-border" title="设定每日自动全量同步时间">
+                                <div class="h-7 px-2 bg-slate-900 border border-slate-700/80 rounded-lg flex items-center gap-1 shrink-0 text-xs text-slate-300 shadow-sm box-border" title="设定自动全量同步频率与时间">
+                                    <span class="text-slate-400 font-bold text-[11px] leading-none">🗓️</span>
+                                    <select id="cron-interval-select" onchange="changeAutoSchedule()" class="bg-transparent text-cyan-400 font-bold outline-none cursor-pointer text-xs h-full leading-none mr-1">
+                                        <option value="1" selected>每 1 天</option>
+                                        <option value="2">每 2 天</option>
+                                        <option value="3">每 3 天</option>
+                                        <option value="4">每 4 天</option>
+                                        <option value="5">每 5 天</option>
+                                        <option value="6">每 6 天</option>
+                                        <option value="7">每 7 天</option>
+                                    </select>
                                     <span class="text-slate-400 font-bold text-[11px] leading-none">⏰</span>
-                                    <select id="cron-hour-select" onchange="changeAutoStartTime(this.value)" class="bg-transparent text-emerald-400 font-bold outline-none cursor-pointer text-xs h-full leading-none">
+                                    <select id="cron-hour-select" onchange="changeAutoSchedule()" class="bg-transparent text-emerald-400 font-bold outline-none cursor-pointer text-xs h-full leading-none">
                                         <option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option>
                                         <option value="3" selected>03:00</option><option value="4">04:00</option><option value="5">05:00</option>
                                         <option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option>
@@ -575,6 +585,13 @@ const FRONTEND_HTML_P1 = `
 
                 cronIsCurrentlyPaused = !!data.isPaused;
 
+                const intervalSelect = document.getElementById('cron-interval-select');
+                if (intervalSelect && typeof data.autoIntervalDays !== 'undefined') {
+                    if (document.activeElement !== intervalSelect) {
+                        intervalSelect.value = data.autoIntervalDays.toString();
+                    }
+                }
+
                 if (hourSelect && typeof data.autoStartHour !== 'undefined') {
                     if (document.activeElement !== hourSelect) {
                         hourSelect.value = data.autoStartHour.toString();
@@ -622,8 +639,10 @@ const FRONTEND_HTML_P1 = `
                     }
                     if (info) {
                         const setH = data.autoStartHour !== undefined ? data.autoStartHour : 3;
+                        const interval = data.autoIntervalDays !== undefined ? data.autoIntervalDays : 1;
                         const timeStr = (setH < 10 ? '0' + setH : setH) + ':00';
-                        info.innerHTML = '<span class="text-emerald-300 font-bold">待命</span> <span class="opacity-70 text-xs text-slate-400 ml-1">(' + timeStr + '更新)</span>';
+                        const schedText = interval === 1 ? ('每' + timeStr) : ('每' + interval + '天 ' + timeStr);
+                        info.innerHTML = '<span class="text-emerald-300 font-bold">待命</span> <span class="opacity-70 text-xs text-slate-400 ml-1">(' + schedText + '更新)</span>';
                     }
                 }
             } catch(e) {}
@@ -711,23 +730,29 @@ const FRONTEND_HTML_P1 = `
             } catch(e) { showToast("❌ 网络请求异常", true); }
         }
 
-        async function changeAutoStartTime(hour) {
+        async function changeAutoSchedule() {
             if (!sysPwd) return showToast("请先登录管理员", true);
+            const hour = document.getElementById('cron-hour-select').value;
+            const interval = document.getElementById('cron-interval-select').value;
             try {
                 const res = await fetch(ACTION_BASE + '/set_cron_time', {
                     method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ hour: parseInt(hour, 10) })
+                    body: JSON.stringify({ hour: parseInt(hour, 10), interval: parseInt(interval, 10) })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showToast("✅ 定时启动时间已成功更新为每日 " + (data.autoStartHour < 10 ? '0' + data.autoStartHour : data.autoStartHour) + ":00！");
+                    const hStr = (data.autoStartHour < 10 ? '0' + data.autoStartHour : data.autoStartHour) + ":00";
+                    const tip = data.autoIntervalDays === 1 ? ("每日 " + hStr) : ("每 " + data.autoIntervalDays + " 天的 " + hStr);
+                    showToast("✅ 自动排期已成功更新为：" + tip + " 自动执行！");
                     pollCronStatus();
                 } else {
                     showToast("❌ 设置失败: " + data.error, true);
                 }
             } catch(e) { showToast("❌ 网络请求异常", true); }
         }
+        // 兼容旧调用别名
+        const changeAutoStartTime = changeAutoSchedule;
 
         async function toggleCronPause() {
             if (!sysPwd) return showToast("请先登录管理员", true);
@@ -2646,39 +2671,68 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
     return { traktScore, imdbScore, rtScore };
   }
 
-  // 🌟 1. MDBList 官方接口直接请求（电影与电视剧通杀）
+  // 🌟 1. MDBList 官方接口直接请求（支持多 API Key 自动故障/额度耗尽顺延）
   if (env.MDBLIST_API_KEY && (tmdbId || imdbId)) {
-    try {
-      const isTv = mediaType === 'tv' || mediaType === 'tv_series';
-      const mType = isTv ? 'show' : 'movie';
-      
-      const mUrl = tmdbId 
-        ? `https://api.mdblist.com/tmdb/${mType}/${tmdbId}?apikey=${env.MDBLIST_API_KEY}`
-        : `https://api.mdblist.com/imdb/${imdbId}?apikey=${env.MDBLIST_API_KEY}`;
-      
-      const mRes = await safeFetch(mUrl, { headers: { "Accept": "application/json", "User-Agent": "Mozilla/5.0" } }, reqCtx);
-      if (mRes.ok) {
-        const mData = await mRes.json();
-        if (mData && Array.isArray(mData.ratings)) {
-          mData.ratings.forEach(r => {
-            const src = String(r.source || "").toLowerCase();
-            if (src === 'imdb' && typeof r.value === 'number') {
-              imdbScore = r.value <= 10 ? r.value : Number((r.value / 10).toFixed(1));
-            }
-            if (src === 'trakt' && typeof r.value === 'number') {
-              traktScore = r.value <= 10 ? Number(r.value.toFixed(1)) : Number((r.value / 10).toFixed(1));
-            }
-            if ((src === 'tomatoes' || src === 'rottentomatoes') && (r.score || r.value)) {
-              rtScore = parseInt(r.score || r.value, 10);
-            }
-          });
+    const mdblistKeys = String(env.MDBLIST_API_KEY || "")
+      .split(/[,;\s\n]+/)
+      .map(k => k.trim())
+      .filter(Boolean);
 
-          if (imdbScore || traktScore || rtScore) {
-            return { traktScore, imdbScore, rtScore };
+    if (reqCtx && !reqCtx.exhaustedMdbKeys) {
+      reqCtx.exhaustedMdbKeys = new Set();
+    }
+
+    const isTv = mediaType === 'tv' || mediaType === 'tv_series';
+    const mType = isTv ? 'show' : 'movie';
+
+    for (const apiKey of mdblistKeys) {
+      if (reqCtx && reqCtx.exhaustedMdbKeys && reqCtx.exhaustedMdbKeys.has(apiKey)) {
+        continue; // 自动跳过已耗尽额度的 Key
+      }
+
+      if (reqCtx && reqCtx.subreqs >= reqCtx.maxSubreqs - 2) break;
+
+      try {
+        const mUrl = tmdbId 
+          ? `https://api.mdblist.com/tmdb/${mType}/${tmdbId}?apikey=${apiKey}`
+          : `https://api.mdblist.com/imdb/${imdbId}?apikey=${apiKey}`;
+        
+        const mRes = await safeFetch(mUrl, { headers: { "Accept": "application/json", "User-Agent": "Mozilla/5.0" } }, reqCtx);
+        
+        // 遇到额度超限 (429) 或认证失败 (401/403)，标记并顺延至下一个 Key
+        if (mRes.status === 429 || mRes.status === 401 || mRes.status === 403) {
+          if (reqCtx) reqCtx.exhaustedMdbKeys.add(apiKey);
+          continue;
+        }
+
+        if (mRes.ok) {
+          const mData = await mRes.json();
+          if (mData && (mData.response === false || mData.error)) {
+            if (reqCtx) reqCtx.exhaustedMdbKeys.add(apiKey);
+            continue;
+          }
+
+          if (mData && Array.isArray(mData.ratings)) {
+            mData.ratings.forEach(r => {
+              const src = String(r.source || "").toLowerCase();
+              if (src === 'imdb' && typeof r.value === 'number') {
+                imdbScore = r.value <= 10 ? r.value : Number((r.value / 10).toFixed(1));
+              }
+              if (src === 'trakt' && typeof r.value === 'number') {
+                traktScore = r.value <= 10 ? Number(r.value.toFixed(1)) : Number((r.value / 10).toFixed(1));
+              }
+              if ((src === 'tomatoes' || src === 'rottentomatoes') && (r.score || r.value)) {
+                rtScore = parseInt(r.score || r.value, 10);
+              }
+            });
+
+            if (imdbScore || traktScore || rtScore) {
+              return { traktScore, imdbScore, rtScore };
+            }
           }
         }
-      }
-    } catch(e) {}
+      } catch (e) {}
+    }
   }
 
   // 🌟 2. OMDb 备用
@@ -3741,15 +3795,16 @@ export default {
       try {
         const body = await request.json();
         const setHour = parseInt(body.hour, 10);
-        let state = { autoStartHour: 3 };
+        const setIntervalDays = parseInt(body.interval, 10);
+        let state = { autoStartHour: 3, autoIntervalDays: 1 };
         if (env.R2_BUCKET) {
           const oldObj = await env.R2_BUCKET.get("cron_state.json");
           if (oldObj) state = await oldObj.json();
           state.autoStartHour = isNaN(setHour) ? 3 : setHour;
-          state.lastRunDate = null;
+          state.autoIntervalDays = (isNaN(setIntervalDays) || setIntervalDays < 1) ? 1 : setIntervalDays;
           await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), { httpMetadata: { contentType: "application/json" } });
         }
-        return new Response(JSON.stringify({ success: true, autoStartHour: state.autoStartHour }), { 
+        return new Response(JSON.stringify({ success: true, autoStartHour: state.autoStartHour, autoIntervalDays: state.autoIntervalDays }), { 
           headers: { "Content-Type": "application/json;charset=UTF-8", ...antiCacheHeaders } 
         });
       } catch (e) {
@@ -4852,6 +4907,7 @@ export default {
       lastRunDate: null, 
       isPaused: false,
       autoStartHour: 3,
+      autoIntervalDays: 1,
       totalAssets: { count: 0, logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 }
     };
 
@@ -4871,7 +4927,15 @@ export default {
     const nowTimeStr = bjTime.toISOString().replace('T', ' ').substring(0, 19);
     const targetUrl = env.WORKER_URL || "https://homepage.eplayerx.cc.cd";
 
-    const isAutoTime = (state.autoStartHour === bjHour && state.lastRunDate !== bjDateStr);
+    // 🌟 计算上次执行与今日的自然日间隔差（支持 1~7 天任意间隔）
+    let daysPassed = 999;
+    if (state.lastRunDate) {
+      const lastTime = new Date(state.lastRunDate + "T00:00:00Z").getTime();
+      const currTime = new Date(bjDateStr + "T00:00:00Z").getTime();
+      daysPassed = Math.max(0, Math.round((currTime - lastTime) / (1000 * 60 * 60 * 24)));
+    }
+    const intervalSetting = state.autoIntervalDays || 1;
+    const isAutoTime = (daysPassed >= intervalSetting && state.autoStartHour === bjHour && state.lastRunDate !== bjDateStr);
     const shouldInitNewCycle = (state.status !== "RUNNING") && (isManualStart || isAutoTime);
 
     if (shouldInitNewCycle) {
@@ -4883,9 +4947,13 @@ export default {
       state.totalAssets = { count: 0, logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 };
 
       if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
+        const schedText = (state.autoIntervalDays && state.autoIntervalDays > 1) 
+          ? `每 ${state.autoIntervalDays} 天一次 (${state.autoStartHour}:00)` 
+          : `每日 (${state.autoStartHour}:00)`;
+
         const startMsg = `🚀 <b>[大盘全量同步 · 开始执行]</b>\n` +
                          `═══════════════════\n` +
-                         `🎯 <b>触发来源</b>: ${isManualStart ? '👑 手动立即测试' : `⏰ 定时自动启动 (${state.autoStartHour}:00)`}\n` +
+                         `🎯 <b>触发来源</b>: ${isManualStart ? '👑 手动立即测试' : `⏰ 定时自动启动 [${schedText}]`}\n` +
                          `📊 <b>计划轮次</b>: 第 ${state.cycleCount || 1} 轮全量更新\n` +
                          `📋 <b>总任务量</b>: 共 ${totalTasks} 个分类与子周历\n` +
                          `⏰ <b>启动时间</b>: <code>${nowTimeStr}</code>\n` +
@@ -4895,7 +4963,10 @@ export default {
     }
 
     if (state.status !== "RUNNING") {
-      return { triggerSource, status: "IDLE", msg: `待命 (每日 ${state.autoStartHour}:00 启动)` };
+      const curInterval = state.autoIntervalDays || 1;
+      const hourStr = (state.autoStartHour < 10 ? '0' + state.autoStartHour : state.autoStartHour) + ':00';
+      const promptText = curInterval === 1 ? `每日 ${hourStr}` : `每 ${curInterval} 天 ${hourStr}`;
+      return { triggerSource, status: "IDLE", msg: `待命 (${promptText} 启动)` };
     }
 
     const reqCtx = { subreqs: 0, maxSubreqs: 46, isSafeMode: false, clearCooldown: false };
