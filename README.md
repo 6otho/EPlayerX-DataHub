@@ -1,4 +1,4 @@
-# 🚀 EPlayerX DataHub
+# 🚀 EplayerX DataHub
 
 > **全自动化、零维护、防强缓存的 EPlayerX 播放器云端数据大盘与首页配置调度中枢。**
 >
