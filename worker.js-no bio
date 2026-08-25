@@ -2784,12 +2784,12 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
 }
 
 // ==========================================
-// 7. TMDB 详细数据加工处理
+// 7. TMDB 详细数据加工处理 (无损继承强化版)
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
   
-  // 🌟 进入网络请求前，优先按最新年份倒序排，让新剧排在最前面拿配额
+  // 优先按年份排序，新剧先拿配额
   const sortedRawItems = [...items].sort((a, b) => {
     const getYear = (x) => {
       const d = String(x?.first_air_date || x?.release_date || x?.air_date || x?.year || "0000");
@@ -2819,10 +2819,11 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
     const toAbs = (p) => (!p || p.startsWith('data:')) ? null : ((p.startsWith('http') || p.startsWith('/api/')) ? p : TMDB_IMG + (p.startsWith('/') ? p : '/' + p));
     const upgradeToOriginal = (url) => (url && typeof url === 'string' && url.includes('image.tmdb.org')) ? url.replace(/\/w\d+/, '/original') : url;
 
+    // 🌟 1. 无条件优先继承老数据的五维资产
     let finalPoster = upgradeToOriginal(oldRecord?.poster_path || toAbs(basicData.poster_path));
     let finalNoLogoPoster = upgradeToOriginal(oldRecord?.noLogoPoster || null);
     let finalThumb = upgradeToOriginal(oldRecord?.thumb || toAbs(basicData.backdrop_path || basicData.poster_path));
-    let finalBackdrop = upgradeToOriginal(oldRecord?.backdrop_path || toAbs(basicData.backdrop_path || basicData.poster_path));
+    let finalBackdrop = upgradeToOriginal(oldRecord?.backdrop_path || oldRecord?.thumb || toAbs(basicData.backdrop_path || basicData.poster_path));
     let finalLogo = upgradeToOriginal(oldRecord?.logo || null);
 
     let finalPosterSource = oldRecord?.poster_source || 'auto';
@@ -2841,7 +2842,6 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
     const hasCert = !!(oldRecord?.certification || oldRecord?.content_rating || oldRecord?.contentRating);
 
     let needDetailFetch = false;
-    // 🌟 缺分级/缺Logo/前35部未扫描，允许调免费的 TMDB 补全
     if (!oldRecord || !hasRealLogo || !hasRealClean || !hasCert || (!alreadyScanned && i < 35)) {
       needDetailFetch = true;
     }
@@ -2863,6 +2863,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
         if (details && imagesData) {
           const ext = extractImages(imagesData, details.backdrop_path, details.poster_path, details.original_language || "");
+          // 只有成功找到新图片且不是手动锁定时才更新，绝不让 null 冲掉老图
           if (ext.logo && finalLogoSource !== 'manual') finalLogo = toAbs(ext.logo);
           if (ext.officialPoster && finalPosterSource !== 'manual') finalPoster = toAbs(ext.officialPoster);
           if (ext.noLogoPoster && finalNoLogoSource !== 'manual') finalNoLogoPoster = toAbs(ext.noLogoPoster);
@@ -2878,7 +2879,10 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
     let extraRatings = { traktScore: savedTrakt, imdbScore: savedImdb, rtScore: savedRt };
     if (!alreadyScanned && i < 35 && reqCtx.subreqs < reqCtx.maxSubreqs - 2) {
-      extraRatings = await fetchFourRatings(tmdbId, resolvedImdbId, actualMediaType, env, reqCtx);
+      const fetchedR = await fetchFourRatings(tmdbId, resolvedImdbId, actualMediaType, env, reqCtx);
+      if (fetchedR.imdbScore) extraRatings.imdbScore = fetchedR.imdbScore;
+      if (fetchedR.traktScore) extraRatings.traktScore = fetchedR.traktScore;
+      if (fetchedR.rtScore) extraRatings.rtScore = fetchedR.rtScore;
     }
 
     const tmdbScore = Number((basicData.vote_average || details?.vote_average || oldRecord?.vote_average || 0).toFixed(1));
@@ -2896,7 +2900,17 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
 
     const certValue = extractCertification(details, actualMediaType) || oldRecord?.certification || oldRecord?.content_rating || oldRecord?.contentRating || undefined;
 
-    results.push({
+    // 🌟 2. 如果老数据已有真实 Logo，绝对不用 text_logo 覆盖
+    let safeFinalLogo = finalLogo;
+    if (!safeFinalLogo && oldRecord?.logo) {
+      safeFinalLogo = oldRecord.logo;
+    }
+    if (!safeFinalLogo && options.originUrl) {
+      safeFinalLogo = `${options.originUrl}/api/text_logo.svg?v=${Date.now()}&text=${encodeURIComponent(finalTitle)}`;
+    }
+
+    const itemResult = {
+      ...(oldRecord || {}),
       id: tmdbId || oldRecord?.tmdbId || Math.floor(Math.random() * 1000000),
       name: finalTitle,
       title: finalTitle,
@@ -2904,65 +2918,71 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
       imdbId: resolvedImdbId,
       tvdbId: resolvedTvdbId,
       
-      // 🌟 分级标签 (TV-MA/限/辅15/护/普)
       certification: certValue,
       content_rating: certValue,
       contentRating: certValue,
       
-      // 🌟 评分字段
-      vote_average: tmdbScore,
-      imdb_rating: imdbScore || undefined,
-      imdbRating: imdbScore || undefined,
-      trakt_rating: traktScore || undefined,
-      traktRating: traktScore || undefined,
-      rotten_tomatoes: rtScore || undefined,
-      rottenTomatoes: rtScore || undefined,
-      tomato_rating: rtScore || undefined,
-      tomatoRating: rtScore || undefined,
-      tomatoMeter: rtScore || undefined,
-      tomatoes: rtScore || undefined,
-      rt: rtScore || undefined,
+      vote_average: tmdbScore > 0 ? tmdbScore : (oldRecord?.vote_average || 0),
+      imdb_rating: imdbScore || oldRecord?.imdb_rating || undefined,
+      imdbRating: imdbScore || oldRecord?.imdbRating || undefined,
+      trakt_rating: traktScore || oldRecord?.trakt_rating || undefined,
+      traktRating: traktScore || oldRecord?.traktRating || undefined,
+      rotten_tomatoes: rtScore || oldRecord?.rotten_tomatoes || undefined,
+      rottenTomatoes: rtScore || oldRecord?.rottenTomatoes || undefined,
+      tomato_rating: rtScore || oldRecord?.tomato_rating || undefined,
+      tomatoRating: rtScore || oldRecord?.tomatoRating || undefined,
+      tomatoMeter: rtScore || oldRecord?.tomatoMeter || undefined,
+      tomatoes: rtScore || oldRecord?.tomatoes || undefined,
+      rt: rtScore || oldRecord?.rt || undefined,
       
       ratings: {
-        tmdb: tmdbScore > 0 ? tmdbScore : undefined,
-        imdb: imdbScore || undefined,
-        trakt: traktScore || undefined,
-        rotten_tomatoes: rtScore || undefined,
-        rottenTomatoes: rtScore || undefined,
-        tomato_rating: rtScore || undefined,
-        tomatoRating: rtScore || undefined,
-        tomatoMeter: rtScore || undefined,
-        tomatoes: rtScore || undefined,
-        rt: rtScore || undefined
+        ...(oldRecord?.ratings || {}),
+        tmdb: tmdbScore > 0 ? tmdbScore : oldRecord?.ratings?.tmdb,
+        imdb: imdbScore || oldRecord?.ratings?.imdb,
+        trakt: traktScore || oldRecord?.ratings?.trakt,
+        rotten_tomatoes: rtScore || oldRecord?.ratings?.rotten_tomatoes,
+        rottenTomatoes: rtScore || oldRecord?.ratings?.rottenTomatoes,
+        tomato_rating: rtScore || oldRecord?.ratings?.tomato_rating,
+        tomatoRating: rtScore || oldRecord?.ratings?.tomatoRating,
+        tomatoMeter: rtScore || oldRecord?.ratings?.tomatoMeter,
+        tomatoes: rtScore || oldRecord?.ratings?.tomatoes,
+        rt: rtScore || oldRecord?.ratings?.rt
       },
 
       release_date: validDate || basicData.release_date || oldRecord?.release_date || null,
       first_air_date: validDate || basicData.first_air_date || oldRecord?.first_air_date || null,
-      air_date: validDate || null,
-      pubdate: validDate || null,
+      air_date: validDate || oldRecord?.air_date || null,
+      pubdate: validDate || oldRecord?.pubdate || null,
       year: validDate ? validDate.substring(0, 4) : (oldRecord?.year || null),
       popularity: basicData.popularity || oldRecord?.popularity || 0,
       original_language: details?.original_language || basicData.original_language || oldRecord?.original_language || "",
-      poster_path: finalPoster,
-      noLogoPoster: finalNoLogoPoster,
+      poster_path: finalPoster || oldRecord?.poster_path,
+      noLogoPoster: finalNoLogoPoster || oldRecord?.noLogoPoster,
       poster_source: finalPosterSource,
       no_logo_poster_source: finalNoLogoSource,
-      backdrop_path: finalBackdrop || finalThumb || finalPoster,
+      backdrop_path: finalBackdrop || finalThumb || finalPoster || oldRecord?.backdrop_path,
       backdrop_source: finalBackdropSource,
-      genre_ids: basicData.genre_ids || oldRecord?.genre_ids || [],
+      genre_ids: (basicData.genre_ids && basicData.genre_ids.length > 0) ? basicData.genre_ids : (oldRecord?.genre_ids || []),
       media_type: detectedType,
-      thumb: finalThumb,
+      thumb: finalThumb || oldRecord?.thumb,
       thumb_source: finalThumbSource, 
-      logo: finalLogo || (options.originUrl ? `${options.originUrl}/api/text_logo.svg?v=${Date.now()}&text=${encodeURIComponent(finalTitle)}` : null),
-      logo_source: finalLogo ? finalLogoSource : 'auto', 
-      verified_no_logo: !finalLogo || (finalLogo && finalLogo.includes('text_logo.svg')),
-      logoEmptyAt: (!finalLogo || (finalLogo && finalLogo.includes('text_logo.svg'))) ? new Date().toISOString() : null,
-      crawledAt: oldRecord?.crawledAt || new Date().toISOString(),
-      ratings_scanned: true,
+      logo: safeFinalLogo,
+      logo_source: (safeFinalLogo && !safeFinalLogo.includes('text_logo.svg')) ? finalLogoSource : 'auto', 
+      verified_no_logo: !safeFinalLogo || safeFinalLogo.includes('text_logo.svg'),
+      logoEmptyAt: (!safeFinalLogo || safeFinalLogo.includes('text_logo.svg')) ? (oldRecord?.logoEmptyAt || new Date().toISOString()) : null,
+      crawledAt: new Date().toISOString(),
+      ratings_scanned: alreadyScanned || !!(imdbScore || traktScore || rtScore),
       image_scanned: true,
       last_episode_air_date: oldRecord?.last_episode_air_date || null,
       next_episode_air_date: oldRecord?.next_episode_air_date || null
-    });
+    };
+
+    delete itemResult.overview;
+    delete itemResult.summary;
+    delete itemResult.intro;
+    delete itemResult.description;
+
+    results.push(itemResult);
   }
 
   return deduplicateByTmdbId(results).slice(0, limit);
@@ -3528,14 +3548,56 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   if (processedData.length === 0 && targetDay === null) throw new Error("TMDB未能匹配到任何符合条件的影视数据");
 
   if (!category.endsWith("_collection")) {
-      let combinedData = deduplicateByTmdbId([...processedData, ...oldItemsList]);
-      combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
+      // 🌟 修复：智能无损合并。以全新抓取的榜单为主序，但老数据的所有资产（Logo/海报/剧照/评分）完整继承！
+      const oldMap = new Map();
+      oldItemsList.forEach(oldItem => {
+          if (oldItem.tmdbId) oldMap.set(String(oldItem.tmdbId), oldItem);
+          else if (oldItem.title) oldMap.set(String(oldItem.title).replace(/[\s·]/g, "").toLowerCase(), oldItem);
+      });
+
+      const mergedList = [];
+      const seenIds = new Set();
+
+      // 1. 先放入本次抓取并处理过的新数据（自动融合老数据资产）
+      for (const pItem of processedData) {
+          if (!pItem.tmdbId) continue;
+          const key = String(pItem.tmdbId);
+          if (seenIds.has(key)) continue;
+          seenIds.add(key);
+
+          const oldRec = oldMap.get(key) || oldMap.get(String(pItem.title).replace(/[\s·]/g, "").toLowerCase());
+          if (oldRec) {
+              if (!pItem.noLogoPoster && oldRec.noLogoPoster) pItem.noLogoPoster = oldRec.noLogoPoster;
+              if ((!pItem.logo || pItem.logo.includes('text_logo.svg')) && oldRec.logo && !oldRec.logo.includes('text_logo.svg')) {
+                  pItem.logo = oldRec.logo;
+                  pItem.logo_source = oldRec.logo_source || 'auto';
+              }
+              if (!pItem.thumb && oldRec.thumb) pItem.thumb = oldRec.thumb;
+              if (!pItem.certification && oldRec.certification) pItem.certification = oldRec.certification;
+              if (oldRec.ratings) {
+                  pItem.ratings = { ...oldRec.ratings, ...(pItem.ratings || {}) };
+              }
+          }
+          mergedList.push(pItem);
+      }
+
+      // 2. 将原来库里剩余的老数据追加到尾部（补充总数，不被随意抹杀）
+      for (const oldItem of oldItemsList) {
+          if (!oldItem.tmdbId) continue;
+          const key = String(oldItem.tmdbId);
+          if (!seenIds.has(key)) {
+              seenIds.add(key);
+              mergedList.push(oldItem);
+          }
+      }
+
+      let combinedData = mergedList.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
 
       if (combinedData.length < 25 && oldItemsList.length >= 25) {
           return { count: oldItemsList.length, stats: computeAssetStats(oldItemsList), newLogos: [] };
       }
 
-      // 🌟 核心修复：从 R2 读取当前分类你设定的排序规则（默认 / 最新 / 热度），在写入前物理排好序！
+      // 从 R2 读取当前分类你设定的排序规则，在写入前物理排好序
       try {
         const layoutObj = await env.R2_BUCKET.get("layout-config.json");
         if (layoutObj) {
@@ -3546,7 +3608,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
             combinedData.sort((a, b) => {
               const yA = parseInt(a.year || (a.first_air_date ? a.first_air_date.substring(0, 4) : '0'), 10);
               const yB = parseInt(b.year || (b.first_air_date ? b.first_air_date.substring(0, 4) : '0'), 10);
-              if (yB !== yA) return yB - yA; // 2026 -> 2025 -> 2024
+              if (yB !== yA) return yB - yA;
               return (b.vote_average || 0) - (a.vote_average || 0);
             });
           } else if (sortRule === 'heat') {
@@ -3578,7 +3640,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: finalJson.count, stats, newLogos: newLogosTracker };
   }
 }
-
 function buildTgMenu(mask) {
   if (typeof mask !== 'bigint') mask = BigInt(mask);
   let inline_keyboard = [];
