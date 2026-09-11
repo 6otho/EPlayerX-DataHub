@@ -1608,7 +1608,7 @@ const FRONTEND_HTML_P1 = `
             });
         }
 
-        // 🌟 3. 修改前端 TS 代码生成器：安全生成，彻底移除后端未定义变量
+        // 🌟 3. 修改前端 TS 代码生成器：恢复为经典的 V1 HomeConfig 代码结构
         function generateTSCode() {
             localStorage.setItem('saved_layout_v2', JSON.stringify(modalLayoutState));
             const selectedCats = [];
@@ -1624,15 +1624,16 @@ const FRONTEND_HTML_P1 = `
             });
             
             const myR2 = "https://r2.eplayerx.cc.cd";
-            const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
             
             let customBlocks = selectedCats.map(c => {
-                // 安全计算文件名，纯前端自包含，绝不跨作用域调用未定义变量
                 const fileName = c.isCollection ? (c.id + '.json') : (c.id.replace(/_/g, '-') + '.json');
                 const safePreset = (c.currentPreset === 'hero-list') ? 'hero-list' : 'poster-list';
 
                 if (c.isCollection) {
                     const cleanTitle = (c.name || '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]/g, '').replace(/\s*[(（].*?[)）]\s*/g, '').trim();
+                    const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
+                    
+                    // 🌟 正确做法：由外层 JS 预先展开 1 到 7 的对象，绝不保留裸露的 .map 和转义反引号！
                     const childrenStr = [1, 2, 3, 4, 5, 6, 7].map(d => {
                         return '        {\\n' +
                                '          id: "' + c.id + '-' + d + '",\\n' +
@@ -1649,13 +1650,13 @@ const FRONTEND_HTML_P1 = `
                            '      id: "' + c.id + '",\\n' +
                            '      title: "' + cleanTitle + '",\\n' +
                            '      mediaType: "' + c.type + '",\\n' +
-                           '      preset: COLLECTION_PRESET,\\n' +
+                           '      preset: "collection-list",\\n' +
                            '      style: "image-landscape",\\n' +
                            '      groupMode: "weekday",\\n' +
                            '      children: [\\n' +
                            childrenStr + '\\n' +
                            '      ]\\n' +
-                           '    } as unknown as HomeBlockTemplate';
+                           '    }';
                 }
                 const sortQuery = (c.sort && c.sort !== 'default') ? ('?sort=' + c.sort) : '';
                 return '    {\\n' +
@@ -1673,7 +1674,6 @@ const FRONTEND_HTML_P1 = `
             return '/// <reference types="@cloudflare/workers-types" />\\n' +
                 'import { getCommunityBlocksByIds } from "../blocks/storage.js";\\n' +
                 'import {\\n' +
-                '  COLLECTION_PRESET,\\n' +
                 '  type CollectionBlock,\\n' +
                 '  type TmdbListRoute,\\n' +
                 '} from "../blocks/types.js";\\n\\n' +
@@ -1739,7 +1739,7 @@ const FRONTEND_HTML_P1 = `
                 '  itemEnvelope?: "data" | "results" | "array";\\n' +
                 '  pagination?: HomePagination;\\n' +
                 '}\\n\\n' +
-                'export interface HomeConfigV2MediaBlock {\\n' +
+                'export interface HomeConfigMediaBlock {\\n' +
                 '  id: string;\\n' +
                 '  title?: string;\\n' +
                 '  mediaType?: "movie" | "tv";\\n' +
@@ -1752,9 +1752,9 @@ const FRONTEND_HTML_P1 = `
                 '  };\\n' +
                 '  route?: TmdbListRoute;\\n' +
                 '}\\n\\n' +
-                'export type HomeConfigV2Block = HomeConfigV2MediaBlock | CollectionBlock;\\n\\n' +
+                'export type HomeConfigBlock = HomeConfigMediaBlock | CollectionBlock;\\n\\n' +
                 'type TmdbListRouteParams = TmdbListRoute["params"];\\n\\n' +
-                'type HomeBlockTemplate = Omit<HomeConfigV2MediaBlock, "title"> & {\\n' +
+                'export type HomeBlockTemplate = Omit<HomeConfigMediaBlock, "title"> & {\\n' +
                 '  titleKey?: HomeTitleKey;\\n' +
                 '  title?: string;\\n' +
                 '  groupMode?: string;\\n' +
@@ -1763,22 +1763,22 @@ const FRONTEND_HTML_P1 = `
                 '  children?: any[];\\n' +
                 '};\\n\\n' +
                 'type DecadesCollectionSlot = { type: "decades-collection" };\\n\\n' +
-                'type V2Section = HomeBlockTemplate | DecadesCollectionSlot;\\n\\n' +
-                'export interface HomeConfigV2Options {\\n' +
+                'type SectionTemplate = HomeBlockTemplate | DecadesCollectionSlot;\\n\\n' +
+                'export interface HomeConfigOptions {\\n' +
                 '  apiBaseUrl: string;\\n' +
                 '  imageBaseUrl: string;\\n' +
                 '  language: string;\\n' +
                 '  timezone: string;\\n' +
                 '  db?: D1Database;\\n' +
                 '}\\n\\n' +
-                'export interface HomeConfigV2 {\\n' +
+                'export interface HomeConfig {\\n' +
                 '  version: number;\\n' +
                 '  apiBaseUrl: string;\\n' +
                 '  imageBaseUrl: string;\\n' +
                 '  carouselSourceId: string;\\n' +
-                '  blocks: HomeConfigV2Block[];\\n' +
+                '  blocks: HomeConfigBlock[];\\n' +
                 '}\\n\\n' +
-                'export const HOME_CONFIG_V2_VERSION = 2;\\n\\n' +
+                'export const HOME_CONFIG_VERSION = 1;\\n\\n' +
                 'const TITLE_TRANSLATIONS: Record<string, Record<Locale, string>> = ' + JSON.stringify(TITLE_TRANSLATIONS, null, 2) + ';\\n\\n' +
                 'const TMDB_LIST_ROUTE_PARAMS: Partial<Record<string, TmdbListRouteParams>> = ' + JSON.stringify(TMDB_LIST_ROUTE_PARAMS, null, 2) + ';\\n\\n' +
                 'const DECADES_COLLECTION_ID = "col-9e37cdc1f13d";\\n\\n' +
@@ -1800,16 +1800,16 @@ const FRONTEND_HTML_P1 = `
                 'function createTmdbListRoute(title: string, params: TmdbListRouteParams): TmdbListRoute {\\n' +
                 '  return { type: "tmdb-list", title, params };\\n' +
                 '}\\n\\n' +
-                'function isDecadesCollectionSlot(section: V2Section): section is DecadesCollectionSlot {\\n' +
+                'function isDecadesCollectionSlot(section: SectionTemplate): section is DecadesCollectionSlot {\\n' +
                 '  return "type" in section && section.type === "decades-collection";\\n' +
                 '}\\n\\n' +
-                'function createV2BlockTemplates(language: string, timezone: string): V2Section[] {\\n' +
+                'function createDefaultBlockTemplates(language: string, timezone: string): SectionTemplate[] {\\n' +
                 '  const chineseOnly = (language || "").toLowerCase().startsWith("zh");\\n' +
-                '  const doubanHeadBlocks: V2Section[] = chineseOnly ? [\\n' +
+                '  const doubanHeadBlocks: SectionTemplate[] = chineseOnly ? [\\n' +
                 '    { id: "douban-popular-tv-shows", mediaType: "tv", titleKey: "home.popular_tv_shows", preset: "poster-list", showRank: true, source: { path: "/crawler/popular/douban/tv", query: { language }, itemEnvelope: "data" } },\\n' +
                 '    { id: "douban-popular-movies", mediaType: "movie", titleKey: "home.popular_movies", preset: "poster-list", showRank: true, source: { path: "/crawler/popular/douban/movies", itemEnvelope: "data" } }\\n' +
                 '  ] : [];\\n\\n' +
-                '  const chineseAnimeBlocks: V2Section[] = chineseOnly ? [\\n' +
+                '  const chineseAnimeBlocks: SectionTemplate[] = chineseOnly ? [\\n' +
                 '    { id: "douban-popular-anime", mediaType: "tv", titleKey: "home.popular_domestic_anime", preset: "poster-list", showRank: true, source: { path: "/crawler/popular/douban/animation", query: { language }, itemEnvelope: "data" }, metadata: { isAnime: true } },\\n' +
                 '    { id: "bangumi-popular-anime", mediaType: "tv", titleKey: "home.bangumi_popular_anime", preset: "poster-list", showRank: true, source: { path: "/crawler/popular/bangumi/animation", query: { language }, itemEnvelope: "data" }, metadata: { isAnime: true } }\\n' +
                 '  ] : [];\\n\\n' +
@@ -1826,17 +1826,17 @@ const FRONTEND_HTML_P1 = `
                 (customBlocks ? ',\\n' + customBlocks : '') + '\\n' +
                 '  ];\\n' +
                 '}\\n\\n' +
-                'function resolveMediaBlock(block: HomeBlockTemplate, language: string): HomeConfigV2MediaBlock {\\n' +
+                'function resolveMediaBlock(block: HomeBlockTemplate, language: string): HomeConfigMediaBlock {\\n' +
                 '  const { titleKey, ...rest } = block;\\n' +
-                '  if (!titleKey) return rest as HomeConfigV2MediaBlock;\\n' +
+                '  if (!titleKey) return rest as HomeConfigMediaBlock;\\n' +
                 '  const title = resolveTitle(titleKey, language);\\n' +
                 '  const routeParams = TMDB_LIST_ROUTE_PARAMS[rest.id];\\n' +
-                '  return { ...rest, title, ...(routeParams ? { route: createTmdbListRoute(title, routeParams) } : {}) } as HomeConfigV2MediaBlock;\\n' +
+                '  return { ...rest, title, ...(routeParams ? { route: createTmdbListRoute(title, routeParams) } : {}) } as HomeConfigMediaBlock;\\n' +
                 '}\\n\\n' +
                 'function parseDecadesCollection(blockId: string, blockJson: string, language: string): CollectionBlock | null {\\n' +
                 '  try {\\n' +
                 '    const parsed = JSON.parse(blockJson) as CollectionBlock;\\n' +
-                '    if (parsed.preset !== COLLECTION_PRESET) return null;\\n' +
+                '    if (parsed.preset !== "collection-list" && (parsed as any).preset !== "collection") return null;\\n' +
                 '    if (!Array.isArray(parsed.children) || parsed.children.length < 2) return null;\\n' +
                 '    return { ...parsed, id: parsed.id || blockId, title: resolveTitle("home.classic_decades", language), style: "image-landscape" };\\n' +
                 '  } catch { return null; }\\n' +
@@ -1850,24 +1850,26 @@ const FRONTEND_HTML_P1 = `
                 '    return parseDecadesCollection(DECADES_COLLECTION_ID, row.block_json, language);\\n' +
                 '  } catch { return null; }\\n' +
                 '}\\n\\n' +
-                'export async function createHomeConfigV2(options: HomeConfigV2Options): Promise<HomeConfigV2> {\\n' +
+                'export async function createDefaultHomeConfig(options: HomeConfigOptions): Promise<HomeConfig> {\\n' +
                 '  const decades = await resolveDecadesCollection(options.db, options.language);\\n' +
-                '  const blocks: HomeConfigV2Block[] = [];\\n' +
-                '  for (const section of createV2BlockTemplates(options.language, options.timezone)) {\\n' +
+                '  const blocks: HomeConfigBlock[] = [];\\n' +
+                '  for (const section of createDefaultBlockTemplates(options.language, options.timezone)) {\\n' +
                 '    if (isDecadesCollectionSlot(section)) {\\n' +
                 '      if (decades) blocks.push(decades);\\n' +
                 '      continue;\\n' +
                 '    }\\n' +
-                '    blocks.push(resolveMediaBlock(section as HomeBlockTemplate, options.language) as HomeConfigV2Block);\\n' +
+                '    blocks.push(resolveMediaBlock(section as HomeBlockTemplate, options.language));\\n' +
                 '  }\\n' +
                 '  return {\\n' +
-                '    version: HOME_CONFIG_V2_VERSION,\\n' +
+                '    version: HOME_CONFIG_VERSION,\\n' +
                 '    apiBaseUrl: options.apiBaseUrl,\\n' +
                 '    imageBaseUrl: options.imageBaseUrl,\\n' +
                 '    carouselSourceId: "tmdb_popular_movies",\\n' +
                 '    blocks,\\n' +
                 '  };\\n' +
-                '}';
+                '}\\n\\n' +
+                'export const createHomeConfig = createDefaultHomeConfig;\\n' +
+                'export const createHomeConfigV2 = createDefaultHomeConfig;';
         }
 
         function copyGeneratedTS() {
@@ -3668,17 +3670,18 @@ function isAdmin(request, env) {
   return (env.ADMIN_SECRET && token === env.ADMIN_SECRET) || (env.SYNC_SECRET && token === env.SYNC_SECRET);
 }
 
-// 🌟 4. 后端推送时终极拦截锁：无缝安全合并
+// 🌟 4. 后端推送时终极拦截锁：针对经典 config 的无缝安全合并
 function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl, fallbackTsCode) {
-  if (!existingText || (!existingText.includes("createV2BlockTemplates") && !existingText.includes("createDefaultBlockTemplates"))) {
+  if (!existingText || (!existingText.includes("createDefaultBlockTemplates") && !existingText.includes("createV2BlockTemplates"))) {
     return fallbackTsCode;
   }
 
   let updatedText = existingText;
   const myR2 = "https://r2.eplayerx.cc.cd";
 
-  if (updatedText.includes("HOME_CONFIG_VERSION = 1")) {
-    updatedText = updatedText.replace("export const HOME_CONFIG_VERSION = 1;", "export const HOME_CONFIG_V2_VERSION = 2;");
+  // 1. 确保版本号为旧版/经典版 V1
+  if (updatedText.includes("HOME_CONFIG_V2_VERSION = 2")) {
+    updatedText = updatedText.replace("export const HOME_CONFIG_V2_VERSION = 2;", "export const HOME_CONFIG_VERSION = 1;");
   }
 
   function findBlockBounds(text, blockId) {
@@ -3711,9 +3714,9 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     if (closeBracePos === -1) return null;
 
     let endPos = closeBracePos + 1;
-    // 🌟 精准吞掉合集块末尾的类型断言，防止多次合并造成 TypeScript 语法破坏
+    // 自动吃掉尾部可能残留的类型强转，防止合并后报 TS 语法错
     const tailSlice = text.substring(endPos, endPos + 60);
-    const asMatch = tailSlice.match(/^\s*as\s+unknown\s+as\s+HomeBlockTemplate/);
+    const asMatch = tailSlice.match(/^\s*as\s+unknown\s+as\s+[a-zA-Z0-9_]+/);
     if (asMatch) {
       endPos += asMatch[0].length;
     }
@@ -3721,7 +3724,7 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     return { start: openBracePos, end: endPos };
   }
 
-  // 1. 清理取消勾选的模块
+  // 2. 清理未勾选的自建模块（绝对不误删手写模块与官方模块）
   const allCmsCatIds = CATEGORY_CONFIGS.map(c => c.id);
   const selectedCatIds = new Set(selectedCats.map(c => c.id));
   const unselectedCmsCatIds = allCmsCatIds.filter(id => !selectedCatIds.has(id));
@@ -3740,7 +3743,10 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
     }
   }
 
-  // 2. 注入/更新勾选的模块
+  // 3. 兼容匹配函数体内部的 return [...] 数组（优先匹配 createDefaultBlockTemplates）
+  const templateFuncPattern = /(function\s+(?:createDefaultBlockTemplates|createV2BlockTemplates)[\s\S]*?return\s*\[)([\s\S]*?)(\];)/;
+
+  // 4. 注入或原地更新选中的模块
   for (const c of selectedCats) {
     let newBlockCode = "";
     const catCfg = CATEGORY_CONFIGS.find(cfg => cfg.id === c.id);
@@ -3749,7 +3755,13 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
 
     if (c.isCollection) {
       const cleanTitle = (c.name || '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]/g, '').replace(/\s*[(（].*?[)）]\s*/g, '').trim();
-      newBlockCode = `    {\n      id: "${c.id}",\n      title: "${cleanTitle}",\n      mediaType: "${c.type}",\n      preset: COLLECTION_PRESET,\n      style: "image-landscape",\n      groupMode: "weekday",\n      children: [1, 2, 3, 4, 5, 6, 7].map(d => ({\n        id: \`${c.id}-\${d}\`,\n        label: \`周\${["一", "二", "三", "四", "五", "六", "日"][d - 1]}\`,\n        weekday: d,\n        title: \`周\${["一", "二", "三", "四", "五", "六", "日"][d - 1]}\`,\n        mediaType: "${c.type}",\n        preset: "poster-list",\n        source: { path: \`${myR2}/${c.id}-\${d}.json\`, itemEnvelope: "data" }\n      }))\n    } as unknown as HomeBlockTemplate`;
+      const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
+      // 🌟 后端展开：把 1 到 7 彻底展开为静态对象，绝不在输出代码里留运行时 .map 表达式
+      const childrenCode = [1, 2, 3, 4, 5, 6, 7].map(d => {
+        return `        {\n          id: "${c.id}-${d}",\n          label: "周${weekdays[d - 1]}",\n          weekday: ${d},\n          title: "周${weekdays[d - 1]}",\n          mediaType: "${c.type}",\n          preset: "poster-list",\n          source: { path: "${myR2}/${c.id}-${d}.json", itemEnvelope: "data" }\n        }`;
+      }).join(',\n');
+
+      newBlockCode = `    {\n      id: "${c.id}",\n      title: "${cleanTitle}",\n      mediaType: "${c.type}",\n      preset: "collection-list",\n      style: "image-landscape",\n      groupMode: "weekday",\n      children: [\n${childrenCode}\n      ]\n    }`;
     } else {
       const sortQuery = (c.sort && c.sort !== 'default') ? `?sort=${c.sort}` : '';
       newBlockCode = `    {\n      id: "${c.id}",\n      mediaType: "${c.type}",\n      titleKey: "${c.titleKey}",\n      preset: "${safePreset}",\n      showRank: true,\n      showOverview: false,\n      sort: "${c.sort || 'default'}",\n      source: { path: "${myR2}/${fileName}${sortQuery}", itemEnvelope: "data" }\n    }`;
@@ -3757,21 +3769,23 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
 
     const bounds = findBlockBounds(updatedText, c.id);
     if (bounds) {
+      // 模块已存在：原地替换
       updatedText = updatedText.substring(0, bounds.start) + newBlockCode.trim() + updatedText.substring(bounds.end);
     } else {
-      const returnArrRegex = /(function\s+createV2BlockTemplates[\s\S]*?return\s*\[)([\s\S]*?)(\];)/;
-      const match = updatedText.match(returnArrRegex);
+      // 模块不存在：追加至 return 数组尾部
+      const match = updatedText.match(templateFuncPattern);
       if (match) {
         let innerArray = match[2].trim();
         let cleanInner = innerArray.replace(/,\s*$/, '');
         let newInner = cleanInner 
-          ? `${cleanInner},\n${newBlockCode}`
+          ? `${cleanInner},\n${newBlockCode}\n  `
           : `\n${newBlockCode}\n  `;
-        updatedText = updatedText.replace(returnArrRegex, `$1\n${newInner}\n$3`);
+        updatedText = updatedText.replace(templateFuncPattern, `$1\n${newInner}$3`);
       }
     }
   }
 
+  // 5. 格式清理：消除多余逗号
   updatedText = updatedText.replace(/,\s*,/g, ',');
   updatedText = updatedText.replace(/\[\s*,/g, '[');
   updatedText = updatedText.replace(/,\s*\]/g, ']');
@@ -4912,10 +4926,12 @@ export default {
           finalTsCode = incrementalMergeConfigTs(existingText, selectedCats, currentOrigin, codeString);
         }
 
-        const encoder = new TextEncoder();
-        const utf8Bytes = encoder.encode(finalTsCode);
+        const utf8Bytes = new TextEncoder().encode(finalTsCode);
         let binary = '';
-        for (let i = 0; i < utf8Bytes.length; i++) binary += String.fromCharCode(utf8Bytes[i]);
+        const len = utf8Bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(utf8Bytes[i]);
+        }
         const base64Content = btoa(binary);
 
         const putRes = await fetch(apiUrl, { 
