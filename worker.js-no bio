@@ -3997,7 +3997,7 @@ export default {
             ctx.waitUntil((async () => {
               let msgId = cb.message.message_id;
               const reqCtx = { subreqs: 0, maxSubreqs: 48, isSafeMode: indices.length > 1, clearCooldown: false };
-              const safeLimit = indices.length > 3 ? 60 : 100;
+              const safeLimit = 100;
 
               let header = `🚀 <b>自选列队同步执行中 [单榜最高:${safeLimit}条]</b>\n`;
               if (reqCtx.isSafeMode) header += `🛡️ <i>多选模式开启，已成型的影片自动跳过不耗额度！</i>\n\n`;
@@ -5057,7 +5057,7 @@ export default {
 
       const currentTask = taskQueue[state.currentIndex];
       try {
-        const res = await executeSyncTask(currentTask.id, env, 60, true, reqCtx, targetUrl, true, true);
+        const res = await executeSyncTask(currentTask.id, env, 100, true, reqCtx, targetUrl, true, true);
         if (res && res.stats) {
           state.totalAssets.count += (res.count || 0);
           state.totalAssets.logos += (res.stats.logos || 0);
