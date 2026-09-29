@@ -97,7 +97,7 @@ const FRONTEND_HTML_P1 = `
                 <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end mb-4 gap-4">
                     <div>
                         <h1 id="cat-title" class="text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 dark:text-white tracking-tighter leading-tight mb-2">大盘数据中心</h1>
-                        <p class="text-gray-500 dark:text-gray-400 font-medium text-xs md:text-sm tracking-wide">独立获取最新片源数据，或定向对勾选的影片提取优质图/标。</p>
+                        <p class="text-gray-500 dark:text-gray-400 font-medium text-xs md:text-sm tracking-wide">独立获取最新片源数据，并按当年优先梯度精准填充，定向提取优质图标/评分。</p>
                     </div>
                     <div class="w-full xl:w-auto bg-white/40 dark:bg-zinc-800/40 backdrop-blur-md rounded-2xl md:rounded-[1.5rem] p-3 flex justify-between items-center gap-2 md:gap-3 border border-white/50 dark:border-zinc-700/50 shadow-sm self-start xl:self-end overflow-x-auto hide-scrollbar">
                          <div class="flex gap-2 w-full xl:w-auto items-center">
@@ -123,7 +123,7 @@ const FRONTEND_HTML_P1 = `
                     </div>
                 </div>
 
-                <!-- 🌟 第一行：周更合集专属状态栏 (周更时显示：左边LED表 + 右边周历；普通分类时整行收起) -->
+                <!-- 🌟 第一行：周更合集专属状态栏 -->
                 <div id="status-bar-container" class="flex flex-col xl:flex-row items-center justify-between gap-3 w-full mb-6 shrink-0">
                     <div id="led-slot-weekly" class="w-full xl:w-auto shrink-0 min-w-0">
                         <div id="led-monitor-box" class="w-full h-full flex items-center justify-between gap-3 px-3.5 md:px-5 py-2.5 rounded-2xl border font-mono-led select-none transition-all duration-300 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner overflow-x-auto hide-scrollbar whitespace-nowrap cursor-grab active:cursor-grabbing">
@@ -160,7 +160,6 @@ const FRONTEND_HTML_P1 = `
 
                                 <button onclick="triggerCronNow()" id="cron-test-btn" class="h-7 px-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm shrink-0 flex items-center justify-center active:scale-95 leading-none" title="立即启动全量同步测试">🚀 立即测</button>
                                 <button onclick="toggleCronPause()" id="cron-pause-btn" class="h-7 px-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-lg text-xs font-bold transition-all border border-slate-700 shrink-0 flex items-center justify-center leading-none" title="暂停/恢复轮询">⏸ 暂停</button>
-                                <!-- 🌟 新增：重连唤醒推进按钮 -->
                                 <button onclick="reconnectCron()" id="cron-reconnect-btn" class="h-7 px-2.5 bg-cyan-700 hover:bg-cyan-600 active:scale-95 text-cyan-100 rounded-lg text-xs font-bold transition-all border border-cyan-500/40 shrink-0 flex items-center justify-center leading-none" title="断点重连：强制唤醒后台引擎，跳过卡点继续推进">🔄 重连</button>
                                 <span id="led-clock" class="h-7 flex items-center font-bold text-xs tracking-wider text-slate-300 shrink-0 px-1 leading-none">--:--:--</span>
                             </div>
@@ -219,7 +218,7 @@ const FRONTEND_HTML_P1 = `
         <div class="lg:hidden fixed bottom-0 left-0 w-full bg-white/70 dark:bg-zinc-900/80 backdrop-blur-2xl border-t border-white/50 dark:border-zinc-800/50 flex justify-start items-center p-2 z-50 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-10px_20px_rgba(0,0,0,0.02)] overflow-x-auto hide-scrollbar gap-2" id="mob-nav"></div>
     </div>
 
-    <!-- 可视化选图弹窗 (竖版海报选择器) -->
+    <!-- 弹窗组件部分保留原样 -->
     <div id="poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="poster-select-title">选择备用【正标带字】竖海报</h3>
@@ -235,7 +234,6 @@ const FRONTEND_HTML_P1 = `
         </div>
     </div>
 
-    <!-- 可视化选图弹窗 (纯净无字轮播竖海报选择器) -->
     <div id="clean-poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="clean-poster-select-title">选择备用【纯净无字】轮播竖海报</h3>
@@ -251,7 +249,6 @@ const FRONTEND_HTML_P1 = `
         </div>
     </div>
 
-    <!-- 可视化选图弹窗 (Logo) -->
     <div id="logo-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="logo-select-title">选择备用 Logo</h3>
@@ -268,7 +265,6 @@ const FRONTEND_HTML_P1 = `
         </div>
     </div>
 
-    <!-- 可视化选图弹窗 (剧照) -->
     <div id="thumb-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="thumb-select-title">选择备用剧照 / 背景</h3>
@@ -284,7 +280,7 @@ const FRONTEND_HTML_P1 = `
         </div>
     </div>
 
-    <!-- 定向数据注入弹窗 (Direct Injection) -->
+    <!-- 定向数据注入弹窗 -->
     <div id="override-modal" class="fixed inset-0 z-[160] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-2xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2">🛠️ 定向入库引擎 (无污染)</h3>
@@ -309,18 +305,16 @@ const FRONTEND_HTML_P1 = `
                 </div>
             </div>
             
-            <!-- 智能批量导入面板 -->
             <div id="bulk-import-container" class="hidden flex-1 mb-4 border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 bg-blue-50/50 dark:bg-zinc-800/80 flex flex-col gap-2 min-h-[30vh]">
                 <div class="text-[11px] md:text-xs text-blue-600 dark:text-blue-400 font-bold mb-1">直接粘贴包含“周一/星期一”等字眼的纯文本 或 Excel 表格内容：</div>
-                <textarea id="bulk-textarea" class="flex-1 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg p-3 text-xs md:text-sm outline-none focus:border-blue-500 resize-none hide-scrollbar font-medium leading-relaxed" placeholder="支持格式示例：&#10;周一 周二 周三&#10;剧名1 剧名2 剧名3&#10;&#10;或者（推荐加上书名号）：&#10;2025-01-01 周三 国产剧 《驻站》 CCTV-1&#10;周二：《国色芳华》，《白月梵星》"></textarea>
+                <textarea id="bulk-textarea" class="flex-1 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg p-3 text-xs md:text-sm outline-none focus:border-blue-500 resize-none hide-scrollbar font-medium leading-relaxed" placeholder="支持格式示例：&#10;周一 周二 周三&#10;剧名1 剧名2 剧名3&#10;&#10;或者（推荐加上书名号）：&#10;2026-01-01 周三 国产剧 《驻站》 CCTV-1&#10;周二：《国色芳华》，《白月梵星》"></textarea>
                 <div class="flex gap-2 justify-end mt-2 shrink-0">
                     <button onclick="closeBulkImport()" class="px-4 py-2 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 transition-colors">取消导入</button>
                     <button onclick="executeBulkImport()" class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-colors">🚀 解析进入队列</button>
                 </div>
             </div>
 
-            <div id="override-list" class="overflow-y-auto flex-1 mb-4 hide-scrollbar border border-gray-100 dark:border-zinc-800 rounded-xl p-2 bg-gray-50/50 dark:bg-zinc-800/30 flex flex-col gap-2 min-h-[30vh]">
-            </div>
+            <div id="override-list" class="overflow-y-auto flex-1 mb-4 hide-scrollbar border border-gray-100 dark:border-zinc-800 rounded-xl p-2 bg-gray-50/50 dark:bg-zinc-800/30 flex flex-col gap-2 min-h-[30vh]"></div>
             
             <div class="flex flex-wrap gap-3 justify-end shrink-0">
                 <button onclick="closeModal('override-modal')" class="flex-1 md:flex-none py-3 px-6 rounded-xl font-bold text-xs md:text-sm text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 transition-colors">关闭取消</button>
@@ -338,7 +332,7 @@ const FRONTEND_HTML_P1 = `
                 <div class="flex items-center justify-between">
                     <div>
                         <div class="text-sm font-black text-gray-800 dark:text-gray-200">大盘总容量限定</div>
-                        <div class="text-[10px] md:text-xs text-gray-500 mt-1">每次同步固定保持这么多部影视</div>
+                        <div class="text-[10px] md:text-xs text-gray-500 mt-1">优先按年份由近及远填充，固定保持这么多部影视</div>
                     </div>
                     <select id="sync-limit-select" class="bg-white dark:bg-zinc-900 border-2 border-orange-200 dark:border-zinc-700 rounded-xl px-3 py-2 outline-none text-sm font-bold text-orange-600 dark:text-orange-500 shadow-sm focus:border-orange-500 transition-colors cursor-pointer">
                         <option value="39">前 39 部</option>
@@ -358,7 +352,7 @@ const FRONTEND_HTML_P1 = `
     <div id="batch-modal" class="fixed inset-0 z-[100] flex items-center justify-center hidden bg-black/40 backdrop-blur-sm transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-3xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2">📦 批量全自动同步</h3>
-            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">一键自动更新所有勾选榜单的最新的影片列表数据。</p>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">一键自动更新所有勾选榜单的最新的影片列表数据（按动态年份智能排布优先入库）。</p>
             <div class="overflow-y-auto flex-1 mb-6 hide-scrollbar pr-2 border-y border-gray-100 dark:border-zinc-800 py-4">
                 <div class="flex justify-between items-center mb-3">
                     <span class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200">选择要同步的榜单</span>
@@ -731,7 +725,6 @@ const FRONTEND_HTML_P1 = `
             } catch(e) { showToast("❌ 网络请求异常", true); }
         }
 
-        // 🌟 新增：前端「重连推进」函数
         async function reconnectCron() {
             if (!sysPwd) return showToast("请先登录管理员", true);
             showToast("⚡ 正在重连并唤醒后台同步引擎...");
@@ -786,7 +779,6 @@ const FRONTEND_HTML_P1 = `
                 }
             } catch(e) { showToast("❌ 网络请求异常", true); }
         }
-        const changeAutoStartTime = changeAutoSchedule;
 
         async function toggleCronPause() {
             if (!sysPwd) return showToast("请先登录管理员", true);
@@ -901,7 +893,6 @@ const FRONTEND_HTML_P1 = `
             document.getElementById('override-list').classList.remove('hidden');
         }
 
-        // 🌟 修复：批量导入智能正则识别（支持一行多部《书名号》剧目，全面覆盖表格与纯文本）
         function executeBulkImport() {
             try {
                 const text = document.getElementById('bulk-textarea').value;
@@ -958,7 +949,6 @@ const FRONTEND_HTML_P1 = `
                         
                         if (matchDay) {
                             const day = dayToNum[matchDay[1]];
-                            // 🌟 核心改进：提取一行内出现的所有《书名号》剧目，不再只取第一个
                             const allBookTitles = [...cleanedLine.matchAll(/《([^》]+)》/g)].map(m => m[1].trim()).filter(Boolean);
 
                             if (allBookTitles.length > 0) {
@@ -1000,13 +990,12 @@ const FRONTEND_HTML_P1 = `
             }
         }
 
-        // 🌟 修复：以安全批次 (4部/批) 推进注入，杜绝 CF 子请求上限 50 次超限熔断
         async function directInjectItems() {
             const keys = Object.keys(sysOverrides);
             if (keys.length === 0) return showToast("⚠️ 队列为空，请先添加或识别影片", true);
             
             const entries = Object.entries(sysOverrides);
-            const CHUNK_SIZE = 4; // 严格安全并发数，确保每次请求子请求数 < 20
+            const CHUNK_SIZE = 4;
             const totalBatches = Math.ceil(entries.length / CHUNK_SIZE);
             
             let totalInjected = 0;
@@ -1925,7 +1914,7 @@ const FRONTEND_HTML_P1 = `
             if(checkboxes.length === 0) return showToast("⚠️ 请至少选择一个榜单！", true);
             const limit = parseInt(document.getElementById('batch-limit-select').value, 10);
             
-            closeModal('batch-modal'); showToast("🚀 批量同步启动 (" + limit + "条/榜单)，请耐心等待任务逐个完成...");
+            closeModal('batch-modal'); showToast("🚀 批量同步启动 (" + limit + "条/榜单)，按当年优先梯级填充，请稍候...");
             let successList = [], failList = [], totalCount = 0;
 
             for (let cb of checkboxes) {
@@ -1986,7 +1975,7 @@ const FRONTEND_HTML_P1 = `
                 const catObj = CATEGORIES.find(c => c.id === currentCategory);
                 const syncTarget = (catObj && catObj.isCollection) ? currentCategory + '-' + currentWeekday : currentCategory;
                 
-                showToast("⏳ 正在定向同步前 " + limit + " 部最新影视数据，请稍候...");
+                showToast("⏳ 正在按【当前年份首选梯级】同步前 " + limit + " 部影视数据...");
                 await runSyncTask(syncTarget, limit); 
                 loadData(currentCategory);
             } else if (currentAction === 'push-github') { await runGithubPush(); } 
@@ -2153,10 +2142,8 @@ const FRONTEND_HTML_P1 = `
         }
     </script>
 </body>
+</html>
 `;
-const FRONTEND_HTML_P2 = `</html>
-`;
-const FRONTEND_HTML = FRONTEND_HTML_P1 + FRONTEND_HTML_P2;
 
 // ==========================================
 // 2. 爬虫核心与全局分类字典 (引擎配置)
@@ -2206,7 +2193,6 @@ const CATEGORY_CONFIGS = [
 const CATEGORY_MAP = {};
 CATEGORY_CONFIGS.forEach(c => CATEGORY_MAP[c.id] = c);
 
-const SAFE_LANGS = "zh,zh-CN,zh-TW,zh-HK,en,ja,ko,th,es,fr,de,ru,pt,tl,id,vi,null";
 const ALL_MASK = (1n << BigInt(CATEGORY_CONFIGS.length)) - 1n;
 const HEADERS_API = { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1", "Accept": "application/json" };
 const HEADERS_BROWSER = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" };
@@ -2229,7 +2215,6 @@ function escapeHTML(str) {
 function buildOldDataHelper(itemsArray) {
     const mapById = new Map();
     const mapByTitle = new Map();
-
     const normalize = (t) => String(t || "").replace(/[\s·《》【】\[\]()（）\-_:：]/g, "").toLowerCase();
 
     if (Array.isArray(itemsArray)) {
@@ -2254,7 +2239,6 @@ function buildOldDataHelper(itemsArray) {
             if (title) {
                 const cleanT = normalize(title);
                 if (cleanT && mapByTitle.has(cleanT)) return mapByTitle.get(cleanT);
-                
                 for (const [k, v] of mapByTitle.entries()) {
                     if (k.includes(cleanT) || cleanT.includes(k)) return v;
                 }
@@ -2339,13 +2323,11 @@ async function getBlacklist(env) {
 
 function isItemBlacklisted(item, blacklist, categoryId) {
   if (!item || !blacklist) return false;
-  
   if (item.tmdbId && blacklist.global.ids.has(String(item.tmdbId))) return true;
   if (item.title) {
     const cleanT = String(item.title).replace(/[\s·《》\-_]/g, "").toLowerCase();
     if (cleanT && blacklist.global.titles.has(cleanT)) return true;
   }
-
   if (categoryId) {
     const baseCatId = categoryId.split('-')[0];
     const catBlacklist = blacklist.categories[baseCatId];
@@ -2357,7 +2339,6 @@ function isItemBlacklisted(item, blacklist, categoryId) {
       }
     }
   }
-
   return false;
 }
 
@@ -2393,7 +2374,7 @@ async function editTgMessage(env, chatId, msgId, text, reqCtx, replyMarkup) {
 }
 
 // ==========================================
-// 5. 各第三方平台 API 抓取适配器
+// 5. 各第三方平台 API 抓取适配器与动态年份引擎
 // ==========================================
 async function fetchBangumiCalendar(limit = 100, reqCtx) {
   try {
@@ -2405,23 +2386,6 @@ async function fetchBangumiCalendar(limit = 100, reqCtx) {
     items.sort((a, b) => b.score - a.score);
     return items.slice(0, limit);
   } catch(e) { return []; }
-}
-
-async function fetchTMDBTrending(type, env, limit = 100, reqCtx) {
-  if (!env.TMDB_ACCESS_TOKEN) throw new Error("缺少 TMDB_ACCESS_TOKEN");
-  let results = [];
-  const pagesToFetch = Math.ceil(limit / 20);
-  
-  for (let page = 1; page <= pagesToFetch; page++) {
-    try {
-      let queryUrl = `https://api.themoviedb.org/3/trending/${type}/day?language=zh-CN&page=${page}`;
-      if (reqCtx && reqCtx.clearCooldown) queryUrl += `&_cb=${Date.now()}`;
-      
-      const res = await safeFetch(queryUrl, { headers: { "Authorization": `Bearer ${env.TMDB_ACCESS_TOKEN}`, "Accept": "application/json" } }, reqCtx);
-      if (res.ok) { const data = await res.json(); results.push(...(data.results || [])); }
-    } catch (e) { break; }
-  }
-  return results.slice(0, limit).map(item => ({ title: item.title || item.name, tmdbId: item.id, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, original_language: item.original_language, origin_country: item.origin_country || [], release_date: item.release_date, first_air_date: item.first_air_date, popularity: item.popularity }));
 }
 
 async function fetchTMDBDiscoverList(type, paramsObj, env, limit = 100, reqCtx) {
@@ -2445,6 +2409,73 @@ async function fetchTMDBDiscoverList(type, paramsObj, env, limit = 100, reqCtx) 
     popularity: item.popularity, origin_country: item.origin_country || [], original_language: item.original_language,
     genre_ids: item.genre_ids || []
   }));
+}
+
+// 🌟 核心引擎升级：全自动动态梯级年份爬虫 (首选当年 -> 次选前一年 -> 历年补齐)
+async function fetchTieredYearList(type, baseParams, env, limit = 100, reqCtx) {
+  const currentYear = new Date().getFullYear(); // 2026 年自动为 2026，2027 年自动为 2027
+  const prevYear = currentYear - 1;             // 2025
+  const isMovie = type === 'movie';
+  const dateField = isMovie ? 'primary_release_year' : 'first_air_date_year';
+
+  let collected = [];
+  const seenIds = new Set();
+
+  // 1. 梯队一：首选当年影视（全开力道抓取，尽可能塞满）
+  const tier1Params = { ...baseParams, [dateField]: currentYear.toString() };
+  const tier1 = await fetchTMDBDiscoverList(type, tier1Params, env, limit, reqCtx).catch(() => []);
+  for (const item of tier1) {
+    if (item.tmdbId && !seenIds.has(item.tmdbId)) {
+      seenIds.add(item.tmdbId);
+      collected.push(item);
+    }
+  }
+
+  // 2. 梯队二：如果当年片目不足 limit，由前一年份 (如 2025) 高热度优质影视填充
+  if (collected.length < limit) {
+    const remain = limit - collected.length;
+    const tier2Params = { ...baseParams, [dateField]: prevYear.toString() };
+    const tier2 = await fetchTMDBDiscoverList(type, tier2Params, env, Math.min(remain + 20, 60), reqCtx).catch(() => []);
+    for (const item of tier2) {
+      if (item.tmdbId && !seenIds.has(item.tmdbId)) {
+        seenIds.add(item.tmdbId);
+        collected.push(item);
+        if (collected.length >= limit) break;
+      }
+    }
+  }
+
+  // 3. 梯队三：若仍未满 limit，移除年份约束，取历年高热度内容补齐兜底
+  if (collected.length < limit) {
+    const remain = limit - collected.length;
+    const tier3 = await fetchTMDBDiscoverList(type, baseParams, env, remain + 20, reqCtx).catch(() => []);
+    for (const item of tier3) {
+      if (item.tmdbId && !seenIds.has(item.tmdbId)) {
+        seenIds.add(item.tmdbId);
+        collected.push(item);
+        if (collected.length >= limit) break;
+      }
+    }
+  }
+
+  return collected.slice(0, limit);
+}
+
+async function fetchTMDBTrending(type, env, limit = 100, reqCtx) {
+  if (!env.TMDB_ACCESS_TOKEN) throw new Error("缺少 TMDB_ACCESS_TOKEN");
+  let results = [];
+  const pagesToFetch = Math.ceil(limit / 20);
+  
+  for (let page = 1; page <= pagesToFetch; page++) {
+    try {
+      let queryUrl = `https://api.themoviedb.org/3/trending/${type}/day?language=zh-CN&page=${page}`;
+      if (reqCtx && reqCtx.clearCooldown) queryUrl += `&_cb=${Date.now()}`;
+      
+      const res = await safeFetch(queryUrl, { headers: { "Authorization": `Bearer ${env.TMDB_ACCESS_TOKEN}`, "Accept": "application/json" } }, reqCtx);
+      if (res.ok) { const data = await res.json(); results.push(...(data.results || [])); }
+    } catch (e) { break; }
+  }
+  return results.slice(0, limit).map(item => ({ title: item.title || item.name, tmdbId: item.id, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, original_language: item.original_language, origin_country: item.origin_country || [], release_date: item.release_date, first_air_date: item.first_air_date, popularity: item.popularity }));
 }
 
 async function fetchTraktTrending(type, env, limit = 100, reqCtx) {
@@ -2474,7 +2505,7 @@ async function fetchDoubanRecentHot(kind, query, limit = 100, reqCtx) {
       if (!res.ok) break;
       const data = await res.json();
       if (!data.items || data.items.length === 0) break;
-      results.push(...data.items.map(item => ({ title: item.title })));
+      results.push(...data.items.map(item => ({ title: item.title, year: item.year })));
       start += data.items.length;
       if (data.items.length < currentLimit) break;
     } catch (e) { break; }
@@ -2494,7 +2525,7 @@ async function fetchDoubanSubjectCollection(collectionId, limit = 100, reqCtx) {
       const data = await res.json();
       const items = data.subject_collection_items || data.items || [];
       if (items.length === 0) break;
-      results.push(...items.map(item => ({ title: item.title })));
+      results.push(...items.map(item => ({ title: item.title, year: item.year })));
       start += items.length;
       if (items.length < currentLimit) break;
     } catch(e) { break; }
@@ -2643,14 +2674,10 @@ function deduplicateByTmdbId(items) {
     if (!item.poster_path) continue;
     
     const cleanTitle = (item.title || "").replace(/[\s·]/g, "").toLowerCase();
-    
-    if (seenIds.has(item.tmdbId) || (cleanTitle && seenTitles.has(cleanTitle))) {
-        continue; 
-    }
+    if (seenIds.has(item.tmdbId) || (cleanTitle && seenTitles.has(cleanTitle))) continue; 
     
     seenIds.add(item.tmdbId);
     if (cleanTitle) seenTitles.add(cleanTitle);
-    
     result.push(item);
   }
   return result;
@@ -2673,66 +2700,40 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
   let imdbScore = null;
   let rtScore = null;
 
-  if (reqCtx.subreqs >= reqCtx.maxSubreqs - 2) {
-    return { traktScore, imdbScore, rtScore };
-  }
+  if (reqCtx.subreqs >= reqCtx.maxSubreqs - 2) return { traktScore, imdbScore, rtScore };
 
   if (env.MDBLIST_API_KEY && (tmdbId || imdbId)) {
-    const mdblistKeys = String(env.MDBLIST_API_KEY || "")
-      .split(/[,;\s\n]+/)
-      .map(k => k.trim())
-      .filter(Boolean);
-
-    if (reqCtx && !reqCtx.exhaustedMdbKeys) {
-      reqCtx.exhaustedMdbKeys = new Set();
-    }
+    const mdblistKeys = String(env.MDBLIST_API_KEY || "").split(/[,;\s\n]+/).map(k => k.trim()).filter(Boolean);
+    if (reqCtx && !reqCtx.exhaustedMdbKeys) reqCtx.exhaustedMdbKeys = new Set();
 
     const isTv = mediaType === 'tv' || mediaType === 'tv_series';
     const mType = isTv ? 'show' : 'movie';
 
     for (const apiKey of mdblistKeys) {
-      if (reqCtx && reqCtx.exhaustedMdbKeys && reqCtx.exhaustedMdbKeys.has(apiKey)) {
-        continue;
-      }
-
+      if (reqCtx && reqCtx.exhaustedMdbKeys && reqCtx.exhaustedMdbKeys.has(apiKey)) continue;
       if (reqCtx && reqCtx.subreqs >= reqCtx.maxSubreqs - 2) break;
 
       try {
-        const mUrl = tmdbId 
-          ? `https://api.mdblist.com/tmdb/${mType}/${tmdbId}?apikey=${apiKey}`
-          : `https://api.mdblist.com/imdb/${imdbId}?apikey=${apiKey}`;
-        
+        const mUrl = tmdbId ? `https://api.mdblist.com/tmdb/${mType}/${tmdbId}?apikey=${apiKey}` : `https://api.mdblist.com/imdb/${imdbId}?apikey=${apiKey}`;
         const mRes = await safeFetch(mUrl, { headers: { "Accept": "application/json", "User-Agent": "Mozilla/5.0" } }, reqCtx);
-        
         if (mRes.status === 429 || mRes.status === 401 || mRes.status === 403) {
           if (reqCtx) reqCtx.exhaustedMdbKeys.add(apiKey);
           continue;
         }
-
         if (mRes.ok) {
           const mData = await mRes.json();
           if (mData && (mData.response === false || mData.error)) {
             if (reqCtx) reqCtx.exhaustedMdbKeys.add(apiKey);
             continue;
           }
-
           if (mData && Array.isArray(mData.ratings)) {
             mData.ratings.forEach(r => {
               const src = String(r.source || "").toLowerCase();
-              if (src === 'imdb' && typeof r.value === 'number') {
-                imdbScore = r.value <= 10 ? r.value : Number((r.value / 10).toFixed(1));
-              }
-              if (src === 'trakt' && typeof r.value === 'number') {
-                traktScore = r.value <= 10 ? Number(r.value.toFixed(1)) : Number((r.value / 10).toFixed(1));
-              }
-              if ((src === 'tomatoes' || src === 'rottentomatoes') && (r.score || r.value)) {
-                rtScore = parseInt(r.score || r.value, 10);
-              }
+              if (src === 'imdb' && typeof r.value === 'number') imdbScore = r.value <= 10 ? r.value : Number((r.value / 10).toFixed(1));
+              if (src === 'trakt' && typeof r.value === 'number') traktScore = r.value <= 10 ? Number(r.value.toFixed(1)) : Number((r.value / 10).toFixed(1));
+              if ((src === 'tomatoes' || src === 'rottentomatoes') && (r.score || r.value)) rtScore = parseInt(r.score || r.value, 10);
             });
-
-            if (imdbScore || traktScore || rtScore) {
-              return { traktScore, imdbScore, rtScore };
-            }
+            if (imdbScore || traktScore || rtScore) return { traktScore, imdbScore, rtScore };
           }
         }
       } catch (e) {}
@@ -2745,15 +2746,10 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
       if (omdbRes.ok) {
         const oData = await omdbRes.json();
         if (oData && oData.Response === "True") {
-          if (!imdbScore && oData.imdbRating && oData.imdbRating !== "N/A") {
-            imdbScore = parseFloat(oData.imdbRating);
-          }
+          if (!imdbScore && oData.imdbRating && oData.imdbRating !== "N/A") imdbScore = parseFloat(oData.imdbRating);
           const rtObj = (oData.Ratings || []).find(r => r.Source === "Rotten Tomatoes");
-          if (!rtScore && rtObj && rtObj.Value) {
-            rtScore = parseInt(rtObj.Value.replace('%', ''), 10);
-          } else if (!rtScore && oData.tomatoMeter && oData.tomatoMeter !== "N/A") {
-            rtScore = parseInt(oData.tomatoMeter, 10);
-          }
+          if (!rtScore && rtObj && rtObj.Value) rtScore = parseInt(rtObj.Value.replace('%', ''), 10);
+          else if (!rtScore && oData.tomatoMeter && oData.tomatoMeter !== "N/A") rtScore = parseInt(oData.tomatoMeter, 10);
         }
       }
     } catch(e) {}
@@ -2765,18 +2761,11 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
       const targetId = imdbId || tmdbId;
       if (targetId) {
         const traktRes = await safeFetch(`https://api.trakt.tv/${traktType}/${targetId}/ratings`, {
-          headers: {
-            "Content-Type": "application/json",
-            "trakt-api-version": "2",
-            "trakt-api-key": env.TRAKT_CLIENT_ID,
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-          }
+          headers: { "Content-Type": "application/json", "trakt-api-version": "2", "trakt-api-key": env.TRAKT_CLIENT_ID, "User-Agent": "Mozilla/5.0" }
         }, reqCtx);
         if (traktRes.ok) {
           const tData = await traktRes.json();
-          if (tData && typeof tData.rating === 'number') {
-            traktScore = Number(tData.rating.toFixed(1));
-          }
+          if (tData && typeof tData.rating === 'number') traktScore = Number(tData.rating.toFixed(1));
         }
       }
     } catch(e) {}
@@ -2786,11 +2775,13 @@ async function fetchFourRatings(tmdbId, imdbId, mediaType, env, reqCtx) {
 }
 
 // ==========================================
-// 7. TMDB 详细数据加工处理 (🌟 注入自动标题检索与容错补齐)
+// 7. TMDB 详细数据加工处理 (🌟 年份优先级加权引擎)
 // ==========================================
 async function processItemsWithTMDB(items, mediaType, env, limit = 100, options = {}, reqCtx) {
   const results = [];
   
+  // 🌟 核心算法改进：按「动态年份梯级（当年首选 -> 次选前年 -> 兜底历年）+ 热度」严格排序预处理
+  const currentYear = new Date().getFullYear();
   const sortedRawItems = [...items].sort((a, b) => {
     const getYear = (x) => {
       const d = String(x?.first_air_date || x?.release_date || x?.air_date || x?.year || "0000");
@@ -2799,7 +2790,17 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
     };
     const yA = getYear(a);
     const yB = getYear(b);
-    if (yB !== yA) return yB - yA;
+
+    // 计算与当前年份的贴近权重
+    const scoreYear = (y) => {
+      if (y === currentYear) return 100000;
+      if (y === currentYear - 1) return 50000;
+      if (y > currentYear) return 80000; // 待播新番
+      return y;
+    };
+
+    const diff = scoreYear(yB) - scoreYear(yA);
+    if (diff !== 0) return diff;
     return (b?.popularity || 0) - (a?.popularity || 0);
   });
 
@@ -2816,7 +2817,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
     let basicData = item;
     let detectedType = item.media_type || oldRecord?.media_type || mediaType;
 
-    // 🌟 核心修复：当缺少 tmdbId 时，自动通过 TMDB 检索剧名，实现手动文本完全自动入库！
+    // 智能动态搜索补齐 TMDB ID
     if (!tmdbId && titleToSearch && env.TMDB_ACCESS_TOKEN && reqCtx.subreqs < reqCtx.maxSubreqs - 4) {
       try {
         const cleanT = cleanSearchQuery(titleToSearch);
@@ -2830,7 +2831,7 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
       } catch(e) {}
     }
 
-    if (!tmdbId) continue; // 未能匹配到 TMDB ID 则安全跳过
+    if (!tmdbId) continue;
 
     const TMDB_IMG = 'https://image.tmdb.org/t/p/original';
     const toAbs = (p) => (!p || p.startsWith('data:')) ? null : ((p.startsWith('http') || p.startsWith('/api/')) ? p : TMDB_IMG + (p.startsWith('/') ? p : '/' + p));
@@ -3072,11 +3073,12 @@ function computeAssetStats(items) {
 }
 
 // ==========================================
-// 8. 核心同步任务分发
+// 8. 核心同步任务分发 (🌟 植入动态年份首选逻辑)
 // ==========================================
 async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, reqCtx, originUrl, fetchLogo = true, fetchThumb = true) {
   let category = categoryInput;
   let targetDay = null;
+  const currentYear = new Date().getFullYear();
   
   const match = categoryInput.match(/^(weekly_.*_collection)-(\d)$/);
   if (match) {
@@ -3086,7 +3088,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   const config = CATEGORY_MAP[category]; if (!config) throw new Error("未定义的分类");
   let processedData = [];
-
   const blacklist = await getBlacklist(env);
 
   let oldItemsList = [];
@@ -3140,12 +3141,11 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   if (category === "weekly_anime_collection") {
       const bgmRes = await safeFetch('https://api.bgm.tv/calendar', { headers: { 'User-Agent': 'EPlayerX/1.0' } }, reqCtx);
       const bgmData = bgmRes.ok ? await bgmRes.json() : [];
-      
       let processedCount = 0;
       let allDayItems = [];
+
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue; 
-          
           let existingItems = [];
           try {
               const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
@@ -3161,22 +3161,17 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           for (const anime of rawItems) {
               const name = anime.name || "";
               const nameCn = anime.name_cn || "";
-              
               if (/(仙逆|吞噬星空|完美世界|斗罗大陆|斗破苍穹|神印王座|武神主宰|师兄|修仙|百炼|大主宰|凡人修仙|遮天|沧元图|剑来|斩神)/.test(name + nameCn)) continue; 
-              
               const checkItem = { title: nameCn || name };
               if (isItemBlacklisted(checkItem, blacklist, category)) continue;
-
               freshItems.push({ title: nameCn || name, searchQuery: name || nameCn, score: anime.rating?.score || 0 });
           }
 
           let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
           combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-
           if (combinedItems.length === 0) continue;
 
           let processedDayData = await processItemsWithTMDB(combinedItems, "tv", env, 100, processOpts({ isJapaneseAnimeOnly: true }), reqCtx);
-          
           processedDayData = processedDayData.filter(item => !isItemBlacklisted(item, blacklist, category));
           processedCount += processedDayData.length;
           allDayItems.push(...processedDayData);
@@ -3200,7 +3195,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       let allDayItems = [];
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue; 
-          
           let existingItems = [];
           try {
               const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
@@ -3241,7 +3235,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       let allDayItems = [];
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue; 
-          
           let existingItems = [];
           try {
               const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
@@ -3281,16 +3274,16 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   else if (category === "weekly_korean_drama_collection") {
       const now = new Date();
-      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
-      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+      const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
+      const future45 = new Date(now.getTime() + 45 * 86400000).toISOString().substring(0, 10);
 
       const rawKr = await fetchTMDBDiscoverList('tv', { 
           with_original_language: 'ko', 
           without_genres: '16,10767,10763', 
-          'air_date.gte': past60,
-          'air_date.lte': future30,
+          'air_date.gte': past90,
+          'air_date.lte': future45,
           sort_by: 'popularity.desc' 
-      }, env, 60, reqCtx).catch(() => []);
+      }, env, 80, reqCtx).catch(() => []);
 
       let processedCount = 0;
       let allDayItems = [];
@@ -3327,16 +3320,16 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
 
   else if (category === "weekly_japanese_drama_collection") {
       const now = new Date();
-      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
-      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+      const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
+      const future45 = new Date(now.getTime() + 45 * 86400000).toISOString().substring(0, 10);
 
       const rawJa = await fetchTMDBDiscoverList('tv', { 
           with_original_language: 'ja', 
           without_genres: '16,10767,10763', 
-          'air_date.gte': past60,
-          'air_date.lte': future30,
+          'air_date.gte': past90,
+          'air_date.lte': future45,
           sort_by: 'popularity.desc' 
-      }, env, 60, reqCtx).catch(() => []);
+      }, env, 80, reqCtx).catch(() => []);
 
       let processedCount = 0;
       let allDayItems = [];
@@ -3374,15 +3367,15 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   else if (category === "weekly_sea_drama_collection") {
       const now = new Date();
       const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
-      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+      const future45 = new Date(now.getTime() + 45 * 86400000).toISOString().substring(0, 10);
 
       const rawSea = await fetchTMDBDiscoverList('tv', { 
           with_original_language: 'th|vi|id|tl', 
           without_genres: '16,10767,10763', 
           'air_date.gte': past90,
-          'air_date.lte': future30,
+          'air_date.lte': future45,
           sort_by: 'popularity.desc' 
-      }, env, 60, reqCtx).catch(() => []);
+      }, env, 80, reqCtx).catch(() => []);
 
       let processedCount = 0;
       let allDayItems = [];
@@ -3417,53 +3410,105 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
-  else if (category === "tmdb_popular_tv") { processedData = await processItemsWithTMDB(await fetchTMDBTrending('tv', env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_popular_movies") { processedData = await processItemsWithTMDB(await fetchTMDBTrending('movie', env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
-  else if (category === "bangumi_airing") { let raw = await fetchBangumiCalendar(limit, reqCtx); processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx); }
-  
+  // 🌟 今日热门电视剧（当年新播首选，再递推补充）
+  else if (category === "tmdb_popular_tv") {
+    let raw = await fetchTieredYearList('tv', { without_genres: '16' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  // 🌟 今日热门电影（当年首发首选，再递推补充）
+  else if (category === "tmdb_popular_movies") {
+    let raw = await fetchTieredYearList('movie', {}, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "movie", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "bangumi_airing") {
+    let raw = await fetchBangumiCalendar(limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  // 🌟 重点增强：时下热门国产剧（当年首选 -> 次选前年 -> 兜底历年全满，保证当年新剧全量收录）
   else if (category === "douban_tv" || category === "douban_tv_custom") { 
-    let raw = await fetchDoubanSubjectCollection("tv_domestic", limit, reqCtx).catch(() => []); 
-    if (!raw.length) raw = await fetchDoubanRecentHot("tv", { tag: "国产剧" }, limit, reqCtx).catch(() => []); 
+    let doubanRaw = await fetchDoubanSubjectCollection("tv_domestic", limit, reqCtx).catch(() => []); 
+    if (!doubanRaw.length) doubanRaw = await fetchDoubanRecentHot("tv", { tag: "国产剧" }, limit, reqCtx).catch(() => []); 
     
-    raw = raw.filter(item => {
+    doubanRaw = doubanRaw.filter(item => {
       const t = item.title || "";
       return !/(动画|动漫|真人秀|脱口秀|演唱会|晚会|纪录片|特别节目|第[一二三四五六七八九十\d]+期|季|年番)/.test(t);
     });
 
-    if (raw.length < limit) { 
-      let tmdbCn = await fetchTMDBDiscoverList('tv', { 
-        with_original_language: 'zh', 
-        with_origin_country: 'CN', 
-        without_genres: '16,10764,10767,10763,99', 
-        sort_by: 'popularity.desc' 
-      }, env, limit, reqCtx).catch(() => []); 
-      raw = deduplicateRawList([...raw, ...tmdbCn]); 
-    } 
-    
+    // 梯级动态补充国产剧，绝不遗漏当年开播大剧
+    let tmdbCnTiered = await fetchTieredYearList('tv', {
+      with_original_language: 'zh',
+      with_origin_country: 'CN',
+      without_genres: '16,10764,10767,10763,99'
+    }, env, limit, reqCtx).catch(() => []);
+
+    let raw = deduplicateRawList([...doubanRaw, ...tmdbCnTiered]);
     processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts({ isDomesticDramaOnly: true }), reqCtx); 
   }
 
-  else if (category === "imdb_top_anime") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_genres: '16', with_original_language: 'ja|zh', sort_by: 'vote_average.desc', 'vote_count.gte': '1000' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "prime_hot_anime") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_watch_providers: '9', watch_region: 'JP', with_genres: '16', sort_by: 'popularity.desc' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "filmarks_anime_movie") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('movie', { with_genres: '16', with_original_language: 'ja', sort_by: 'vote_average.desc', 'vote_count.gte': '200' }, env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
-  else if (category === "netflix_hot_anime") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_networks: '213', with_genres: '16', with_original_language: 'ja|zh', sort_by: 'popularity.desc' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_anime_top_ja") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_original_language: 'ja', with_genres: '16', sort_by: 'vote_average.desc', 'vote_count.gte': '500' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_anime_jp") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_original_language: 'ja', with_genres: '16' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_anime_movie_ja") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('movie', { with_original_language: 'ja', with_genres: '16' }, env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_anime_cn") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_original_language: 'zh', with_genres: '16' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_tv_netflix") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_networks: '213' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_tv_hbo") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_networks: '49' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_tv_apple") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_networks: '2552' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "douban_movies") { processedData = await processItemsWithTMDB(await fetchDoubanRecentHot("movie", { category: "热门", type: "华语" }, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
+  else if (category === "imdb_top_anime") {
+    processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_genres: '16', with_original_language: 'ja|zh', sort_by: 'vote_average.desc', 'vote_count.gte': '1000' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "prime_hot_anime") {
+    let raw = await fetchTieredYearList('tv', { with_watch_providers: '9', watch_region: 'JP', with_genres: '16' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "filmarks_anime_movie") {
+    processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('movie', { with_genres: '16', with_original_language: 'ja', sort_by: 'vote_average.desc', 'vote_count.gte': '200' }, env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "netflix_hot_anime") {
+    let raw = await fetchTieredYearList('tv', { with_networks: '213', with_genres: '16', with_original_language: 'ja|zh' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_anime_top_ja") {
+    processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_original_language: 'ja', with_genres: '16', sort_by: 'vote_average.desc', 'vote_count.gte': '500' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx);
+  }
+  // 🌟 近期热门日本动漫（当年首发首选，再递推补充）
+  else if (category === "tmdb_anime_jp") {
+    let raw = await fetchTieredYearList('tv', { with_original_language: 'ja', with_genres: '16' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_anime_movie_ja") {
+    let raw = await fetchTieredYearList('movie', { with_original_language: 'ja', with_genres: '16' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "movie", env, limit, processOpts(), reqCtx);
+  }
+  // 🌟 热门国产动漫（当年首发首选，再递推补充）
+  else if (category === "tmdb_anime_cn") {
+    let raw = await fetchTieredYearList('tv', { with_original_language: 'zh', with_genres: '16' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_tv_netflix") {
+    let raw = await fetchTieredYearList('tv', { with_networks: '213' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_tv_hbo") {
+    let raw = await fetchTieredYearList('tv', { with_networks: '49' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_tv_apple") {
+    let raw = await fetchTieredYearList('tv', { with_networks: '2552' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "douban_movies") {
+    let raw = await fetchDoubanRecentHot("movie", { category: "热门", type: "华语" }, limit, reqCtx);
+    if (raw.length < limit) {
+      let tmdbMovies = await fetchTieredYearList('movie', { with_original_language: 'zh', with_origin_country: 'CN' }, env, limit, reqCtx);
+      raw = deduplicateRawList([...raw, ...tmdbMovies]);
+    }
+    processedData = await processItemsWithTMDB(raw, "movie", env, limit, processOpts(), reqCtx);
+  }
   else if (category === "variety_cn") {
     let rawCn = await fetchDoubanRecentHot("tv", { category: "show", type: "show_domestic" }, limit, reqCtx).catch(() => []);
-    if (rawCn.length < limit) { let tmdbCn = await fetchTMDBDiscoverList('tv', { with_genres: '10764', with_original_language: 'zh', sort_by: 'popularity.desc' }, env, limit, reqCtx).catch(() => []); rawCn = [...rawCn, ...tmdbCn]; }
+    if (rawCn.length < limit) {
+      let tmdbCn = await fetchTieredYearList('tv', { with_genres: '10764', with_original_language: 'zh' }, env, limit, reqCtx).catch(() => []);
+      rawCn = deduplicateRawList([...rawCn, ...tmdbCn]);
+    }
     processedData = await processItemsWithTMDB(rawCn, "tv", env, limit, processOpts(), reqCtx);
   }
   else if (category === "variety_kr") {
-    const seeds = [{ title: "런닝맨", tmdbId: null }, { title: "아는 형님", tmdbId: null }, { title: "나 혼자 산达", tmdbId: null }, { title: "1박 2일", tmdbId: null }, { title: "환승연애", tmdbId: null }, { title: "놀라운 토요일", tmdbId: null }, { title: "유 퀴즈 온 더 블럭", tmdbId: null }];
-    const tmdbKr = await fetchTMDBDiscoverList('tv', { with_genres: '10764', with_original_language: 'ko', sort_by: 'popularity.desc' }, env, limit, reqCtx).catch(() => []);
-    let krList = [...seeds]; const seenKr = new Set(seeds.map(s => s.title));
+    const seeds = [{ title: "런닝맨", tmdbId: null }, { title: "아는 형님", tmdbId: null }, { title: "나 혼자 산다", tmdbId: null }, { title: "1박 2일", tmdbId: null }, { title: "환승연애", tmdbId: null }, { title: "놀라운 토요일", tmdbId: null }, { title: "유 퀴즈 온 더 블럭", tmdbId: null }];
+    const tmdbKr = await fetchTieredYearList('tv', { with_genres: '10764', with_original_language: 'ko' }, env, limit, reqCtx).catch(() => []);
+    let krList = [...seeds];
+    const seenKr = new Set(seeds.map(s => s.title));
     tmdbKr.forEach(item => { if (!seenKr.has(item.title)) { krList.push(item); seenKr.add(item.title); } });
     processedData = await processItemsWithTMDB(krList, "tv", env, limit, processOpts(), reqCtx);
   }
@@ -3471,29 +3516,45 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
     const tmdbJaStream = await fetchTMDBDiscoverList('tv', { with_genres: '10764', with_original_language: 'ja', with_networks: '213|1024|2643', sort_by: 'popularity.desc' }, env, limit, reqCtx).catch(() => []);
     const tmdbJaRecent = await fetchTMDBDiscoverList('tv', { with_genres: '10764', with_original_language: 'ja', 'first_air_date.gte': '2022-01-01', sort_by: 'popularity.desc' }, env, limit, reqCtx).catch(() => []);
     const tmdbOthers = await fetchTMDBDiscoverList('tv', { with_genres: '10764', with_original_language: 'en|th|es|fr|de|id|tl|ms|vi', 'first_air_date.gte': '2022-01-01', sort_by: 'popularity.desc' }, env, limit, reqCtx).catch(() => []);
-    let tmdbJa = [...tmdbJaStream]; const seenJa = new Set(tmdbJaStream.map(i => i.tmdbId));
+    let tmdbJa = [...tmdbJaStream];
+    const seenJa = new Set(tmdbJaStream.map(i => i.tmdbId));
     tmdbJaRecent.forEach(item => { if (!seenJa.has(item.tmdbId)) { tmdbJa.push(item); seenJa.add(item.tmdbId); } });
-    let gbList = []; const seenGb = new Set();
+    let gbList = [];
+    const seenGb = new Set();
     tmdbJa.slice(0, 15).forEach(i => { if (!seenGb.has(i.title)) { gbList.push(i); seenGb.add(i.title); } });
     const maxLen = Math.max(tmdbJa.length, tmdbOthers.length);
     for (let i = 0; i < maxLen; i++) {
-      if (tmdbOthers[i] && !seenGb.has(tmdbOthers[i].title)) { 
-        gbList.push(tmdbOthers[i]); 
-        seenGb.add(tmdbOthers[i].title); 
-      }
-      if (i >= 15 && tmdbJa[i] && !seenGb.has(tmdbJa[i].title)) { 
-        gbList.push(tmdbJa[i]); 
-        seenGb.add(tmdbJa[i].title); 
-      }
+      if (tmdbOthers[i] && !seenGb.has(tmdbOthers[i].title)) { gbList.push(tmdbOthers[i]); seenGb.add(tmdbOthers[i].title); }
+      if (i >= 15 && tmdbJa[i] && !seenGb.has(tmdbJa[i].title)) { gbList.push(tmdbJa[i]); seenGb.add(tmdbJa[i].title); }
     }
     processedData = await processItemsWithTMDB(gbList, "tv", env, limit, processOpts(), reqCtx);
   }
-  else if (category === "trakt_movies") { processedData = await processItemsWithTMDB(await fetchTraktTrending('movies', env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
-  else if (category === "trakt_shows") { processedData = await processItemsWithTMDB(await fetchTraktTrending('shows', env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "douban_korean_tv") { processedData = await processItemsWithTMDB(await fetchDoubanSubjectCollection("tv_korean", limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_tv_ja") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_original_language: 'ja', without_genres: '16' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_tv_tw") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_original_language: 'zh', with_origin_country: 'TW', sort_by: 'popularity.desc', 'first_air_date.gte': '2021-01-01', 'vote_count.gte': '5' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_movie_tw") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('movie', { with_original_language: 'zh', with_origin_country: 'TW', sort_by: 'popularity.desc', 'primary_release_date.gte': '2021-01-01', 'vote_count.gte': '5' }, env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
+  else if (category === "trakt_movies") {
+    processedData = await processItemsWithTMDB(await fetchTraktTrending('movies', env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "trakt_shows") {
+    processedData = await processItemsWithTMDB(await fetchTraktTrending('shows', env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "douban_korean_tv") {
+    let raw = await fetchDoubanSubjectCollection("tv_korean", limit, reqCtx);
+    if (raw.length < limit) {
+      let tmdbKr = await fetchTieredYearList('tv', { with_original_language: 'ko', without_genres: '16' }, env, limit, reqCtx);
+      raw = deduplicateRawList([...raw, ...tmdbKr]);
+    }
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_tv_ja") {
+    let raw = await fetchTieredYearList('tv', { with_original_language: 'ja', without_genres: '16' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_tv_tw") {
+    let raw = await fetchTieredYearList('tv', { with_original_language: 'zh', with_origin_country: 'TW' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_movie_tw") {
+    let raw = await fetchTieredYearList('movie', { with_original_language: 'zh', with_origin_country: 'TW' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "movie", env, limit, processOpts(), reqCtx);
+  }
   else if (category === "tmdb_movie_hk_erotic_comedy") {
     const [level3Comedies, sexComedies, keywordErotics] = await Promise.all([
       fetchTMDBDiscoverList('movie', { certification_country: 'HK', certification: 'III', with_origin_country: 'HK', without_genres: '27,53,16,28', sort_by: 'popularity.desc', include_adult: 'true' }, env, limit, reqCtx).catch(() => []),
@@ -3516,8 +3577,14 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
     pureDynamicList.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
     processedData = await processItemsWithTMDB(pureDynamicList, "movie", env, limit, processOpts({ include_adult: "true" }), reqCtx);
   }
-  else if (category === "tmdb_tv_th") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_original_language: 'th' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "tmdb_movie_th") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('movie', { with_original_language: 'th' }, env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
+  else if (category === "tmdb_tv_th") {
+    let raw = await fetchTieredYearList('tv', { with_original_language: 'th' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "tmdb_movie_th") {
+    let raw = await fetchTieredYearList('movie', { with_original_language: 'th' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "movie", env, limit, processOpts(), reqCtx);
+  }
   else if (category === "tmdb_movie_sea") { 
     const [vivamax, keywordErotics, seaRomance] = await Promise.all([
       fetchTMDBDiscoverList('movie', { with_companies: '342|125178', with_original_language: 'tl', without_genres: '27,16,10751,9648', sort_by: 'popularity.desc', include_adult: 'true' }, env, Math.floor(limit/2), reqCtx).catch(() => []),
@@ -3532,9 +3599,18 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
     pureList = pureList.filter(item => { const title = (item.title || "").toLowerCase(); return !blacklistWords.some(b => title.includes(b.toLowerCase())); });
     processedData = await processItemsWithTMDB(pureList, "movie", env, limit, processOpts({ include_adult: "true" }), reqCtx);
   }
-  else if (category === "tmdb_tv_es") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_original_language: 'es' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "netflix_tv_minor") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('tv', { with_networks: '213', with_original_language: 'fr|de|it|pt|ru|tr|sv|nl|no|da|fi|pl|id|ar|he|cs', sort_by: 'popularity.desc' }, env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx); }
-  else if (category === "netflix_movie_minor") { processedData = await processItemsWithTMDB(await fetchTMDBDiscoverList('movie', { with_original_language: 'fr|de|it|pt|ru|tr|sv|nl|no|da|fi|pl|id|ar|he|cs', sort_by: 'popularity.desc', 'vote_count.gte': '100' }, env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx); }
+  else if (category === "tmdb_tv_es") {
+    let raw = await fetchTieredYearList('tv', { with_original_language: 'es' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "netflix_tv_minor") {
+    let raw = await fetchTieredYearList('tv', { with_networks: '213', with_original_language: 'fr|de|it|pt|ru|tr|sv|nl|no|da|fi|pl|id|ar|he|cs' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "tv", env, limit, processOpts(), reqCtx);
+  }
+  else if (category === "netflix_movie_minor") {
+    let raw = await fetchTieredYearList('movie', { with_networks: '213', with_original_language: 'fr|de|it|pt|ru|tr|sv|nl|no|da|fi|pl|id|ar|he|cs', 'vote_count.gte': '50' }, env, limit, reqCtx);
+    processedData = await processItemsWithTMDB(raw, "movie", env, limit, processOpts(), reqCtx);
+  }
   else if (category === "tmdb_tv_bl") {
     const GAGA_2025_SEEDS = [{ title: "Revenged Love" }, { title: "Desire" }, { title: "Secret Lover" }, { title: "Doctor's Mine" }, { title: "Chase Game" }, { title: "School Trip Joined a Group" }, { title: "Fragrance of the First Flower" }, { title: "Love in the Air" }, { title: "Cosmetic Playlover" }, { title: "Takara's Treasure" }, { title: "Fujimi Orchestra" }, { title: "Although I Love You And You" }, { title: "Candy Color Paradox" }, { title: "Semantic Error" }, { title: "Love For Love's Sake" }];
     const [blKeyword, yaoiKeyword, bromanceTh, bromanceKoZh, gmmNetwork] = await Promise.all([
@@ -3795,7 +3871,7 @@ function incrementalMergeConfigTs(existingText, selectedCats, fallbackOriginUrl,
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname === "/") return new Response(FRONTEND_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8" } });
+    if (url.pathname === "/") return new Response(FRONTEND_HTML_P1, { headers: { "Content-Type": "text/html;charset=UTF-8" } });
 
     const antiCacheHeaders = { 
       "Access-Control-Allow-Origin": "*", 
@@ -3861,7 +3937,6 @@ export default {
       }
     }
 
-    // 🌟 新增：后台断点重连接口（跳过卡死项并继续唤醒执行）
     if (action === "action" && category === "resume_cron" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
@@ -3933,7 +4008,7 @@ export default {
       }
 
       const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-          <defs><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght=900&amp;display=swap');</style></defs>
+          <defs><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&amp;display=swap');</style></defs>
           ${textElements}
       </svg>`;
       return new Response(svgString, { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=604800, immutable", ...antiCacheHeaders } });
@@ -3942,7 +4017,6 @@ export default {
     if (action === "api" && category === "tg_webhook" && request.method === "POST") {
       try {
         const body = await request.json();
-
         if (body.message && body.message.chat && body.message.text) {
           const chatId = body.message.chat.id.toString();
           const text = body.message.text;
@@ -4077,7 +4151,6 @@ export default {
       return new Response(obj.body, { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
     }
 
-    // 🌟 核心修复：定向注入引擎，自动识别电影或剧集分类，调用补全好的 TMDB 搜索接口
     if (action === "action" && category === "direct_inject" && request.method === "POST") {
         if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
         try {
@@ -4156,11 +4229,9 @@ export default {
       if (!category || category === 'login') return new Response("Not Found", { status: 404, headers: antiCacheHeaders });
 
       let config = CATEGORY_MAP[category];
-      
       if (!config && category.includes("_collection-")) {
           config = { fileName: `${category}.json` };
       }
-
       if (!config) return new Response("Not Found", { status: 404, headers: antiCacheHeaders });
 
       const object = await env.R2_BUCKET.get(config.fileName);
@@ -4186,7 +4257,7 @@ export default {
                   return { year: y, fullDate: `${y}-${m}-${d}`, isUpcoming: false };
               }
 
-              const yearMatch = rawDateStr.match(/\b(19|20)\d{2}\\b/);
+              const yearMatch = rawDateStr.match(/\b(19|20)\d{2}\b/);
               if (yearMatch) {
                   const y = parseInt(yearMatch[0], 10);
                   return { year: y, fullDate: `${y}-01-01`, isUpcoming: false };
@@ -4330,9 +4401,7 @@ export default {
       try {
         const currentOrigin = new URL(request.url).origin;
         const webCtx = { subreqs: 0, maxSubreqs: 48, isSafeMode: false, clearCooldown: clearCooldown };
-        
         const result = await executeSyncTask(targetCat, env, limit, quiet, webCtx, currentOrigin, fetchLogo, fetchThumb);
-
         return new Response(JSON.stringify({ success: true, count: result.count, stats: result.stats, newLogos: result.newLogos }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
       } catch (e) { return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders }); }
     }
@@ -4346,19 +4415,11 @@ export default {
             const mediaType = (rawType === 'movie' || rawType.includes('movie')) ? 'movie' : 'tv';
             const fctx = { subreqs: 0, maxSubreqs: 5, isSafeMode: false, clearCooldown: true };
             
-            const details = await tmdbFetch(
-                mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
-                { language: "zh-CN" }, env, fctx
-            );
+            const details = await tmdbFetch(mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`, { language: "zh-CN" }, env, fctx);
             const origLang = details.original_language || "";
-
-            const imagesData = await tmdbFetch(
-                mediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`,
-                {}, env, fctx
-            );
+            const imagesData = await tmdbFetch(mediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`, {}, env, fctx);
             
             let posters = imagesData.posters || [];
-            
             const getPosterScore = (p) => {
                 const lang = p.iso_639_1;
                 const isClean = lang === null || lang === 'xx' || lang === 'none' || !lang;
@@ -4370,7 +4431,6 @@ export default {
             };
 
             posters.sort((a, b) => getPosterScore(b) - getPosterScore(a));
-            
             const TMDB_IMG_POSTER = 'https://image.tmdb.org/t/p/original';
             const posterUrls = posters.map(p => ({
                 url: TMDB_IMG_POSTER + p.file_path,
@@ -4379,9 +4439,7 @@ export default {
                 isClean: p.iso_639_1 === null || p.iso_639_1 === 'xx' || p.iso_639_1 === 'none' || !p.iso_639_1
             }));
             
-            return new Response(JSON.stringify({ success: true, posters: posterUrls }), {
-                headers: { "Content-Type": "application/json", ...antiCacheHeaders }
-            });
+            return new Response(JSON.stringify({ success: true, posters: posterUrls }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
         } catch (e) {
             return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
         }
@@ -4395,19 +4453,11 @@ export default {
             const mediaType = body.type || 'movie';
             const fctx = { subreqs: 0, maxSubreqs: 5, isSafeMode: false, clearCooldown: true };
             
-            const details = await tmdbFetch(
-                mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
-                { language: "zh-CN" }, env, fctx
-            );
+            const details = await tmdbFetch(mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`, { language: "zh-CN" }, env, fctx);
             const origLang = details.original_language || "";
-
-            const imagesData = await tmdbFetch(
-                mediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`,
-                {}, env, fctx
-            );
+            const imagesData = await tmdbFetch(mediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`, {}, env, fctx);
             
             let logos = imagesData.logos || [];
-            
             const origL = (origLang || "").toLowerCase();
             const getLangScore = (lang) => {
                 const l = String(lang || "").toLowerCase();
@@ -4426,10 +4476,7 @@ export default {
             
             const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/original';
             const logoUrls = logos.map(l => ({ url: TMDB_IMG_LOGO + l.file_path, file_path: l.file_path, lang: l.iso_639_1 }));
-            
-            return new Response(JSON.stringify({ success: true, logos: logoUrls }), {
-                headers: { "Content-Type": "application/json", ...antiCacheHeaders }
-            });
+            return new Response(JSON.stringify({ success: true, logos: logoUrls }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
         } catch (e) {
             return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
         }
@@ -4443,19 +4490,11 @@ export default {
             const mediaType = body.type || 'movie';
             const fctx = { subreqs: 0, maxSubreqs: 5, isSafeMode: false, clearCooldown: true };
             
-            const details = await tmdbFetch(
-                mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
-                { language: "zh-CN" }, env, fctx
-            );
+            const details = await tmdbFetch(mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`, { language: "zh-CN" }, env, fctx);
             const origLang = details.original_language || "";
-
-            const imagesData = await tmdbFetch(
-                mediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`,
-                {}, env, fctx
-            );
+            const imagesData = await tmdbFetch(mediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`, {}, env, fctx);
             
             let backdrops = imagesData.backdrops || [];
-            
             const getLangScore = (lang) => {
                 if (!lang) return 0;
                 const l = String(lang).toLowerCase();
@@ -4483,10 +4522,7 @@ export default {
                 lang: l.iso_639_1,
                 isClean: l.iso_639_1 === null || l.iso_639_1 === 'xx' || l.iso_639_1 === 'none' || !l.iso_639_1
             }));
-            
-            return new Response(JSON.stringify({ success: true, thumbs: thumbUrls }), {
-                headers: { "Content-Type": "application/json", ...antiCacheHeaders }
-            });
+            return new Response(JSON.stringify({ success: true, thumbs: thumbUrls }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
         } catch (e) {
             return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
         }
@@ -4501,14 +4537,11 @@ export default {
             const categoryName = body.category;
 
             if (categoryName && env.R2_BUCKET && posterUrl) {
-                if (posterUrl.includes('image.tmdb.org')) {
-                    posterUrl = posterUrl.replace(/\/w\d+/, '/original');
-                }
+                if (posterUrl.includes('image.tmdb.org')) posterUrl = posterUrl.replace(/\/w\d+/, '/original');
 
                 let fileName = categoryName + ".json";
-                if (categoryName.endsWith("_collection")) {
-                    fileName = `${categoryName}-${body.weekday || 1}.json`;
-                } else {
+                if (categoryName.endsWith("_collection")) fileName = `${categoryName}-${body.weekday || 1}.json`;
+                else {
                     const config = CATEGORY_MAP[categoryName];
                     if (config) fileName = config.fileName;
                 }
@@ -4527,9 +4560,7 @@ export default {
                                 updated = true;
                             }
                         });
-                        if (updated) {
-                            await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-                        }
+                        if (updated) await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
                     }
                 }
             }
@@ -4548,14 +4579,11 @@ export default {
             const categoryName = body.category;
 
             if (categoryName && env.R2_BUCKET && noLogoPosterUrl) {
-                if (noLogoPosterUrl.includes('image.tmdb.org')) {
-                    noLogoPosterUrl = noLogoPosterUrl.replace(/\/w\d+/, '/original');
-                }
+                if (noLogoPosterUrl.includes('image.tmdb.org')) noLogoPosterUrl = noLogoPosterUrl.replace(/\/w\d+/, '/original');
 
                 let fileName = categoryName + ".json";
-                if (categoryName.endsWith("_collection")) {
-                    fileName = `${categoryName}-${body.weekday || 1}.json`;
-                } else {
+                if (categoryName.endsWith("_collection")) fileName = `${categoryName}-${body.weekday || 1}.json`;
+                else {
                     const config = CATEGORY_MAP[categoryName];
                     if (config) fileName = config.fileName;
                 }
@@ -4574,9 +4602,7 @@ export default {
                                 updated = true;
                             }
                         });
-                        if (updated) {
-                            await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-                        }
+                        if (updated) await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
                     }
                 }
             }
@@ -4597,14 +4623,11 @@ export default {
             const currentOrigin = new URL(request.url).origin;
 
             if (categoryName && env.R2_BUCKET) {
-                if (logoUrl && logoUrl.includes('image.tmdb.org')) {
-                    logoUrl = logoUrl.replace(/\/w\d+/, '/original');
-                }
+                if (logoUrl && logoUrl.includes('image.tmdb.org')) logoUrl = logoUrl.replace(/\/w\d+/, '/original');
 
                 let fileName = categoryName + ".json";
-                if (categoryName.endsWith("_collection")) {
-                    fileName = `${categoryName}-${body.weekday || 1}.json`;
-                } else {
+                if (categoryName.endsWith("_collection")) fileName = `${categoryName}-${body.weekday || 1}.json`;
+                else {
                     const config = CATEGORY_MAP[categoryName];
                     if (config) fileName = config.fileName;
                 }
@@ -4631,9 +4654,7 @@ export default {
                                 updated = true;
                             }
                         });
-                        if (updated) {
-                            await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-                        }
+                        if (updated) await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
                     }
                 }
             }
@@ -4652,14 +4673,11 @@ export default {
             const categoryName = body.category;
 
             if (categoryName && env.R2_BUCKET && thumbUrl) {
-                if (thumbUrl.includes('image.tmdb.org')) {
-                    thumbUrl = thumbUrl.replace(/\/w\d+/, '/original');
-                }
+                if (thumbUrl.includes('image.tmdb.org')) thumbUrl = thumbUrl.replace(/\/w\d+/, '/original');
 
                 let fileName = categoryName + ".json";
-                if (categoryName.endsWith("_collection")) {
-                    fileName = `${categoryName}-${body.weekday || 1}.json`;
-                } else {
+                if (categoryName.endsWith("_collection")) fileName = `${categoryName}-${body.weekday || 1}.json`;
+                else {
                     const config = CATEGORY_MAP[categoryName];
                     if (config) fileName = config.fileName;
                 }
@@ -4679,9 +4697,7 @@ export default {
                                 updated = true;
                             }
                         });
-                        if (updated) {
-                            await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-                        }
+                        if (updated) await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
                     }
                 }
             }
@@ -4695,7 +4711,6 @@ export default {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
         const body = await request.json();
-        
         const itemsToProcess = body.items || [];
         const categoryName = body.category || ""; 
         if (!itemsToProcess.length) return new Response(JSON.stringify({ success: false, error: "缺少数据项" }), { status: 400, headers: antiCacheHeaders });
@@ -4706,11 +4721,9 @@ export default {
 
         if (categoryName && env.R2_BUCKET) {
             let fileName = categoryName + ".json";
-            if (categoryName.endsWith("_collection")) {
-                fileName = `${categoryName}-${body.weekday || 1}.json`;
-            } else if (categoryName.includes("_collection-")) {
-                fileName = `${categoryName}.json`;
-            } else {
+            if (categoryName.endsWith("_collection")) fileName = `${categoryName}-${body.weekday || 1}.json`;
+            else if (categoryName.includes("_collection-")) fileName = `${categoryName}.json`;
+            else {
                 const config = CATEGORY_MAP[categoryName];
                 if (config) fileName = config.fileName;
             }
@@ -4720,7 +4733,6 @@ export default {
                 let oldJson = await oldObj.json();
                 if (oldJson && oldJson.data) {
                     let changed = false;
-                    
                     for (const reqItem of itemsToProcess) {
                         const tmdbId = reqItem.id;
                         const rawType = String(reqItem.type || "").toLowerCase();
@@ -4729,9 +4741,7 @@ export default {
                         const isMovie = rawType === 'movie' || rawType.includes('movie') || (!rawType.includes('tv') && catType.includes('movie'));
                         const actualMediaType = isMovie ? "movie" : "tv";
 
-                        if (fctx.subreqs >= fctx.maxSubreqs - 4) {
-                            break; 
-                        }
+                        if (fctx.subreqs >= fctx.maxSubreqs - 4) break; 
                         
                         try {
                             const details = await tmdbFetch(
@@ -4740,11 +4750,7 @@ export default {
                                 env, fctx
                             );
                             
-                            const imagesData = await tmdbFetch(
-                                actualMediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`,
-                                {}, 
-                                env, fctx
-                            );
+                            const imagesData = await tmdbFetch(actualMediaType === "movie" ? `/movie/${tmdbId}/images` : `/tv/${tmdbId}/images`, {}, env, fctx);
 
                             const resolvedImdbId = details?.external_ids?.imdb_id || details?.imdb_id || null;
                             const resolvedTvdbId = details?.external_ids?.tvdb_id || details?.tvdb_id || null;
@@ -4860,17 +4866,12 @@ export default {
                             results.push({ tmdbId, success: false, error: e.message });
                         }
                     }
-                    
-                    if (changed) {
-                        await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-                    }
+                    if (changed) await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
                 }
             }
         }
         
-        return new Response(JSON.stringify({ success: true, results }), {
-          headers: { "Content-Type": "application/json", ...antiCacheHeaders }
-        });
+        return new Response(JSON.stringify({ success: true, results }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
       } catch (e) {
         return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
       }
@@ -4943,7 +4944,7 @@ export default {
           method: "PUT", 
           headers, 
           body: JSON.stringify({ 
-            message: "Update config.ts via Web Dashboard CMS (Auto Version & Clean Merge)", 
+            message: "Update config.ts via Web Dashboard CMS (Tiered Year Priority & Clean Merge)", 
             content: base64Content, 
             sha: fileSha || undefined 
           }) 
@@ -4958,7 +4959,7 @@ export default {
   },
 
   // ==========================================
-  // 10. 智能极速调度引擎 (🌟 整合防卡死机制与断点重连续跑)
+  // 10. 智能极速调度引擎
   // ==========================================
   async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】", isManualStart = false, isResume = false) {
     if (!env.R2_BUCKET) throw new Error("未检测到 env.R2_BUCKET 存储桶绑定");
@@ -5006,15 +5007,12 @@ export default {
     const nowTimeStr = bjTime.toISOString().replace('T', ' ').substring(0, 19);
     const targetUrl = env.WORKER_URL || "https://homepage.eplayerx.cc.cd";
 
-    // 🌟 防卡死机制 1：检测是否假死超过 15 分钟（防止之前卡死导致一直处于 RUNNING 状态无法继续）
     const isStuck = state.status === "RUNNING" && state.lastActiveTimestamp && (nowTimestamp - state.lastActiveTimestamp > 15 * 60 * 1000);
 
-    // 🌟 断点重连模式 (isResume)：解除暂停，强制标记为 RUNNING，不重置 currentIndex，直接断点续跑
     if (isResume) {
       state.isPaused = false;
       state.status = "RUNNING";
       if (!state.cycleStartTime) state.cycleStartTime = nowTimeStr;
-      // 若当前索引异常则重置，否则保留现有进度继续推进
       if (typeof state.currentIndex !== 'number' || state.currentIndex >= totalTasks) {
         state.currentIndex = 0;
       }
@@ -5024,7 +5022,6 @@ export default {
       return { triggerSource, status: "PAUSED", msg: "后台自动更新已暂停" };
     }
 
-    // 计算上次全量执行间隔
     let daysPassed = 999;
     if (state.lastRunDate) {
       const lastTime = new Date(state.lastRunDate + "T00:00:00Z").getTime();
@@ -5034,7 +5031,6 @@ export default {
     const intervalSetting = state.autoIntervalDays || 1;
     const isAutoTime = (daysPassed >= intervalSetting && state.autoStartHour === bjHour && state.lastRunDate !== bjDateStr);
     
-    // 只有在全新启动或者假死复位时才重置索引
     const shouldInitNewCycle = (state.status !== "RUNNING" || isStuck) && (isManualStart || isAutoTime);
 
     if (shouldInitNewCycle) {
@@ -5051,13 +5047,13 @@ export default {
           ? `每 ${state.autoIntervalDays} 天一次 (${state.autoStartHour}:00)` 
           : `每日 (${state.autoStartHour}:00)`;
 
-        const startMsg = `🚀 <b>[大盘全量同步 · 开始执行]</b>\n` +
+        const startMsg = `🚀 <b>[大盘全量同步 · 开始执行 (当年优先梯级)]</b>\n` +
                          `═══════════════════\n` +
                          `🎯 <b>触发来源</b>: ${isManualStart ? '👑 手动立即测试' : (isStuck ? '⚠️ 假死自动复位' : `⏰ 定时自动启动 [${schedText}]`)}\n` +
                          `📊 <b>计划轮次</b>: 第 ${state.cycleCount || 1} 轮全量更新\n` +
                          `📋 <b>总任务量</b>: 共 ${totalTasks} 个分类与子周历\n` +
                          `⏰ <b>启动时间</b>: <code>${nowTimeStr}</code>\n` +
-                         `⚡ <i>全速推进中，抓取完毕后将自动推送五维资产明细...</i>`;
+                         `⚡ <i>优先抓取当年新热好剧，再行回补，正在全速推进...</i>`;
         await sendTgMessage(env, startMsg);
       }
     }
@@ -5073,11 +5069,8 @@ export default {
     const batchStartTime = Date.now();
     let tasksExecutedThisBatch = 0;
 
-    // 🌟 单次执行批次（严格控制在 Cloudflare Worker 的 15 秒/25次子请求红线以内，避免超限崩溃）
     while (state.currentIndex < totalTasks) {
-      if (reqCtx.subreqs >= 25 || (Date.now() - batchStartTime) >= 14000) {
-        break;
-      }
+      if (reqCtx.subreqs >= 25 || (Date.now() - batchStartTime) >= 14000) break;
 
       const currentTask = taskQueue[state.currentIndex];
       try {
@@ -5097,20 +5090,16 @@ export default {
         state.lastStatus = `异常: ${err.message}`;
       }
 
-      // 无论此项成功还是失败，均指针前移，绝不在同一个项目死循环卡死
       state.currentIndex++;
       tasksExecutedThisBatch++;
       state.lastActiveTimestamp = Date.now();
 
-      if (reqCtx.subreqs >= 20) {
-        break;
-      }
+      if (reqCtx.subreqs >= 20) break;
     }
 
     state.lastRunTime = nowTimeStr;
     state.lastActiveTimestamp = Date.now();
 
-    // 🌟 全部 77 个任务全部推进完毕
     if (state.currentIndex >= totalTasks) {
       state.status = "IDLE";
       state.currentIndex = 0;
@@ -5120,7 +5109,7 @@ export default {
         const finishMsg = `🎉 <b>[大盘全量同步 · 全部圆满完成！]</b>\n` +
                           `═══════════════════\n` +
                           `📊 <b>完成轮次</b>: 第 ${(state.cycleCount - 1) || 1} 轮\n` +
-                          `📋 <b>任务统计</b>: 全部 ${totalTasks} 个榜单/周历已全部刷新入库\n` +
+                          `📋 <b>任务统计</b>: 全部 ${totalTasks} 个榜单/周历已全部按年份首选梯级刷新入库\n` +
                           `📦 <b>入库总量</b>: <b>${state.totalAssets.count}</b> 部影视\n\n` +
                           `✨ <b>五维资产入库汇总:</b>\n` +
                           `▪️ 💎 真实Logo: <b>${state.totalAssets.logos}</b>\n` +
@@ -5137,7 +5126,6 @@ export default {
       }
     }
 
-    // 更新持久化状态
     await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), {
       httpMetadata: { contentType: "application/json" }
     });
