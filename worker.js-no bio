@@ -2600,21 +2600,41 @@ function extractImages(images, backdropPath, posterPath, origLang) {
 
   const targetOrig = (origLang || "").toLowerCase();
 
+  const isChineseMedia = targetOrig === 'zh' || targetOrig.startsWith('zh');
+
   const getLogoScore = (l) => {
     const lang = (l.iso_639_1 || "").toLowerCase();
+    const ratio = l.aspect_ratio || (l.width && l.height ? (l.width / l.height) : 1);
+    const isLandscape = ratio > 1.1; // 严格判定为横版 Logo
+
     let score = 0;
-    if (targetOrig && (lang === targetOrig || (targetOrig === 'zh' && lang.startsWith('zh')))) {
-      score = 100000;
-    } else if (isStrictClean(l)) {
-      score = 80000;
-    } else if (lang === 'en') {
-      score = 60000;
-    } else if (lang === 'zh' || lang.startsWith('zh')) {
-      score = 40000;
+
+    // 🌟 中文影视分类（国产剧、国漫等）：锁死横版加成
+    if (isChineseMedia) {
+      if (lang === 'zh' || lang.startsWith('zh')) {
+        score = isLandscape ? 300000 : 20000; // 横向中文 Logo 获得最高优先级，竖版/方块直接垫底
+      } else if (isLandscape) {
+        score = 80000; // 即使不是中文，横版的优先级也远高于竖版
+      } else {
+        score = 1000;
+      }
     } else {
-      score = 10000;
+      // 非中文分类的原有逻辑
+      if (targetOrig && (lang === targetOrig || (targetOrig === 'zh' && lang.startsWith('zh')))) {
+        score = isLandscape ? 120000 : 60000;
+      } else if (isStrictClean(l)) {
+        score = isLandscape ? 80000 : 40000;
+      } else if (lang === 'en') {
+        score = isLandscape ? 60000 : 30000;
+      } else if (lang === 'zh' || lang.startsWith('zh')) {
+        score = isLandscape ? 40000 : 20000;
+      } else {
+        score = 10000;
+      }
     }
-    return score + ((l.vote_average || 0) * 100) + (l.vote_count || 0);
+
+    // 优先比例更舒展的横版（ratio 越大得分越高）+ 投票权重
+    return score + (Math.min(ratio, 4.0) * 1000) + ((l.vote_average || 0) * 100) + (l.vote_count || 0);
   };
 
   const sortedLogos = [...logos].sort((a, b) => getLogoScore(b) - getLogoScore(a));
@@ -4459,20 +4479,33 @@ export default {
             
             let logos = imagesData.logos || [];
             const origL = (origLang || "").toLowerCase();
-            const getLangScore = (lang) => {
-                const l = String(lang || "").toLowerCase();
-                if (origL && (l === origL || (origL === 'zh' && l.startsWith('zh')))) return 10000;
-                if (l === 'en') return 5000;
-                if (l === 'zh' || l.startsWith('zh')) return 3000;
-                if (!l || l === 'null' || l === 'xx') return 2000;
-                return 1000;
+            const isChinese = origL === 'zh' || origL.startsWith('zh');
+
+            const getLogoItemScore = (l) => {
+                const lang = String(l.iso_639_1 || "").toLowerCase();
+                const ratio = l.aspect_ratio || (l.width && l.height ? (l.width / l.height) : 1);
+                const isLandscape = ratio > 1.1;
+
+                let score = 0;
+                if (isChinese) {
+                    if (lang === 'zh' || lang.startsWith('zh')) {
+                        score = isLandscape ? 50000 : 8000;
+                    } else if (isLandscape) {
+                        score = 15000;
+                    } else {
+                        score = 1000;
+                    }
+                } else {
+                    if (origL && (lang === origL || (origL === 'zh' && lang.startsWith('zh')))) score = isLandscape ? 20000 : 10000;
+                    else if (lang === 'en') score = isLandscape ? 10000 : 5000;
+                    else if (lang === 'zh' || lang.startsWith('zh')) score = isLandscape ? 6000 : 3000;
+                    else if (!lang || lang === 'null' || lang === 'xx') score = 2000;
+                    else score = 1000;
+                }
+                return score + (Math.min(ratio, 4.0) * 100) + (l.vote_average || 0);
             };
 
-            logos.sort((a, b) => {
-                const scoreA = getLangScore(a.iso_639_1) * 100 + (a.vote_average || 0);
-                const scoreB = getLangScore(b.iso_639_1) * 100 + (b.vote_average || 0);
-                return scoreB - scoreA;
-            });
+            logos.sort((a, b) => getLogoItemScore(b) - getLogoItemScore(a));
             
             const TMDB_IMG_LOGO = 'https://image.tmdb.org/t/p/original';
             const logoUrls = logos.map(l => ({ url: TMDB_IMG_LOGO + l.file_path, file_path: l.file_path, lang: l.iso_639_1 }));
