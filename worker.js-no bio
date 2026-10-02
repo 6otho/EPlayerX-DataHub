@@ -1412,15 +1412,37 @@ const FRONTEND_HTML_P1 = `
 
             let displayData = [...window.currentFetchedData];
             if (sortType === 'year') {
-                displayData.sort((a, b) => {
-                    const infoA = extractYearAndDate(a);
-                    const infoB = extractYearAndDate(b);
-                    if (infoB.year !== infoA.year) return infoB.year - infoA.year;
-                    if (infoB.fullDate !== infoA.fullDate) return infoB.fullDate.localeCompare(infoA.fullDate);
+                const getTs = function(x) {
+                    if (!x || typeof x !== 'object') return 0;
+                    const str = String(x.last_episode_air_date || x.release_date || x.first_air_date || x.air_date || x.year || '').trim();
+                    const m = str.match(/\\b(19\\d{2}|20\\d{2})[-/.年](\\d{1,2})[-/.月](\\d{1,2})/);
+                    if (m) {
+                        const mm = m[2].length === 1 ? '0' + m[2] : m[2];
+                        const dd = m[3].length === 1 ? '0' + m[3] : m[3];
+                        const t = new Date(m[1] + '-' + mm + '-' + dd + 'T00:00:00Z').getTime();
+                        return isNaN(t) ? 0 : t;
+                    }
+                    const ym = str.match(/\\b(19\\d{2}|20\\d{2})[-/.年](\\d{1,2})/);
+                    if (ym) {
+                        const mm = ym[2].length === 1 ? '0' + ym[2] : ym[2];
+                        const t = new Date(ym[1] + '-' + mm + '-01T00:00:00Z').getTime();
+                        return isNaN(t) ? 0 : t;
+                    }
+                    const y = str.match(/\\b(19\\d{2}|20\\d{2})\\b/);
+                    if (y) {
+                        const t = new Date(y[0] + '-01-01T00:00:00Z').getTime();
+                        return isNaN(t) ? 0 : t;
+                    }
+                    return 0;
+                };
+                displayData.sort(function(a, b) {
+                    const tA = getTs(a);
+                    const tB = getTs(b);
+                    if (tB !== tA) return tB - tA; // 严格按真实毫秒倒序（10月 > 9月 > 8月）
                     return (b.vote_average || 0) - (a.vote_average || 0);
                 });
             } else if (sortType === 'heat') {
-                displayData.sort((a, b) => {
+                displayData.sort(function(a, b) {
                     const voteDiff = (b.vote_average || 0) - (a.vote_average || 0);
                     if (Math.abs(voteDiff) > 0.01) return voteDiff;
                     return (b.popularity || 0) - (a.popularity || 0);
@@ -2926,12 +2948,44 @@ async function processItemsWithTMDB(items, mediaType, env, limit = 100, options 
     const traktScore = extraRatings.traktScore ? Number(Number(extraRatings.traktScore).toFixed(1)) : (savedTrakt ? Number(savedTrakt) : undefined);
     const rtScore = extraRatings.rtScore ? parseInt(extraRatings.rtScore, 10) : (savedRt ? parseInt(savedRt, 10) : undefined);
 
-    let rawDate = (details?.first_air_date || details?.release_date || basicData.first_air_date || basicData.release_date || oldRecord?.first_air_date || oldRecord?.release_date || oldRecord?.air_date || "").toString().trim();
+    // 🌟 1. 优先提取最新单集播出日 last_episode_air_date，真实反映下半年(9/10月)开播时间
+    let rawDate = (
+      details?.last_episode_air_date || 
+      basicData?.last_episode_air_date ||
+      details?.release_date || 
+      details?.first_air_date || 
+      basicData?.release_date || 
+      basicData?.first_air_date || 
+      (Array.isArray(item?.pubdates) ? item.pubdates[0] : item?.pubdate) ||
+      oldRecord?.last_episode_air_date || 
+      oldRecord?.release_date || 
+      oldRecord?.first_air_date || 
+      oldRecord?.air_date || 
+      ""
+    ).toString().trim();
+
     let validDate = null;
-    const dateMatch = rawDate.match(/\b(19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/);
+    let validYear = null;
+
+    // 匹配 年-月-日（带中文“年月日”或斜杠、横杠都兼容，月份自动补零）
+    const dateMatch = rawDate.match(/\b(19|20\d{2})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
     if (dateMatch) {
-      const parts = dateMatch[0].split(/[-/.]/);
-      validDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      validYear = dateMatch[1];
+      validDate = `${validYear}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}`;
+    } else {
+      // 匹配 年-月
+      const ymMatch = rawDate.match(/\b(19|20\d{2})[-/.年](\d{1,2})/);
+      if (ymMatch) {
+        validYear = ymMatch[1];
+        validDate = `${validYear}-${ymMatch[2].padStart(2, '0')}-01`;
+      } else {
+        // 匹配纯年份
+        const yMatch = rawDate.match(/\b(19|20\d{2})\b/);
+        if (yMatch) {
+          validYear = yMatch[0];
+          validDate = `${validYear}-01-01`;
+        }
+      }
     }
 
     const certValue = extractCertification(details, actualMediaType) || oldRecord?.certification || oldRecord?.content_rating || oldRecord?.contentRating || undefined;
@@ -3701,22 +3755,80 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           return { count: oldItemsList.length, stats: computeAssetStats(oldItemsList), newLogos: [] };
       }
 
+      // 🌟 核心：精准时间戳解析器（精确到每一天的毫秒数）
+      const parseDateTimeStamp = (item) => {
+        if (!item || typeof item !== 'object') return 0;
+        // 优先读取单集更新日，其次首播日、上映日
+        const raw = String(
+          item.last_episode_air_date || 
+          item.air_date || 
+          item.release_date || 
+          item.first_air_date || 
+          (Array.isArray(item.pubdates) ? item.pubdates[0] : item.pubdate) || 
+          item.year || 
+          ""
+        ).trim();
+
+        // 匹配 YYYY-MM-DD 或 YYYY/MM/DD 或 YYYY年MM月DD日
+        const fullMatch = raw.match(/\b(19\d{2}|20\d{2})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
+        if (fullMatch) {
+          const y = parseInt(fullMatch[1], 10);
+          const m = fullMatch[2].padStart(2, '0');
+          const d = fullMatch[3].padStart(2, '0');
+          const t = new Date(`${y}-${m}-${d}T00:00:00Z`).getTime();
+          return isNaN(t) ? 0 : t;
+        }
+
+        // 匹配 YYYY-MM
+        const monthMatch = raw.match(/\b(19\d{2}|20\d{2})[-/.年](\d{1,2})/);
+        if (monthMatch) {
+          const y = parseInt(monthMatch[1], 10);
+          const m = monthMatch[2].padStart(2, '0');
+          const t = new Date(`${y}-${m}-01T00:00:00Z`).getTime();
+          return isNaN(t) ? 0 : t;
+        }
+
+        // 仅匹配年份
+        const yearMatch = raw.match(/\b(19\d{2}|20\d{2})\b/);
+        if (yearMatch) {
+          const y = parseInt(yearMatch[0], 10);
+          const t = new Date(`${y}-01-01T00:00:00Z`).getTime();
+          return isNaN(t) ? 0 : t;
+        }
+
+        return 0; // 无时间信息
+      };
+
       try {
+        let sortRule = 'year'; // 默认统一按最新时间排序！
         const layoutObj = await env.R2_BUCKET.get("layout-config.json");
         if (layoutObj) {
           const layoutCfg = await layoutObj.json();
-          const sortRule = layoutCfg.layout?.[category]?.sort || 'default';
-
-          if (sortRule === 'year') {
-            combinedData.sort((a, b) => {
-              const yA = parseInt(a.year || (a.first_air_date ? a.first_air_date.substring(0, 4) : '0'), 10);
-              const yB = parseInt(b.year || (b.first_air_date ? b.first_air_date.substring(0, 4) : '0'), 10);
-              if (yB !== yA) return yB - yA;
-              return (b.vote_average || 0) - (a.vote_average || 0);
-            });
-          } else if (sortRule === 'heat') {
-            combinedData.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+          if (layoutCfg.layout?.[category]?.sort) {
+            sortRule = layoutCfg.layout[category].sort;
           }
+        }
+
+        if (sortRule === 'year') {
+          const nowMs = Date.now();
+          combinedData.sort((a, b) => {
+            const timeA = parseDateTimeStamp(a);
+            const timeB = parseDateTimeStamp(b);
+
+            // 1. 如果有待播剧（开播时间大于当前时间），优先排在最前
+            const isUpcomingA = timeA > nowMs;
+            const isUpcomingB = timeB > nowMs;
+            if (isUpcomingA && !isUpcomingB) return -1;
+            if (!isUpcomingA && isUpcomingB) return 1;
+
+            // 2. 核心：按真实年月日毫秒严格倒序（10月排在9月前，9月排在8月前，2026排在2025前）
+            if (timeB !== timeA) return timeB - timeA;
+
+            // 3. 同一天开播的，才用评分/热度辅助比对
+            return (b.vote_average || 0) - (a.vote_average || 0);
+          });
+        } else if (sortRule === 'heat') {
+          combinedData.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
         }
       } catch (e) {}
 
