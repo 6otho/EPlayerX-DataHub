@@ -5140,10 +5140,20 @@ export default {
       totalAssets: { count: 0, logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 }
     };
 
+    // 🌟 核心拦截 1：如果是后台定时器触发，随机避让 100~600ms，打破 Cloudflare 多节点并发完全同一时刻进来的局面
+    if (!isManualStart && !isResume) {
+      await new Promise(r => setTimeout(r, Math.floor(Math.random() * 500) + 100));
+    }
+
     try {
       const stateObj = await env.R2_BUCKET.get("cron_state.json");
       if (stateObj) state = Object.assign(state, await stateObj.json());
     } catch (e) {}
+
+    // 🌟 核心拦截 2：防止并发节点双跑，如果刚刚 5 秒内已有节点启动了，直接拦截退出
+    if (!isManualStart && !isResume && state.status === "RUNNING" && (Date.now() - (state.lastActiveTimestamp || 0) < 5000)) {
+      return { status: "ALREADY_STARTED_BY_ANOTHER_EDGE" };
+    }
 
     const nowTimestamp = Date.now();
     const bjTime = new Date(nowTimestamp + 8 * 3600 * 1000);
