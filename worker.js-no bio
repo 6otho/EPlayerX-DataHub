@@ -727,31 +727,18 @@ const FRONTEND_HTML_P1 = `
 
         async function reconnectCron() {
             if (!sysPwd) return showToast("请先登录管理员", true);
-            showToast("⚡ 正在重连并唤醒后台同步引擎...");
+            showToast("⚡ 正在唤醒后台自主接力引擎...");
             try {
-                let finished = false;
-                while (!finished) {
-                    const res = await fetch(ACTION_BASE + '/resume_cron', {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + sysPwd }
-                    });
-                    const data = await res.json();
-                    if (!data.success) {
-                        showToast("❌ 重连推进异常: " + (data.error || "未知错误"), true);
-                        break;
-                    }
+                const res = await fetch(ACTION_BASE + '/resume_cron', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + sysPwd }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast("🚀 后台接力已激活！现在您可以安全退出网页或锁屏，后台定时器将自动跑完！");
                     pollCronStatus();
-                    if (data.data && data.data.status === "IDLE") {
-                        finished = true;
-                        showToast("🎉 全量同步任务已全部完成！数据已刷新。");
-                        loadData(currentCategory);
-                        break;
-                    } else {
-                        const prog = data.data ? data.data.progress : '执行中';
-                        const task = data.data?.lastTask ? (' (' + data.data.lastTask + ')') : '';
-                        showToast("⚡ 重连推进中: " + prog + task);
-                        await new Promise(r => setTimeout(r, 800));
-                    }
+                } else {
+                    showToast("❌ 唤醒失败: " + (data.error || "未知错误"), true);
                 }
             } catch(e) {
                 showToast("❌ 网络请求异常", true);
@@ -1212,8 +1199,11 @@ const FRONTEND_HTML_P1 = `
             }
         }
 
-        async function removeItem(e, tmdbId) {
+        async function removeItem(e, tmdbId, title) {
             e.stopPropagation();
+            const safeTitleName = title || "该影片";
+            if (!confirm("🗑️ 移除确认：\\n\\n是否确定将《" + safeTitleName + "》从当前列表中临时移除？\\n\\n⚠️ 注意：此操作仅在本地移除，下次同步如果该片依然在榜单中可能会被重新抓取。如需永久不再抓取，请使用右侧【黑名单封禁】。")) return;
+
             showToast("🗑️ 正在从当前列表中移除...");
             try {
                 const res = await fetch(ACTION_BASE + '/delete_item', {
@@ -1566,7 +1556,7 @@ const FRONTEND_HTML_P1 = `
                 '</label>';
                 
                 const actionControlBtns = '<div class="absolute top-2.5 left-11 flex gap-1 z-30">' +
-                    '<button onclick="removeItem(event, \\'' + item.tmdbId + '\\')" class="bg-red-600/90 hover:bg-red-500 text-white p-1 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center justify-center" title="从当前列表移除（同步可能恢复）">' +
+                    '<button onclick="removeItem(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\')" class="bg-red-600/90 hover:bg-red-500 text-white p-1 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center justify-center" title="从当前列表移除">' +
                         '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>' +
                     '</button>' +
                     '<button onclick="blacklistItem(event, \\'' + item.tmdbId + '\\', \\'' + safeTitle + '\\')" class="bg-zinc-800/80 hover:bg-black text-zinc-300 hover:text-red-400 p-1 rounded-md shadow-sm border border-white/20 transition-all transform hover:scale-110 flex items-center justify-center opacity-60 hover:opacity-100" title="加入【当前分类】黑名单（此分类不再同步）">' +
@@ -3819,128 +3809,82 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   if (processedData.length === 0 && targetDay === null) throw new Error("TMDB未能匹配到任何符合条件的影视数据");
 
   if (!category.endsWith("_collection")) {
+      // 🌟 1. 建立已有数据的索引，记录原本的手动排位
+      const oldIdSet = new Set();
+      const oldTitleSet = new Set();
       const oldMap = new Map();
+
       oldItemsList.forEach(oldItem => {
-          if (oldItem.tmdbId) oldMap.set(String(oldItem.tmdbId), oldItem);
-          else if (oldItem.title) oldMap.set(String(oldItem.title).replace(/[\s·]/g, "").toLowerCase(), oldItem);
+          if (oldItem.tmdbId) {
+              const k = String(oldItem.tmdbId);
+              oldIdSet.add(k);
+              oldMap.set(k, oldItem);
+          }
+          if (oldItem.title) {
+              const cleanT = String(oldItem.title).replace(/[\s·]/g, "").toLowerCase();
+              oldTitleSet.add(cleanT);
+              oldMap.set(cleanT, oldItem);
+          }
       });
 
-      const mergedList = [];
-      const seenIds = new Set();
+      // 🌟 2. 区分【真正的新剧/新电影】与【已有旧剧】
+      const brandNewItems = [];
+      const freshMapForExisting = new Map();
 
       for (const pItem of processedData) {
           if (!pItem.tmdbId) continue;
-          const key = String(pItem.tmdbId);
-          if (seenIds.has(key)) continue;
-          seenIds.add(key);
+          const kId = String(pItem.tmdbId);
+          const kTitle = String(pItem.title || "").replace(/[\s·]/g, "").toLowerCase();
 
-          const oldRec = oldMap.get(key) || oldMap.get(String(pItem.title).replace(/[\s·]/g, "").toLowerCase());
-          if (oldRec) {
-              if (!pItem.noLogoPoster && oldRec.noLogoPoster) pItem.noLogoPoster = oldRec.noLogoPoster;
-              if ((!pItem.logo || pItem.logo.includes('text_logo.svg')) && oldRec.logo && !oldRec.logo.includes('text_logo.svg')) {
-                  pItem.logo = oldRec.logo;
-                  pItem.logo_source = oldRec.logo_source || 'auto';
-              }
-              if (!pItem.thumb && oldRec.thumb) pItem.thumb = oldRec.thumb;
-              if (!pItem.certification && oldRec.certification) pItem.certification = oldRec.certification;
-              if (oldRec.ratings) {
-                  pItem.ratings = { ...oldRec.ratings, ...(pItem.ratings || {}) };
-              }
+          const isExisting = oldIdSet.has(kId) || (kTitle && oldTitleSet.has(kTitle));
+          if (!isExisting) {
+              brandNewItems.push(pItem); // 真正的新剧
+          } else {
+              freshMapForExisting.set(kId, pItem);
+              if (kTitle) freshMapForExisting.set(kTitle, pItem);
           }
-          mergedList.push(pItem);
       }
 
+      // 🌟 3. 保护已有旧剧：严格按原本的物理顺序更新属性，顺序纹丝不动！
+      const updatedExistingItems = [];
       for (const oldItem of oldItemsList) {
           if (!oldItem.tmdbId) continue;
-          const key = String(oldItem.tmdbId);
-          if (!seenIds.has(key)) {
-              seenIds.add(key);
-              mergedList.push(oldItem);
+          const kId = String(oldItem.tmdbId);
+          const kTitle = String(oldItem.title || "").replace(/[\s·]/g, "").toLowerCase();
+          const freshData = freshMapForExisting.get(kId) || freshMapForExisting.get(kTitle);
+
+          if (freshData) {
+              // 继承新抓到的图片与评分，但完全不动位置
+              if (freshData.noLogoPoster && oldItem.no_logo_poster_source !== 'manual') oldItem.noLogoPoster = freshData.noLogoPoster;
+              if (freshData.logo && (!oldItem.logo || oldItem.logo.includes('text_logo.svg')) && oldItem.logo_source !== 'manual') {
+                  oldItem.logo = freshData.logo;
+              }
+              if (freshData.thumb && oldItem.thumb_source !== 'manual') oldItem.thumb = freshData.thumb;
+              if (freshData.backdrop_path && oldItem.backdrop_source !== 'manual') oldItem.backdrop_path = freshData.backdrop_path;
+              if (freshData.poster_path && oldItem.poster_source !== 'manual') oldItem.poster_path = freshData.poster_path;
+              if (freshData.ratings) {
+                  oldItem.ratings = { ...(oldItem.ratings || {}), ...freshData.ratings };
+              }
+              if (freshData.certification) oldItem.certification = freshData.certification;
           }
+          updatedExistingItems.push(oldItem);
       }
 
-      let combinedData = mergedList.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
+      // 🌟 4. 如果有新剧：新剧按时间倒序排列，放在最前面；已有排好的旧剧紧跟其后！
+      // 如果没有新剧：brandNewItems 为空，完全 100% 保持你手动排好的顺序，绝对不打乱！
+      let combinedData = [];
+      if (brandNewItems.length > 0) {
+          brandNewItems.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+          combinedData = [...brandNewItems, ...updatedExistingItems];
+      } else {
+          combinedData = [...updatedExistingItems];
+      }
+
+      combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
 
       if (combinedData.length < 25 && oldItemsList.length >= 25) {
           return { count: oldItemsList.length, stats: computeAssetStats(oldItemsList), newLogos: [] };
       }
-
-      // 🌟 核心：精准时间戳解析器（精确到每一天的毫秒数）
-      const parseDateTimeStamp = (item) => {
-        if (!item || typeof item !== 'object') return 0;
-        // 优先读取单集更新日，其次首播日、上映日
-        const raw = String(
-          item.last_episode_air_date || 
-          item.air_date || 
-          item.release_date || 
-          item.first_air_date || 
-          (Array.isArray(item.pubdates) ? item.pubdates[0] : item.pubdate) || 
-          item.year || 
-          ""
-        ).trim();
-
-        // 匹配 YYYY-MM-DD 或 YYYY/MM/DD 或 YYYY年MM月DD日
-        const fullMatch = raw.match(/\b(19\d{2}|20\d{2})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
-        if (fullMatch) {
-          const y = parseInt(fullMatch[1], 10);
-          const m = fullMatch[2].padStart(2, '0');
-          const d = fullMatch[3].padStart(2, '0');
-          const t = new Date(`${y}-${m}-${d}T00:00:00Z`).getTime();
-          return isNaN(t) ? 0 : t;
-        }
-
-        // 匹配 YYYY-MM
-        const monthMatch = raw.match(/\b(19\d{2}|20\d{2})[-/.年](\d{1,2})/);
-        if (monthMatch) {
-          const y = parseInt(monthMatch[1], 10);
-          const m = monthMatch[2].padStart(2, '0');
-          const t = new Date(`${y}-${m}-01T00:00:00Z`).getTime();
-          return isNaN(t) ? 0 : t;
-        }
-
-        // 仅匹配年份
-        const yearMatch = raw.match(/\b(19\d{2}|20\d{2})\b/);
-        if (yearMatch) {
-          const y = parseInt(yearMatch[0], 10);
-          const t = new Date(`${y}-01-01T00:00:00Z`).getTime();
-          return isNaN(t) ? 0 : t;
-        }
-
-        return 0; // 无时间信息
-      };
-
-      try {
-        let sortRule = 'year'; // 默认统一按最新时间排序！
-        const layoutObj = await env.R2_BUCKET.get("layout-config.json");
-        if (layoutObj) {
-          const layoutCfg = await layoutObj.json();
-          if (layoutCfg.layout?.[category]?.sort) {
-            sortRule = layoutCfg.layout[category].sort;
-          }
-        }
-
-        if (sortRule === 'year') {
-          const nowMs = Date.now();
-          combinedData.sort((a, b) => {
-            const timeA = parseDateTimeStamp(a);
-            const timeB = parseDateTimeStamp(b);
-
-            // 1. 如果有待播剧（开播时间大于当前时间），优先排在最前
-            const isUpcomingA = timeA > nowMs;
-            const isUpcomingB = timeB > nowMs;
-            if (isUpcomingA && !isUpcomingB) return -1;
-            if (!isUpcomingA && isUpcomingB) return 1;
-
-            // 2. 核心：按真实年月日毫秒严格倒序（10月排在9月前，9月排在8月前，2026排在2025前）
-            if (timeB !== timeA) return timeB - timeA;
-
-            // 3. 同一天开播的，才用评分/热度辅助比对
-            return (b.vote_average || 0) - (a.vote_average || 0);
-          });
-        } else if (sortRule === 'heat') {
-          combinedData.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-        }
-      } catch (e) {}
 
       const finalJson = { platform: config.platform, type: config.type, count: combinedData.length, lastUpdated: new Date().toISOString(), data: combinedData };
       await env.R2_BUCKET.put(config.fileName, JSON.stringify(finalJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -5263,7 +5207,7 @@ export default {
   },
 
   // ==========================================
-  // 10. 智能极速调度引擎
+  // 10. 智能极速调度引擎（彻底解决 CPU 10ms 限制与后台自驱）
   // ==========================================
   async runCronLogic(env, ctx, triggerSource = "【CF Cron 定时器】", isManualStart = false, isResume = false) {
     if (!env.R2_BUCKET) throw new Error("未检测到 env.R2_BUCKET 存储桶绑定");
@@ -5292,6 +5236,7 @@ export default {
       cycleCount: 1, 
       cycleStartTime: null, 
       lastRunDate: null, 
+      lastStartHourTag: null,
       isPaused: false,
       autoStartHour: 3,
       autoIntervalDays: 1,
@@ -5299,25 +5244,15 @@ export default {
       totalAssets: { count: 0, logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 }
     };
 
-    // 🌟 核心拦截 1：如果是后台定时器触发，随机避让 100~600ms，打破 Cloudflare 多节点并发完全同一时刻进来的局面
+    // 🌟 后台定时器触发时微小抖动，防边缘并发
     if (!isManualStart && !isResume) {
-      await new Promise(r => setTimeout(r, Math.floor(Math.random() * 500) + 100));
-    }
-
-    // 🌟 1. 后台自动触发时引入 150~600ms 随机抖动避让，错开 Cloudflare 多边缘节点并发唤醒
-    if (!isManualStart && !isResume) {
-      await new Promise(r => setTimeout(r, Math.floor(Math.random() * 450) + 150));
+      await new Promise(r => setTimeout(r, Math.floor(Math.random() * 200) + 50));
     }
 
     try {
       const stateObj = await env.R2_BUCKET.get("cron_state.json");
       if (stateObj) state = Object.assign(state, await stateObj.json());
     } catch (e) {}
-
-    // 🌟 2. 5秒内如果已被其他并发实例启动了，直接拦截退出，坚决不二次触发
-    if (!isManualStart && !isResume && state.status === "RUNNING" && (Date.now() - (state.lastActiveTimestamp || 0) < 5000)) {
-      return { status: "BLOCKED_CONCURRENT_EDGE" };
-    }
 
     const nowTimestamp = Date.now();
     const bjTime = new Date(nowTimestamp + 8 * 3600 * 1000);
@@ -5327,8 +5262,10 @@ export default {
     const targetUrl = env.WORKER_URL || "https://homepage.eplayerx.cc.cd";
     const currentHourLock = `${bjDateStr}_${bjHour}`;
 
+    // 超过 15 分钟无响应认定为卡死，自动复位
     const isStuck = state.status === "RUNNING" && state.lastActiveTimestamp && (nowTimestamp - state.lastActiveTimestamp > 15 * 60 * 1000);
 
+    // 🌟 重连指令：瞬间激活状态机并直接写入 R2
     if (isResume) {
       state.isPaused = false;
       state.status = "RUNNING";
@@ -5336,6 +5273,10 @@ export default {
       if (typeof state.currentIndex !== 'number' || state.currentIndex >= totalTasks) {
         state.currentIndex = 0;
       }
+      state.lastActiveTimestamp = Date.now();
+      await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), {
+        httpMetadata: { contentType: "application/json" }
+      });
     }
 
     if (state.isPaused && !isManualStart && !isResume) {
@@ -5350,7 +5291,7 @@ export default {
     }
     const intervalSetting = state.autoIntervalDays || 1;
 
-    // 🌟 3. 当前小时锁判定：同一天同一个小时只要触发过，绝对不再触发
+    // 定时启动判定（小时锁保护）
     const isAutoTime = (
       daysPassed >= intervalSetting && 
       state.autoStartHour === bjHour && 
@@ -5364,12 +5305,12 @@ export default {
       state.currentIndex = 0;
       state.cycleStartTime = nowTimeStr;
       state.lastRunDate = bjDateStr;
-      state.lastStartHourTag = currentHourLock; // 锁死当前小时
+      state.lastStartHourTag = currentHourLock;
       state.isPaused = false;
       state.lastActiveTimestamp = nowTimestamp;
       state.totalAssets = { count: 0, logos: 0, noLogoPosters: 0, cleanBackdrops: 0, posters: 0, thumbs: 0 };
 
-      // 🌟 4. 核心关键：先写 R2 存储桶占锁，然后再发 TG 消息！
+      // 先锁状态入库
       await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), {
         httpMetadata: { contentType: "application/json" }
       });
@@ -5397,16 +5338,16 @@ export default {
       return { triggerSource, status: "IDLE", msg: `待命 (${promptText} 启动)` };
     }
 
-    const reqCtx = { subreqs: 0, maxSubreqs: 46, isSafeMode: false, clearCooldown: false };
-    const batchStartTime = Date.now();
+    // 🌟🌟🌟【降载救命改动】：彻底防止 10ms CPU 超时！
+    // 免费版限制 CPU 10ms，单次批次严格只跑 1 个分类，绝不在单次循环里连续跑导致 CPU 累加超标！
+    // 配合每分钟触发的 Cron，每分钟推进 1 个，75 个任务会平稳在后台自驱跑完，绝不报错超时！
+    const reqCtx = { subreqs: 0, maxSubreqs: 30, isSafeMode: false, clearCooldown: false };
     let tasksExecutedThisBatch = 0;
 
-    while (state.currentIndex < totalTasks) {
-      if (reqCtx.subreqs >= 25 || (Date.now() - batchStartTime) >= 14000) break;
-
+    if (state.currentIndex < totalTasks) {
       const currentTask = taskQueue[state.currentIndex];
       try {
-        const res = await executeSyncTask(currentTask.id, env, 100, true, reqCtx, targetUrl, true, true);
+        const res = await executeSyncTask(currentTask.id, env, 80, true, reqCtx, targetUrl, true, true);
         if (res && res.stats) {
           state.totalAssets.count += (res.count || 0);
           state.totalAssets.logos += (res.stats.logos || 0);
@@ -5419,19 +5360,17 @@ export default {
         state.lastStatus = `成功 (${res?.count || 0}部)`;
       } catch (err) {
         state.lastTask = currentTask.name;
-        state.lastStatus = `异常: ${err.message}`;
+        state.lastStatus = `跳过异常: ${err.message}`;
       }
 
+      // 无论成功与否，必须推进 index 并更新时间戳，绝不卡死在某个分类！
       state.currentIndex++;
       tasksExecutedThisBatch++;
+      state.lastRunTime = nowTimeStr;
       state.lastActiveTimestamp = Date.now();
-
-      if (reqCtx.subreqs >= 20) break;
     }
 
-    state.lastRunTime = nowTimeStr;
-    state.lastActiveTimestamp = Date.now();
-
+    // 全量任务圆满收工处理
     if (state.currentIndex >= totalTasks) {
       state.status = "IDLE";
       state.currentIndex = 0;
@@ -5458,6 +5397,7 @@ export default {
       }
     }
 
+    // 及时写入当前进度，保证断点续传绝不丢失
     await env.R2_BUCKET.put("cron_state.json", JSON.stringify(state, null, 2), {
       httpMetadata: { contentType: "application/json" }
     });
