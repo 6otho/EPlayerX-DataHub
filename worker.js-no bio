@@ -1106,13 +1106,15 @@ const FRONTEND_HTML_P1 = `
             const selectedIds = new Set(checkedBoxes.map(cb => String(cb.value)));
             let list = [...(window.currentFetchedData || [])];
 
+            const getId = (it) => String(it.tmdbId || it.id || "");
+
             if (direction === 'top') {
-                const selectedItems = list.filter(item => selectedIds.has(String(item.tmdbId)));
-                const remainingItems = list.filter(item => !selectedIds.has(String(item.tmdbId)));
+                const selectedItems = list.filter(item => selectedIds.has(getId(item)));
+                const remainingItems = list.filter(item => !selectedIds.has(getId(item)));
                 list = [...selectedItems, ...remainingItems];
             } else if (direction === 'up') {
                 for (let i = 1; i < list.length; i++) {
-                    if (selectedIds.has(String(list[i].tmdbId)) && !selectedIds.has(String(list[i - 1].tmdbId))) {
+                    if (selectedIds.has(getId(list[i])) && !selectedIds.has(getId(list[i - 1]))) {
                         const temp = list[i - 1];
                         list[i - 1] = list[i];
                         list[i] = temp;
@@ -1120,7 +1122,7 @@ const FRONTEND_HTML_P1 = `
                 }
             } else if (direction === 'down') {
                 for (let i = list.length - 2; i >= 0; i--) {
-                    if (selectedIds.has(String(list[i].tmdbId)) && !selectedIds.has(String(list[i + 1].tmdbId))) {
+                    if (selectedIds.has(getId(list[i])) && !selectedIds.has(getId(list[i + 1]))) {
                         const temp = list[i + 1];
                         list[i + 1] = list[i];
                         list[i] = temp;
@@ -1130,6 +1132,14 @@ const FRONTEND_HTML_P1 = `
 
             window.currentFetchedData = list;
             pendingCheckedIds = Array.from(selectedIds);
+
+            let savedV2 = JSON.parse(localStorage.getItem('saved_layout_v2') || '{}');
+            if (!savedV2[currentCategory]) savedV2[currentCategory] = { checked: true, sort: 'default' };
+            savedV2[currentCategory].sort = 'default';
+            localStorage.setItem('saved_layout_v2', JSON.stringify(savedV2));
+            if (modalLayoutState && modalLayoutState[currentCategory]) modalLayoutState[currentCategory].sort = 'default';
+            syncLayoutToCloud(categoryOrder, savedV2);
+
             renderGrid();
             showToast("✨ 排序已调整，正在同步保存至云端...");
 
@@ -1140,7 +1150,7 @@ const FRONTEND_HTML_P1 = `
                     body: JSON.stringify({
                         category: currentCategory,
                         weekday: currentWeekday,
-                        orderedIds: list.map(i => i.tmdbId)
+                        orderedIds: list.map(i => getId(i))
                     })
                 });
                 const data = await res.json();
@@ -1151,51 +1161,6 @@ const FRONTEND_HTML_P1 = `
                 }
             } catch (err) {
                 showToast("❌ 网络异常，未能保存顺序", true);
-            }
-        }
-
-        async function moveItemOrder(e, tmdbId, direction) {
-            e.stopPropagation();
-            if (!window.currentFetchedData || window.currentFetchedData.length === 0) return;
-            
-            const index = window.currentFetchedData.findIndex(item => String(item.tmdbId) === String(tmdbId));
-            if (index === -1) return;
-
-            if (direction === 'top') {
-                if (index === 0) return showToast("⚠️ 该影片已在第 1 位（轮播图首位）");
-                const item = window.currentFetchedData.splice(index, 1)[0];
-                window.currentFetchedData.unshift(item);
-            } else if (direction === 'up') {
-                if (index === 0) return showToast("⚠️ 已经在最前，无法再前移");
-                const item = window.currentFetchedData.splice(index, 1)[0];
-                window.currentFetchedData.splice(index - 1, 0, item);
-            } else if (direction === 'down') {
-                if (index === window.currentFetchedData.length - 1) return showToast("⚠️ 已经在最后，无法再后移");
-                const item = window.currentFetchedData.splice(index, 1)[0];
-                window.currentFetchedData.splice(index + 1, 0, item);
-            }
-
-            renderGrid();
-            showToast("✨ 排序调整成功，正在同步到云端...");
-
-            try {
-                const res = await fetch(ACTION_BASE + '/save_items_order', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        category: currentCategory,
-                        weekday: currentWeekday,
-                        orderedIds: window.currentFetchedData.map(i => i.tmdbId)
-                    })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    showToast("✅ 轮播图顺序已锁定并保存！");
-                } else {
-                    showToast("❌ 保存失败: " + data.error, true);
-                }
-            } catch (err) {
-                showToast("❌ 网络异常，保存失败", true);
             }
         }
 
@@ -3365,8 +3330,34 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
   }
 
   else if (category === "weekly_drama_collection") {
+      const now = new Date();
+      // 🌟 设定时间雷达：最近 60 天到未来 30 天，只抓当季热播与即将上线国产大剧
+      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
+      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+
+      // 1. 从 TMDB 获取正在热播的国产剧（排除动画16、真人秀10764、脱口秀10767）
+      const tmdbLiveCn = await fetchTMDBDiscoverList('tv', {
+          with_original_language: 'zh',
+          with_origin_country: 'CN',
+          without_genres: '16,10764,10767,10763,99',
+          'air_date.gte': past60,
+          'air_date.lte': future30,
+          sort_by: 'popularity.desc'
+      }, env, 80, reqCtx).catch(() => []);
+
+      // 2. 结合豆瓣当季最新热门电视剧作为时效补充
+      let doubanHotCn = await fetchDoubanSubjectCollection("tv_domestic", 40, reqCtx).catch(() => []);
+      doubanHotCn = doubanHotCn.filter(item => {
+          const t = item.title || "";
+          return !/(动画|动漫|真人秀|脱口秀|演唱会|晚会|纪录片|特别节目|第[一二三四五六七八九十\d]+期|季|年番)/.test(t);
+      });
+
+      // 3. 聚合双源当季新剧并去重
+      const freshSeasonDramas = deduplicateRawList([...tmdbLiveCn, ...doubanHotCn]);
+
       let processedCount = 0;
       let allDayItems = [];
+
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue; 
           let existingItems = [];
@@ -3378,13 +3369,19 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               }
           } catch(e) {}
 
-          existingItems = existingItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-          if (existingItems.length === 0) {
+          // 🌟 根据播出时间与自定义规则智能分配星期
+          let freshForDay = freshSeasonDramas.filter(item => determineDay(item, null, null, overrides) === day);
+
+          // 合并新老数据，新剧优先排前，老剧跟在后
+          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
+          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
+          
+          if (combinedItems.length === 0) {
               await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify({ platform: "tmdb", type: "tv_series", count: 0, lastUpdated: new Date().toISOString(), data: [] }, null, 2), { httpMetadata: { contentType: "application/json" } });
               continue; 
           }
 
-          let processed = await processItemsWithTMDB(existingItems, "tv", env, limit, processOpts(), reqCtx);
+          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts({ isDomesticDramaOnly: true }), reqCtx);
           processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
           processedCount += processed.length;
           allDayItems.push(...processed);
@@ -3707,7 +3704,46 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
     processedData = await processItemsWithTMDB(await fetchTraktTrending('movies', env, limit, reqCtx), "movie", env, limit, processOpts(), reqCtx);
   }
   else if (category === "trakt_shows") {
-    processedData = await processItemsWithTMDB(await fetchTraktTrending('shows', env, limit, reqCtx), "tv", env, limit, processOpts(), reqCtx);
+    // 🌟 1. 先尝试获取 Trakt 趋势，若 Trakt 失败或不足，自动用 TMDB 欧美专属库智能补足
+    let rawShows = await fetchTraktTrending('shows', env, limit, reqCtx).catch(() => []);
+
+    // 🌟 2. 强力后备：使用当年优先梯级抓取纯正欧美剧（剔除动画16、真人秀10764，锁定欧美主流语种）
+    let euroUsTv = await fetchTieredYearList('tv', {
+      with_original_language: 'en|fr|de|es|it|sv|no|da',
+      without_genres: '16,10764,10767',
+      sort_by: 'popularity.desc'
+    }, env, limit, reqCtx).catch(() => []);
+
+    // 🌟 3. 双源合并去重
+    let combinedRaw = deduplicateRawList([...rawShows, ...euroUsTv]);
+
+    // 🌟 4. 严格过滤拦截：坚决把动画、国产片、日漫、电影从源头全部枪毙！
+    combinedRaw = combinedRaw.filter(item => {
+      const origLang = (item.original_language || '').toLowerCase();
+      const countries = (item.origin_country || []).map(c => String(c).toUpperCase());
+      const genres = item.genre_ids || [];
+
+      // 绝不允许包含动画(16)
+      if (genres.includes(16)) return false;
+
+      // 绝不允许来自中港台、日韩
+      if (['zh', 'ja', 'ko'].includes(origLang)) return false;
+      if (countries.some(c => ['CN', 'HK', 'TW', 'JP', 'KR'].includes(c))) return false;
+
+      return true;
+    });
+
+    // 🌟 5. 走加工引擎，强制限定 mediaType 为 'tv'
+    processedData = await processItemsWithTMDB(combinedRaw, "tv", env, limit, processOpts({
+      isWesternTvOnly: true
+    }), reqCtx);
+
+    // 🌟 6. 二次清洗保险：再次确认加工后没有中日韩及动画
+    processedData = processedData.filter(item => {
+      const lang = (item.original_language || '').toLowerCase();
+      const genres = item.genre_ids || [];
+      return !['zh', 'ja', 'ko'].includes(lang) && !genres.includes(16);
+    });
   }
   else if (category === "douban_korean_tv") {
     let raw = await fetchDoubanSubjectCollection("tv_korean", limit, reqCtx);
@@ -3871,7 +3907,6 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       }
 
       // 🌟 4. 如果有新剧：新剧按时间倒序排列，放在最前面；已有排好的旧剧紧跟其后！
-      // 如果没有新剧：brandNewItems 为空，完全 100% 保持你手动排好的顺序，绝对不打乱！
       let combinedData = [];
       if (brandNewItems.length > 0) {
           brandNewItems.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
@@ -3880,11 +3915,30 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           combinedData = [...updatedExistingItems];
       }
 
-      combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
+      // 🌟🌟🌟【核心排毒拦截】：不管新抓的还是 R2 里残留的旧数据，在此做最终强力清洗！
+      if (category === "trakt_shows") {
+        combinedData = combinedData.filter(item => {
+          const lang = String(item.original_language || "").toLowerCase();
+          const countries = (item.origin_country || []).map(c => String(c).toUpperCase());
+          const genres = item.genre_ids || [];
 
-      if (combinedData.length < 25 && oldItemsList.length >= 25) {
-          return { count: oldItemsList.length, stats: computeAssetStats(oldItemsList), newLogos: [] };
+          // 1. 严格剔除动画分类 (TMDB genre 16 = 动画)
+          if (genres.includes(16) || genres.includes("16")) return false;
+
+          // 2. 严格剔除亚洲语言（中港台、日、韩、泰）
+          if (["zh", "cn", "ja", "ko", "th"].includes(lang)) return false;
+
+          // 3. 严格剔除亚洲产地
+          if (countries.some(c => ["CN", "HK", "TW", "JP", "KR", "TH"].includes(c))) return false;
+
+          // 4. 严格剔除电影类型，只留剧集
+          if (item.media_type && item.media_type === "movie") return false;
+
+          return true;
+        });
       }
+
+      combinedData = combinedData.filter(item => !isItemBlacklisted(item, blacklist, category)).slice(0, limit);
 
       const finalJson = { platform: config.platform, type: config.type, count: combinedData.length, lastUpdated: new Date().toISOString(), data: combinedData };
       await env.R2_BUCKET.put(config.fileName, JSON.stringify(finalJson, null, 2), { httpMetadata: { contentType: "application/json" } });
@@ -4514,26 +4568,55 @@ export default {
             const oldObj = await env.R2_BUCKET.get(fileName);
             if (oldObj) {
                 const oldJson = await oldObj.json();
-                if (oldJson && oldJson.data) {
+                if (oldJson && Array.isArray(oldJson.data)) {
+                    // 🌟【关键修复 2】：建立双重映射，tmdbId 与 id 同时匹配，防止漏掉项
                     const itemMap = new Map();
-                    oldJson.data.forEach(item => itemMap.set(String(item.tmdbId), item));
+                    oldJson.data.forEach(item => {
+                        if (item.tmdbId !== undefined && item.tmdbId !== null) itemMap.set(String(item.tmdbId), item);
+                        if (item.id !== undefined && item.id !== null) itemMap.set(String(item.id), item);
+                    });
 
                     const reorderedData = [];
+                    const addedSet = new Set();
+
                     orderedIds.forEach(id => {
-                        const it = itemMap.get(String(id));
+                        const sid = String(id);
+                        const it = itemMap.get(sid);
                         if (it) {
-                            reorderedData.push(it);
-                            itemMap.delete(String(id));
+                            const uniqueKey = String(it.tmdbId || it.id);
+                            if (!addedSet.has(uniqueKey)) {
+                                reorderedData.push(it);
+                                addedSet.add(uniqueKey);
+                            }
                         }
                     });
-                    for (const remainItem of itemMap.values()) {
-                        reorderedData.push(remainItem);
-                    }
+
+                    // 把不在前端列表里的剩余旧项追加在最后
+                    oldJson.data.forEach(orig => {
+                        const uniqueKey = String(orig.tmdbId || orig.id);
+                        if (!addedSet.has(uniqueKey)) {
+                            reorderedData.push(orig);
+                            addedSet.add(uniqueKey);
+                        }
+                    });
 
                     oldJson.data = reorderedData;
                     await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), {
                         httpMetadata: { contentType: "application/json" }
                     });
+
+                    // 🌟 同步将该分类的云端布局锁定为 default
+                    try {
+                        const layoutObj = await env.R2_BUCKET.get("layout-config.json");
+                        let layoutData = layoutObj ? await layoutObj.json() : {};
+                        if (!layoutData.layout) layoutData.layout = {};
+                        if (!layoutData.layout[catId]) layoutData.layout[catId] = {};
+                        layoutData.layout[catId].sort = 'default';
+                        await env.R2_BUCKET.put("layout-config.json", JSON.stringify(layoutData, null, 2), {
+                            httpMetadata: { contentType: "application/json" }
+                        });
+                    } catch(e) {}
+
                     return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
                 }
             }
@@ -4544,79 +4627,115 @@ export default {
       }
     }
 
+    // 🌟 补回丢失的单片删除/拉黑核心接口：delete_item
     if (action === "action" && category === "delete_item" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
         const body = await request.json();
-        const { tmdbId, category: catId, mode = 'remove' } = body;
-        
+        const { tmdbId, category: catId, weekday, mode = 'remove' } = body;
+        if (!tmdbId || !catId) return new Response(JSON.stringify({ success: false, error: "缺少必要参数" }), { status: 400, headers: antiCacheHeaders });
+
         let fileName = catId + ".json";
         if (catId.endsWith("_collection")) {
-            fileName = `${catId}-${body.weekday || 1}.json`;
+            fileName = `${catId}-${weekday || 1}.json`;
+        } else if (catId.includes("_collection-")) {
+            fileName = `${catId}.json`;
         } else {
-            const config = CATEGORY_MAP[catId];
+            const config = CATEGORY_MAP[catId] || CATEGORY_CONFIGS.find(c => c.id === catId);
             if (config) fileName = config.fileName;
         }
 
         if (env.R2_BUCKET) {
-            const oldObj = await env.R2_BUCKET.get(fileName);
+            let oldObj = await env.R2_BUCKET.get(fileName);
+            // 兼容性查找：如果没有找到带下划线的，尝试查找带中划线的
+            if (!oldObj && !fileName.includes('-')) {
+                const altFileName = fileName.replace(/_/g, '-');
+                oldObj = await env.R2_BUCKET.get(altFileName);
+                if (oldObj) fileName = altFileName;
+            }
+
             if (oldObj) {
                 const oldJson = await oldObj.json();
-                if (oldJson && oldJson.data) {
-                    const targetItem = oldJson.data.find(item => item.tmdbId == tmdbId);
+                if (oldJson && Array.isArray(oldJson.data)) {
+                    const targetStrId = String(tmdbId);
                     
-                    if (targetItem && mode === 'blacklist') {
-                        await addToBlacklist(env, [targetItem], catId); 
+                    // 双重兼容查找：无论存储的是 tmdbId 还是 id 都能找到
+                    const targetItem = oldJson.data.find(item => String(item.tmdbId) === targetStrId || String(item.id) === targetStrId);
+                    
+                    if (mode === 'blacklist') {
+                        const itemToBlock = targetItem || { tmdbId: targetStrId };
+                        await addToBlacklist(env, [itemToBlock], catId); 
                     }
                     
-                    oldJson.data = oldJson.data.filter(item => item.tmdbId != tmdbId);
+                    // 彻底从列表中移除
+                    oldJson.data = oldJson.data.filter(item => String(item.tmdbId) !== targetStrId && String(item.id) !== targetStrId);
                     oldJson.count = oldJson.data.length;
-                    await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-                    return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
+                    
+                    await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { 
+                        httpMetadata: { contentType: "application/json" } 
+                    });
+                    return new Response(JSON.stringify({ success: true, count: oldJson.count }), { 
+                        headers: { "Content-Type": "application/json", ...antiCacheHeaders } 
+                    });
                 }
             }
         }
-        return new Response(JSON.stringify({ success: false, error: "未找到文件" }), { status: 404, headers: antiCacheHeaders });
+        return new Response(JSON.stringify({ success: false, error: `未找到文件: ${fileName}` }), { status: 404, headers: antiCacheHeaders });
       } catch (e) {
         return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
       }
     }
 
+    // 🌟 修复与加固批量删除/拉黑接口：batch_delete
     if (action === "action" && category === "batch_delete" && request.method === "POST") {
       if (!isAdmin(request, env)) return new Response(JSON.stringify({ success: false, error: "越权！" }), { status: 403, headers: antiCacheHeaders });
       try {
         const body = await request.json();
         const { tmdbIds, category: catId, weekday, mode = 'remove' } = body;
-        if (!tmdbIds || !Array.isArray(tmdbIds)) return new Response(JSON.stringify({ success: false, error: "参数错误" }), { status: 400, headers: antiCacheHeaders });
+        if (!tmdbIds || !Array.isArray(tmdbIds) || !catId) return new Response(JSON.stringify({ success: false, error: "参数错误" }), { status: 400, headers: antiCacheHeaders });
 
         let fileName = catId + ".json";
         if (catId.endsWith("_collection")) {
             fileName = `${catId}-${weekday || 1}.json`;
+        } else if (catId.includes("_collection-")) {
+            fileName = `${catId}.json`;
         } else {
-            const config = CATEGORY_MAP[catId];
+            const config = CATEGORY_MAP[catId] || CATEGORY_CONFIGS.find(c => c.id === catId);
             if (config) fileName = config.fileName;
         }
 
         if (env.R2_BUCKET) {
-            const oldObj = await env.R2_BUCKET.get(fileName);
+            let oldObj = await env.R2_BUCKET.get(fileName);
+            if (!oldObj && !fileName.includes('-')) {
+                const altFileName = fileName.replace(/_/g, '-');
+                oldObj = await env.R2_BUCKET.get(altFileName);
+                if (oldObj) fileName = altFileName;
+            }
+
             if (oldObj) {
                 const oldJson = await oldObj.json();
-                if (oldJson && oldJson.data) {
+                if (oldJson && Array.isArray(oldJson.data)) {
                     const idsSet = new Set(tmdbIds.map(String));
-                    const itemsToDelete = oldJson.data.filter(item => idsSet.has(String(item.tmdbId)));
+                    const itemsToDelete = oldJson.data.filter(item => idsSet.has(String(item.tmdbId)) || idsSet.has(String(item.id)));
                     
-                    if (itemsToDelete.length > 0 && mode === 'blacklist') {
-                        await addToBlacklist(env, itemsToDelete, catId);
+                    if (mode === 'blacklist') {
+                        const blockList = itemsToDelete.length > 0 ? itemsToDelete : tmdbIds.map(id => ({ tmdbId: String(id) }));
+                        await addToBlacklist(env, blockList, catId);
                     }
                     
-                    oldJson.data = oldJson.data.filter(item => !idsSet.has(String(item.tmdbId)));
+                    oldJson.data = oldJson.data.filter(item => !idsSet.has(String(item.tmdbId)) && !idsSet.has(String(item.id)));
                     oldJson.count = oldJson.data.length;
-                    await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-                    return new Response(JSON.stringify({ success: true, count: oldJson.count }), { headers: { "Content-Type": "application/json", ...antiCacheHeaders } });
+                    
+                    await env.R2_BUCKET.put(fileName, JSON.stringify(oldJson, null, 2), { 
+                        httpMetadata: { contentType: "application/json" } 
+                    });
+                    return new Response(JSON.stringify({ success: true, count: oldJson.count }), { 
+                        headers: { "Content-Type": "application/json", ...antiCacheHeaders } 
+                    });
                 }
             }
         }
-        return new Response(JSON.stringify({ success: false, error: "未找到文件" }), { status: 404, headers: antiCacheHeaders });
+        return new Response(JSON.stringify({ success: false, error: `未找到文件: ${fileName}` }), { status: 404, headers: antiCacheHeaders });
       } catch (e) {
         return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
       }
