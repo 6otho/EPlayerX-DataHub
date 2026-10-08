@@ -1,5 +1,5 @@
 // ==========================================
-// 1. 前端 HTML 界面与拖拉拽系统 (Part 1 - 包含全页面通用左靠齐 LED 时钟、暂停开关、重连推进、定时选择与一键测试)
+// 1. 前端 HTML 界面与拖拉拽系统 (Part 1 - 包含星期多选复选条、一键同步选中星期)
 // ==========================================
 const FRONTEND_HTML_P1 = `
 <!DOCTYPE html>
@@ -123,7 +123,7 @@ const FRONTEND_HTML_P1 = `
                     </div>
                 </div>
 
-                <!-- 🌟 第一行：周更合集专属状态栏 -->
+                <!-- 🌟 第一行：状态栏与周历多选控制器 -->
                 <div id="status-bar-container" class="flex flex-col xl:flex-row items-center justify-between gap-3 w-full mb-6 shrink-0">
                     <div id="led-slot-weekly" class="w-full xl:w-auto shrink-0 min-w-0">
                         <div id="led-monitor-box" class="w-full h-full flex items-center justify-between gap-3 px-3.5 md:px-5 py-2.5 rounded-2xl border font-mono-led select-none transition-all duration-300 bg-[#090d16] border-slate-800 text-slate-400 shadow-inner overflow-x-auto hide-scrollbar whitespace-nowrap cursor-grab active:cursor-grabbing">
@@ -166,8 +166,19 @@ const FRONTEND_HTML_P1 = `
                         </div>
                     </div>
 
-                    <div id="weekday-tabs-container" class="hidden flex-1 justify-center items-center w-full">
-                        <div id="weekday-buttons" class="flex bg-white/50 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-white/60 dark:border-zinc-700/60 shadow-inner justify-between gap-1 w-full max-w-xl"></div>
+                    <!-- 🌟 重点新增：星期复选控制条 + 星期切换按钮 -->
+                    <div id="weekday-tabs-container" class="hidden flex-1 flex-col items-center justify-center w-full max-w-xl gap-1.5">
+                        <div class="flex items-center justify-between w-full px-2 py-1 bg-white/40 dark:bg-zinc-800/40 rounded-xl border border-white/50 dark:border-zinc-700/50">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-bold text-gray-500 dark:text-gray-400">📅 勾选待更新星期:</span>
+                                <button onclick="toggleAllWeekdays(true)" class="px-2 py-0.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded border border-indigo-200">全选</button>
+                                <button onclick="toggleAllWeekdays(false)" class="px-2 py-0.5 text-[10px] font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded border border-gray-200">清空</button>
+                            </div>
+                            <button onclick="syncSelectedWeekdays()" class="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1">
+                                ⚡ 同步所选星期
+                            </button>
+                        </div>
+                        <div id="weekday-buttons" class="flex bg-white/50 dark:bg-zinc-800/50 p-1.5 rounded-2xl border border-white/60 dark:border-zinc-700/60 shadow-inner justify-between gap-1 w-full"></div>
                     </div>
                 </div>
 
@@ -218,7 +229,7 @@ const FRONTEND_HTML_P1 = `
         <div class="lg:hidden fixed bottom-0 left-0 w-full bg-white/70 dark:bg-zinc-900/80 backdrop-blur-2xl border-t border-white/50 dark:border-zinc-800/50 flex justify-start items-center p-2 z-50 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-10px_20px_rgba(0,0,0,0.02)] overflow-x-auto hide-scrollbar gap-2" id="mob-nav"></div>
     </div>
 
-    <!-- 弹窗组件部分保留原样 -->
+    <!-- 弹窗组件 -->
     <div id="poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="poster-select-title">选择备用【正标带字】竖海报</h3>
@@ -301,7 +312,7 @@ const FRONTEND_HTML_P1 = `
                 <span class="text-xs font-bold text-gray-800 dark:text-gray-200">待注入的队列</span>
                 <div class="flex gap-2">
                     <button onclick="clearAllOverrides()" class="text-[11px] md:text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 px-3 py-1.5 rounded-lg transition-colors shadow-sm">🗑️ 清空队列</button>
-                    <button onclick="openBulkImport()" class="text-[11px] md:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 px-3 py-1.5 rounded-lg transition-colors shadow-sm">📋 批量文本智能识别</button>
+                    <button onclick="openBulkImport()" class="text-[11px] md:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 bg-blue-50 dark:blue-900/30 border border-blue-100 dark:border-blue-800 px-3 py-1.5 rounded-lg transition-colors shadow-sm">📋 批量文本智能识别</button>
                 </div>
             </div>
             
@@ -794,23 +805,71 @@ const FRONTEND_HTML_P1 = `
         };
 
         function openConfirmModal(action) {
-            currentAction = action; let desc = "";
+            currentAction = action; 
+            let desc = "";
             let btn = document.getElementById('modal-confirm-btn');
-            if(action === 'sync-single') document.getElementById('sync-limit-container').classList.remove('hidden');
-            else document.getElementById('sync-limit-container').classList.add('hidden');
-
+            const limitBox = document.getElementById('sync-limit-container');
+            
             if (action === 'sync-single') {
-                desc = "抓取并同步该分类的最新的源片单数据。新番周更表由于包含一整周7天的数据，云端抓取大约需要25秒，请耐心等待文件生成。";
-                btn.className = "w-1/2 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-[#ff6b4a] to-[#e53a1a] shadow-md hover:scale-105 transition-transform"; btn.innerText = "同步最新数据";
-            } else if (action === 'push-github') {
-                desc = "即将以【精准增量合并模式】将选中的模块合并进入 GitHub 项目的 config.ts，绝对保留你在 GitHub 上原有的其他分类和手动代码！";
-                btn.className = "w-1/2 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-gray-800 to-black shadow-md hover:scale-105 transition-transform"; btn.innerText = "确认增量合并";
-            } else if (action === 'tg-webhook') {
-                desc = "绑定后，可直接在 Telegram 发送 /sync 唤出更新面板，实现全平台双向交互。";
-                btn.className = "w-1/2 py-3 rounded-xl font-bold text-white bg-[#0088cc] shadow-md hover:scale-105 transition-transform"; btn.innerText = "一键激活 TG 机器人";
+                limitBox.classList.remove('hidden');
+                limitBox.classList.add('flex');
+                
+                const catObj = CATEGORIES.find(c => c.id === currentCategory);
+                if (catObj && catObj.isCollection) {
+                    desc = "检测到当前为周更表合集。您可以使用星期栏上方的专属【⚡ 同步所选星期】功能，也可以在此直接同步当前天！";
+                } else {
+                    desc = "抓取并同步该分类最新的当季源片单数据。";
+                }
+
+                btn.className = "w-1/2 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-[#ff6b4a] to-[#e53a1a] shadow-md hover:scale-105 transition-transform"; 
+                btn.innerText = "同步最新数据";
+            } else {
+                limitBox.classList.remove('flex');
+                limitBox.classList.add('hidden');
+                if (action === 'push-github') {
+                    desc = "即将以【精准增量合并模式】将选中的模块合并进入 GitHub 项目的 config.ts，绝对保留你在 GitHub 上原有的其他分类和手动代码！";
+                    btn.className = "w-1/2 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-gray-800 to-black shadow-md hover:scale-105 transition-transform"; 
+                    btn.innerText = "确认增量合并";
+                } else if (action === 'tg-webhook') {
+                    desc = "绑定后，可直接在 Telegram 发送 /sync 唤出更新面板，实现全平台双向交互。";
+                    btn.className = "w-1/2 py-3 rounded-xl font-bold text-white bg-[#0088cc] shadow-md hover:scale-105 transition-transform"; 
+                    btn.innerText = "一键激活 TG 机器人";
+                }
             }
             document.getElementById('confirm-desc').innerText = desc;
             document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        // 🌟 星期多选全选/清空
+        function toggleAllWeekdays(check) {
+            document.querySelectorAll('.weekday-sync-cb').forEach(cb => cb.checked = check);
+        }
+
+        // 🌟 核心：一键同步所选的全部星期（周一到周日随便勾！）
+        async function syncSelectedWeekdays() {
+            if (!sysPwd) return showToast("请先登录管理员", true);
+            const checkedBoxes = Array.from(document.querySelectorAll('.weekday-sync-cb:checked'));
+            if (checkedBoxes.length === 0) return showToast("⚠️ 请先勾选至少一个要同步的星期！", true);
+
+            const days = checkedBoxes.map(cb => parseInt(cb.value, 10)).sort((a, b) => a - b);
+            const weekdaysName = ["", "周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+            const daysText = days.map(d => weekdaysName[d]).join("、");
+
+            if (!confirm("🚀 确认同步所选星期：\\n\\n即将依次抓取更新【" + daysText + "】共 " + days.length + " 天的片单。\\n\\n是否继续？")) return;
+
+            showToast("🚀 开始同步选中的星期: " + daysText + " ...");
+            
+            for (let i = 0; i < days.length; i++) {
+                const dayNum = days[i];
+                const dayLabel = weekdaysName[dayNum];
+                showToast("⏳ [" + (i + 1) + "/" + days.length + "] 正在更新 " + dayLabel + " 的片单...");
+                
+                const targetKey = currentCategory + '-' + dayNum;
+                await runSyncTask(targetKey, 80);
+            }
+
+            showToast("🎉 所选星期 (" + daysText + ") 已全部同步完毕！");
+            loadData(currentCategory);
         }
 
         function openOverrideModal() {
@@ -1174,7 +1233,7 @@ const FRONTEND_HTML_P1 = `
                 const res = await fetch(ACTION_BASE + '/delete_item', {
                     method: 'POST', 
                     headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ tmdbId, category: currentCategory, weekday: currentWeekday, mode: 'remove' })
+                    body: JSON.stringify({ tmdbId: tmdbId, category: currentCategory, weekday: currentWeekday, mode: 'remove' })
                 });
                 const data = await res.json();
                 if (data.success) { showToast("✅ 已成功从当前列表中移除！"); loadData(currentCategory); } else showToast("❌ 移除失败: " + data.error, true);
@@ -1193,7 +1252,7 @@ const FRONTEND_HTML_P1 = `
                 const res = await fetch(ACTION_BASE + '/delete_item', {
                     method: 'POST', 
                     headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ tmdbId, category: currentCategory, weekday: currentWeekday, mode: 'blacklist' })
+                    body: JSON.stringify({ tmdbId: tmdbId, category: currentCategory, weekday: currentWeekday, mode: 'blacklist' })
                 });
                 const data = await res.json();
                 if (data.success) { showToast("✅ 已加入【当前分类】黑名单！"); loadData(currentCategory); } else showToast("❌ 封禁失败: " + data.error, true);
@@ -1433,11 +1492,13 @@ const FRONTEND_HTML_P1 = `
         function renderGrid() {
             const grid = document.getElementById("movie-grid");
             if (!window.currentFetchedData || window.currentFetchedData.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-400 font-bold">大盘暂无数据，请点击更新抓取。</div>'; return;
+                grid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-400 font-bold">大盘暂无数据，请点击更新抓取。</div>'; 
+                return;
             }
 
             let savedV2 = JSON.parse(localStorage.getItem('saved_layout_v2') || '{}');
-            let sortType = 'default'; if (savedV2[currentCategory] && savedV2[currentCategory].sort) sortType = savedV2[currentCategory].sort;
+            let sortType = 'default'; 
+            if (savedV2[currentCategory] && savedV2[currentCategory].sort) sortType = savedV2[currentCategory].sort;
             ['default', 'year', 'heat'].forEach(s => {
                 const btn = document.getElementById('sort-' + s); if (!btn) return;
                 if (s === sortType) btn.className = "flex-1 xl:flex-none px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all bg-white dark:bg-zinc-700 shadow-md text-blue-600 dark:text-blue-400";
@@ -1484,7 +1545,7 @@ const FRONTEND_HTML_P1 = `
                     }
                     const ym = str.match(/\\b(19\\d{2}|20\\d{2})[-/.年](\\d{1,2})/);
                     if (ym) {
-                        const mm = ym[2].length === 1 ? '0' + ym[2] : ym[2];
+                        const mm = ym[2].length === 1 ? '0' + ym[2] : m[2];
                         const t = new Date(ym[1] + '-' + mm + '-01T00:00:00Z').getTime();
                         return isNaN(t) ? 0 : t;
                     }
@@ -1498,7 +1559,7 @@ const FRONTEND_HTML_P1 = `
                 displayData.sort(function(a, b) {
                     const tA = getTs(a);
                     const tB = getTs(b);
-                    if (tB !== tA) return tB - tA; // 严格按真实毫秒倒序（10月 > 9月 > 8月）
+                    if (tB !== tA) return tB - tA;
                     return (b.vote_average || 0) - (a.vote_average || 0);
                 });
             } else if (sortType === 'heat') {
@@ -1509,7 +1570,8 @@ const FRONTEND_HTML_P1 = `
                 });
             }
 
-            grid.innerHTML = ""; const catObj = CATEGORIES.find(c => c.id === currentCategory);
+            grid.innerHTML = ""; 
+            const catObj = CATEGORIES.find(c => c.id === currentCategory);
 
             displayData.forEach(item => {
                 const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -1549,18 +1611,22 @@ const FRONTEND_HTML_P1 = `
                     badgeItems.push('<span class="flex items-center gap-0.5"><span>🍅</span>' + rtVal + '%</span>');
                 }
 
-                const ratingBadge = badgeItems.length > 0 
-                    ? '<div class="bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-md border border-white/20 select-none max-w-[calc(100%-48px)] overflow-x-auto hide-scrollbar shrink-0">' + badgeItems.join('<span class="text-white/30 text-[8px]">|</span>') + '</div>' 
-                    : '';
+                let ratingBadgeHtml = "";
+                if (badgeItems.length > 0) {
+                    ratingBadgeHtml = '<div class="bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-md border border-white/20 select-none shrink-0">' + badgeItems.join('<span class="text-white/30 text-[8px]">|</span>') + '</div>';
+                }
                 
                 const yearInfo = extractYearAndDate(item);
                 const displayYearStr = yearInfo.isUpcoming ? '待播' : (yearInfo.year > 0 ? yearInfo.year : '');
-                const yearBadge = displayYearStr ? '<div class="' + (yearInfo.isUpcoming ? 'bg-purple-600/90' : 'bg-blue-600/90') + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center shadow-sm border border-white/20 shrink-0">' + displayYearStr + '</div>' : '';
+                let yearBadgeHtml = "";
+                if (displayYearStr) {
+                    yearBadgeHtml = '<div class="' + (yearInfo.isUpcoming ? 'bg-purple-600/90' : 'bg-blue-600/90') + ' text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded-md flex items-center shadow-sm border border-white/20 shrink-0">' + displayYearStr + '</div>';
+                }
                 
-                // 🌟 将年份与所有评分打包成底部组合条（年份在左，评分紧跟在年份右边）
-                const bottomMetaBar = (yearBadge || ratingBadge) 
-                    ? '<div class="absolute bottom-2 left-2 right-2 flex items-center gap-1.5 z-20 overflow-hidden pointer-events-none">' + yearBadge + ratingBadge + '</div>' 
-                    : '';
+                let bottomMetaBar = "";
+                if (yearBadgeHtml !== "" || ratingBadgeHtml !== "") {
+                    bottomMetaBar = '<div class="absolute bottom-2 left-2 right-2 flex items-center gap-1.5 z-20 overflow-hidden pointer-events-none">' + yearBadgeHtml + ratingBadgeHtml + '</div>';
+                }
 
                 const posterSource = item.poster_source || 'auto';
                 const noLogoSource = item.no_logo_poster_source || 'auto';
@@ -1621,7 +1687,7 @@ const FRONTEND_HTML_P1 = `
             "home.popular_movies": { en: "Popular Chinese Movies", zh: "实时热门电影", "zh-Hant": "實時熱門電影", ja: "人気の中国映画", es: "Películas Populares", ar: "أفلام صينية شهيرة" },
             "home.popular_variety_shows": { en: "Popular Variety Shows", zh: "热门综艺", "zh-Hant": "熱門綜藝", ja: "人気のバラエティ", es: "Programas de Variedades", ar: "برامج منوعة شهيرة" },
             "home.popular_korean_tv_shows": { en: "Popular Korean Dramas", zh: "热门韩剧安利", "zh-Hant": "熱門韓劇安利", ja: "人気の韓国ドラマ", es: "Dramas Coreanos Populares", ar: "مسلسلات كورية شهيرة" },
-            "home.popular_japanese_tv_shows": { en: "Popular Japanese TV Shows", zh: "专治精神内耗的日剧", "zh-Hant": "專治精神內耗的日劇", ja: "人気の国内ドラマ", es: "Dramas Japoneses Populares", ar: "مسلسلات يابانية شهيرة" },
+            "home.popular_japanese_tv_shows": { en: "Popular Japanese TV Shows", zh: "专治精神内耗的日剧", "zh-Hant": "專治精神內耗的日劇", ja: "人気の国内ドラマ", es: "Dramas Japoneses Populares", ar: "مسلس赛日剧" },
             "home.popular_spanish_tv_shows": { en: "Popular Spanish TV Shows", zh: "反转停不下来的西语爽剧", "zh-Hant": "反轉停不下來的西語爽劇", ja: "人気のスペイン語ドラマ", es: "Series en Español Populares", ar: "مسلسلات إسبانية شهيرة" },
             "home.popular_taiwanese_tv_shows": { en: "Popular Taiwanese TV Shows", zh: "现在台剧都这么敢拍？", "zh-Hant": "現在台劇都這麼敢拍？", ja: "人気の台湾ドラマ", es: "Series Taiwanesas Populares", ar: "مسلسلات تايوانية شهيرة" },
             "home.popular_taiwanese_movies": { en: "Popular Taiwanese Movies", zh: "台味正浓的宝藏台片", "zh-Hant": "台味正濃的寶藏台片", ja: "人気の台湾映画", es: "Películas Taiwanesas Populares", ar: "أفلام تايوانية شهيرة" },
@@ -2058,15 +2124,19 @@ const FRONTEND_HTML_P1 = `
             closeModal('confirm-modal');
             if (currentAction === 'sync-single') {
                 const limit = parseInt(document.getElementById('sync-limit-select').value, 10);
-                
                 const catObj = CATEGORIES.find(c => c.id === currentCategory);
-                const syncTarget = (catObj && catObj.isCollection) ? currentCategory + '-' + currentWeekday : currentCategory;
                 
-                showToast("⏳ 正在按【当前年份首选梯级】同步前 " + limit + " 部影视数据...");
+                // 默认单项同步直接同步当前选中的单天或当前分类
+                let syncTarget = (catObj && catObj.isCollection) ? currentCategory + '-' + currentWeekday : currentCategory;
+                showToast("⏳ 正在按【当年首选梯级】同步前 " + limit + " 部影视数据...");
+
                 await runSyncTask(syncTarget, limit); 
                 loadData(currentCategory);
-            } else if (currentAction === 'push-github') { await runGithubPush(); } 
-            else if (currentAction === 'tg-webhook') { await runTgWebhook(); }
+            } else if (currentAction === 'push-github') { 
+                await runGithubPush(); 
+            } else if (currentAction === 'tg-webhook') { 
+                await runTgWebhook(); 
+            }
         }
 
         function initNav() {
@@ -2191,12 +2261,17 @@ const FRONTEND_HTML_P1 = `
                 const tabs = document.getElementById("weekday-tabs-container");
                 tabs.classList.remove("hidden");
                 tabs.classList.add("flex");
-                const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+                
+                // 🌟 生成周一至周日上方带复选框的按钮条
+                const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
                 const btnsContainer = document.getElementById("weekday-buttons");
                 btnsContainer.innerHTML = weekdays.map((w, idx) => {
-                    const day = idx === 0 ? 7 : idx; 
+                    const day = idx + 1; // 1~7 对应周一到周日
                     const isActive = day === currentWeekday;
-                    return '<button onclick="currentWeekday=' + day + '; loadData(\\'' + category + '\\')" class="flex-1 py-2 rounded-xl text-xs md:text-sm font-black transition-all ' + (isActive ? 'bg-gradient-to-r from-[#ff6b4a] to-[#e53a1a] text-white shadow-md transform scale-[1.03] animate-[fadeIn_0.2s_ease]' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200') + '">' + w + '</button>';
+                    return '<div class="flex-1 flex flex-col items-center gap-1 bg-white/40 dark:bg-zinc-800/40 p-1 rounded-xl">' +
+                        '<input type="checkbox" value="' + day + '" class="weekday-sync-cb w-3.5 h-3.5 accent-purple-600 rounded cursor-pointer" checked title="勾选以加入批量同步">' +
+                        '<button onclick="currentWeekday=' + day + '; loadData(\\'' + category + '\\')" class="w-full py-1.5 rounded-lg text-xs md:text-sm font-black transition-all ' + (isActive ? 'bg-gradient-to-r from-[#ff6b4a] to-[#e53a1a] text-white shadow-md transform scale-[1.02]' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white') + '">' + w + '</button>' +
+                    '</div>';
                 }).join("");
             } else {
                 document.getElementById("weekday-tabs-container").classList.remove("flex");
@@ -3277,6 +3352,9 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       }
   } catch (e) {}
 
+  // ========================================================
+  // 1. 巴哈新番周更表 (日漫新番实时周历，新番置顶)
+  // ========================================================
   if (category === "weekly_anime_collection") {
       const bgmRes = await safeFetch('https://api.bgm.tv/calendar', { headers: { 'User-Agent': 'EPlayerX/1.0' } }, reqCtx);
       const bgmData = bgmRes.ok ? await bgmRes.json() : [];
@@ -3306,7 +3384,8 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               freshItems.push({ title: nameCn || name, searchQuery: name || nameCn, score: anime.rating?.score || 0 });
           }
 
-          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          // 🌟 修正：新番排在前面，旧数据垫后
+          let combinedItems = deduplicateRawList([...freshItems, ...existingItems]);
           combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
           if (combinedItems.length === 0) continue;
 
@@ -3329,13 +3408,14 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
+  // ========================================================
+  // 2. 国产追剧周更表 (当季国产剧雷达 + 豆瓣热播双源)
+  // ========================================================
   else if (category === "weekly_drama_collection") {
       const now = new Date();
-      // 🌟 设定时间雷达：最近 60 天到未来 30 天，只抓当季热播与即将上线国产大剧
       const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
       const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
 
-      // 1. 从 TMDB 获取正在热播的国产剧（排除动画16、真人秀10764、脱口秀10767）
       const tmdbLiveCn = await fetchTMDBDiscoverList('tv', {
           with_original_language: 'zh',
           with_origin_country: 'CN',
@@ -3345,16 +3425,13 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           sort_by: 'popularity.desc'
       }, env, 80, reqCtx).catch(() => []);
 
-      // 2. 结合豆瓣当季最新热门电视剧作为时效补充
       let doubanHotCn = await fetchDoubanSubjectCollection("tv_domestic", 40, reqCtx).catch(() => []);
       doubanHotCn = doubanHotCn.filter(item => {
           const t = item.title || "";
           return !/(动画|动漫|真人秀|脱口秀|演唱会|晚会|纪录片|特别节目|第[一二三四五六七八九十\d]+期|季|年番)/.test(t);
       });
 
-      // 3. 聚合双源当季新剧并去重
       const freshSeasonDramas = deduplicateRawList([...tmdbLiveCn, ...doubanHotCn]);
-
       let processedCount = 0;
       let allDayItems = [];
 
@@ -3369,10 +3446,7 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               }
           } catch(e) {}
 
-          // 🌟 根据播出时间与自定义规则智能分配星期
           let freshForDay = freshSeasonDramas.filter(item => determineDay(item, null, null, overrides) === day);
-
-          // 合并新老数据，新剧优先排前，老剧跟在后
           let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
           combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
           
@@ -3400,10 +3474,35 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
+  // ========================================================
+  // 3. 国漫追番周历表 (🌟 彻底激活国漫当季新番爬虫，新番排在最前)
+  // ========================================================
   else if (category === "weekly_guoman_collection") {
-      const standardDays = {};
+      const now = new Date();
+      const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
+      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+
+      // 1. 抓取近期有单集更新的国产动画（覆盖当季热播与年番）
+      const rawLiveGuoman = await fetchTMDBDiscoverList('tv', {
+          with_original_language: 'zh',
+          with_origin_country: 'CN',
+          with_genres: '16',
+          'air_date.gte': past90,
+          'air_date.lte': future30,
+          sort_by: 'popularity.desc'
+      }, env, 80, reqCtx).catch(() => []);
+
+      // 2. 补充高热度当年/前一年国产动画，防漏热门年番
+      const hotGuomanYear = await fetchTieredYearList('tv', {
+          with_original_language: 'zh',
+          with_origin_country: 'CN',
+          with_genres: '16'
+      }, env, 50, reqCtx).catch(() => []);
+
+      const freshGuoman = deduplicateRawList([...rawLiveGuoman, ...hotGuomanYear]);
       let processedCount = 0;
       let allDayItems = [];
+
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue; 
           let existingItems = [];
@@ -3415,14 +3514,15 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               }
           } catch(e) {}
 
-          let freshItems = [];
-          for (const [name, d] of Object.entries(standardDays)) {
-              if (d === day) freshItems.push({ title: name });
-          }
-
-          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let freshForDay = freshGuoman.filter(item => determineDay(item, null, null, overrides) === day);
+          // 🌟 修正：当季新国漫置前！
+          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
           combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-          if (combinedItems.length === 0) continue;
+          
+          if (combinedItems.length === 0) {
+              await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify({ platform: "tmdb", type: "animation", count: 0, lastUpdated: new Date().toISOString(), data: [] }, null, 2), { httpMetadata: { contentType: "application/json" } });
+              continue;
+          }
 
           let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
           processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
@@ -3443,21 +3543,31 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
+  // ========================================================
+  // 4. 韩剧追剧周更表 (🌟 豆瓣热门韩剧 + TMDB当季在播双源，新剧在前)
+  // ========================================================
   else if (category === "weekly_korean_drama_collection") {
       const now = new Date();
-      const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
-      const future45 = new Date(now.getTime() + 45 * 86400000).toISOString().substring(0, 10);
+      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
+      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
 
-      const rawKr = await fetchTMDBDiscoverList('tv', { 
+      // 1. TMDB 正在开播与即将开播的当季韩剧
+      const tmdbLiveKr = await fetchTMDBDiscoverList('tv', { 
           with_original_language: 'ko', 
           without_genres: '16,10767,10763', 
-          'air_date.gte': past90,
-          'air_date.lte': future45,
+          'air_date.gte': past60,
+          'air_date.lte': future30,
           sort_by: 'popularity.desc' 
       }, env, 80, reqCtx).catch(() => []);
 
+      // 2. 豆瓣热门韩剧榜（高口碑与全网热度）
+      let doubanKr = await fetchDoubanSubjectCollection("tv_korean", 40, reqCtx).catch(() => []);
+      doubanKr = doubanKr.filter(item => !/(综艺|真人秀|脱口秀)/.test(item.title || ""));
+
+      const freshKorean = deduplicateRawList([...tmdbLiveKr, ...doubanKr]);
       let processedCount = 0;
       let allDayItems = [];
+
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue;
           let existingItems = [];
@@ -3466,8 +3576,9 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               if (oldObj) { const oldJson = await oldObj.json(); if (oldJson && oldJson.data) existingItems = oldJson.data; }
           } catch(e) {}
 
-          let freshItems = rawKr.filter(item => determineDay(item, null, null, overrides) === day);
-          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let freshForDay = freshKorean.filter(item => determineDay(item, null, null, overrides) === day);
+          // 🌟 修正：新抓取的当季韩剧置前！
+          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
           combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
           if (combinedItems.length === 0) continue;
 
@@ -3489,21 +3600,31 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
+  // ========================================================
+  // 5. 日剧追剧周更表 (🌟 豆瓣热门日剧 + TMDB当季在播双源，新剧在前)
+  // ========================================================
   else if (category === "weekly_japanese_drama_collection") {
       const now = new Date();
-      const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
-      const future45 = new Date(now.getTime() + 45 * 86400000).toISOString().substring(0, 10);
+      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
+      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
 
-      const rawJa = await fetchTMDBDiscoverList('tv', { 
+      // 1. TMDB 正在开播与即将开播的日剧
+      const tmdbLiveJa = await fetchTMDBDiscoverList('tv', { 
           with_original_language: 'ja', 
           without_genres: '16,10767,10763', 
-          'air_date.gte': past90,
-          'air_date.lte': future45,
+          'air_date.gte': past60,
+          'air_date.lte': future30,
           sort_by: 'popularity.desc' 
       }, env, 80, reqCtx).catch(() => []);
 
+      // 2. 豆瓣热门日剧补充
+      let doubanJa = await fetchDoubanSubjectCollection("tv_japanese", 40, reqCtx).catch(() => []);
+      doubanJa = doubanJa.filter(item => !/(综艺|动画|特摄)/.test(item.title || ""));
+
+      const freshJapanese = deduplicateRawList([...tmdbLiveJa, ...doubanJa]);
       let processedCount = 0;
       let allDayItems = [];
+
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue;
           let existingItems = [];
@@ -3512,8 +3633,9 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               if (oldObj) { const oldJson = await oldObj.json(); if (oldJson && oldJson.data) existingItems = oldJson.data; }
           } catch(e) {}
 
-          let freshItems = rawJa.filter(item => determineDay(item, null, null, overrides) === day);
-          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let freshForDay = freshJapanese.filter(item => determineDay(item, null, null, overrides) === day);
+          // 🌟 修正：当季日剧置前！
+          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
           combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
           if (combinedItems.length === 0) continue;
 
@@ -3535,21 +3657,25 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
   }
 
+  // ========================================================
+  // 6. 东南亚剧周更表 (🌟 泰剧/越剧/菲剧当季热播置前)
+  // ========================================================
   else if (category === "weekly_sea_drama_collection") {
       const now = new Date();
-      const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
-      const future45 = new Date(now.getTime() + 45 * 86400000).toISOString().substring(0, 10);
+      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
+      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
 
       const rawSea = await fetchTMDBDiscoverList('tv', { 
           with_original_language: 'th|vi|id|tl', 
           without_genres: '16,10767,10763', 
-          'air_date.gte': past90,
-          'air_date.lte': future45,
+          'air_date.gte': past60,
+          'air_date.lte': future30,
           sort_by: 'popularity.desc' 
       }, env, 80, reqCtx).catch(() => []);
 
       let processedCount = 0;
       let allDayItems = [];
+
       for (let day = 1; day <= 7; day++) {
           if (targetDay !== null && day !== targetDay) continue;
           let existingItems = [];
@@ -3558,8 +3684,9 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
               if (oldObj) { const oldJson = await oldObj.json(); if (oldJson && oldJson.data) existingItems = oldJson.data; }
           } catch(e) {}
 
-          let freshItems = rawSea.filter(item => determineDay(item, null, null, overrides) === day);
-          let combinedItems = deduplicateRawList([...existingItems, ...freshItems]);
+          let freshForDay = rawSea.filter(item => determineDay(item, null, null, overrides) === day);
+          // 🌟 修正：新剧置前！
+          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
           combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
           if (combinedItems.length === 0) continue;
 
