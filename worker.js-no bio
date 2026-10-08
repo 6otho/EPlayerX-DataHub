@@ -3949,20 +3949,79 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
     processedData = await processItemsWithTMDB(raw, "movie", env, limit, processOpts(), reqCtx);
   }
   else if (category === "tmdb_tv_bl") {
-    const GAGA_2025_SEEDS = [{ title: "Revenged Love" }, { title: "Desire" }, { title: "Secret Lover" }, { title: "Doctor's Mine" }, { title: "Chase Game" }, { title: "School Trip Joined a Group" }, { title: "Fragrance of the First Flower" }, { title: "Love in the Air" }, { title: "Cosmetic Playlover" }, { title: "Takara's Treasure" }, { title: "Fujimi Orchestra" }, { title: "Although I Love You And You" }, { title: "Candy Color Paradox" }, { title: "Semantic Error" }, { title: "Love For Love's Sake" }];
-    const [blKeyword, yaoiKeyword, bromanceTh, bromanceKoZh, gmmNetwork] = await Promise.all([
-      fetchTMDBDiscoverList('tv', { with_keywords: '155201', sort_by: 'popularity.desc', without_genres: '16' }, env, 20, reqCtx),
-      fetchTMDBDiscoverList('tv', { with_keywords: '210672', with_original_language: 'ja', sort_by: 'popularity.desc', without_genres: '16' }, env, 20, reqCtx),
-      fetchTMDBDiscoverList('tv', { with_keywords: '9748', with_original_language: 'th', sort_by: 'popularity.desc', without_genres: '16' }, env, 20, reqCtx),
-      fetchTMDBDiscoverList('tv', { with_keywords: '9748', with_original_language: 'ko|zh', sort_by: 'popularity.desc', without_genres: '16' }, env, 20, reqCtx),
-      fetchTMDBDiscoverList('tv', { with_networks: '2091', sort_by: 'popularity.desc', without_genres: '16' }, env, 20, reqCtx)
+    // 🌟 经典与当季公认亚洲高分耽美神作种子 (中英双语保真库)
+    const CLASSIC_BL_SEEDS = [
+      { title: "黑帮少爷爱上我", searchQuery: "KinnPorsche The Series" },
+      { title: "以你的心诠释我的爱", searchQuery: "I Told Sunset About You" },
+      { title: "语义错误", searchQuery: "Semantic Error" },
+      { title: "美丽的他", searchQuery: "My Beautiful Man" },
+      { title: "关于未知的我们", searchQuery: "Unknown" },
+      { title: "奇迹", searchQuery: "Kiseki: Dear to Me" },
+      { title: "我的会长大人", searchQuery: "My School President" },
+      { title: "只因我们天生一对", searchQuery: "2gether The Series" },
+      { title: "到了30岁还是处男", searchQuery: "Cherry Magic" },
+      { title: "消失的初恋", searchQuery: "My Love Mix-Up!" },
+      { title: "非故意恋爱故事", searchQuery: "Unintentional Love Story" },
+      { title: "第八感", searchQuery: "The Eighth Sense" },
+      { title: "爱的香气", searchQuery: "I Feel You Linger in the Air" },
+      { title: "坑爹的穿越", searchQuery: "Pit Babe" },
+      { title: "极速恋人", searchQuery: "Pit Babe The Series" },
+      { title: "恋爱修课", searchQuery: "Heartstopper" },
+      { title: "看脸时代", searchQuery: "Love for Love's Sake" },
+      { title: "穿书自救指南", searchQuery: "Dead Friend Forever" }
+    ];
+
+    // 🌟 严谨的亚洲 BL 标签联合检索（锁定泰、日、韩、台，严禁 9748 普通兄弟情与非 BL 电视台）
+    const [thaiBL, japanBL, koreaBL, taiwanBL] = await Promise.all([
+      // 1. 泰腐专区：以 Boys' Love(155201) 与同性纯爱(238355|158718) 为核心
+      fetchTMDBDiscoverList('tv', { 
+        with_keywords: '155201|238355|158718', 
+        with_original_language: 'th', 
+        without_genres: '16', 
+        sort_by: 'popularity.desc' 
+      }, env, 30, reqCtx).catch(() => []),
+
+      // 2. 日腐专区：以 Boys' Love(155201) 与 Yaoi(210672) 为核心
+      fetchTMDBDiscoverList('tv', { 
+        with_keywords: '155201|210672|238355', 
+        with_original_language: 'ja', 
+        without_genres: '16', 
+        sort_by: 'popularity.desc' 
+      }, env, 30, reqCtx).catch(() => []),
+
+      // 3. 韩腐专区：以同性爱情与纯爱为核心
+      fetchTMDBDiscoverList('tv', { 
+        with_keywords: '155201|238355|158718', 
+        with_original_language: 'ko', 
+        without_genres: '16', 
+        sort_by: 'popularity.desc' 
+      }, env, 30, reqCtx).catch(() => []),
+
+      // 4. 台腐专区：台湾出品的耽美剧集
+      fetchTMDBDiscoverList('tv', { 
+        with_keywords: '155201|238355', 
+        with_original_language: 'zh', 
+        with_origin_country: 'TW', 
+        without_genres: '16', 
+        sort_by: 'popularity.desc' 
+      }, env, 20, reqCtx).catch(() => [])
     ]);
-    const allData = [...blKeyword, ...yaoiKeyword, ...bromanceTh, ...bromanceKoZh, ...gmmNetwork].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+
+    // 合并并去重，排除中国大陆普通无涉剧集
+    const allDynamicBL = [...CLASSIC_BL_SEEDS, ...thaiBL, ...japanBL, ...koreaBL, ...taiwanBL];
     const seen = new Map();
-    allData.forEach(item => { if (item.origin_country && item.origin_country.includes('CN')) return; if (!seen.has(item.tmdbId)) seen.set(item.tmdbId, item); });
-    let pureList = Array.from(seen.values());
-    if (pureList.length < 15) { pureList = [...pureList, ...GAGA_2025_SEEDS]; }
-    processedData = await processItemsWithTMDB(pureList, "tv", env, limit, processOpts(), reqCtx);
+
+    allDynamicBL.forEach(item => {
+      // 严格排除大陆产地普通剧
+      if (item.origin_country && item.origin_country.includes('CN')) return;
+      const key = item.tmdbId ? item.tmdbId.toString() : item.title;
+      if (!seen.has(key)) seen.set(key, item);
+    });
+
+    let pureBLList = Array.from(seen.values());
+    pureBLList.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+
+    processedData = await processItemsWithTMDB(pureBLList, "tv", env, limit, processOpts(), reqCtx);
   }
 
   if (Array.isArray(processedData)) {
@@ -4033,14 +4092,88 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
           updatedExistingItems.push(oldItem);
       }
 
-      // 🌟 4. 如果有新剧：新剧按时间倒序排列，放在最前面；已有排好的旧剧紧跟其后！
-      let combinedData = [];
-      if (brandNewItems.length > 0) {
-          brandNewItems.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-          combinedData = [...brandNewItems, ...updatedExistingItems];
-      } else {
-          combinedData = [...updatedExistingItems];
+      // 🌟 精准解析年月日与具体时间戳 (用于严格比对大小王，判断到月日数值)
+      const parseExactDate = (it) => {
+        if (!it || typeof it !== 'object') return { ts: 0, dateStr: "0000-00-00", year: 0 };
+        const raw = String(
+          it.last_episode_air_date || 
+          it.release_date || 
+          it.first_air_date || 
+          it.air_date || 
+          (Array.isArray(it.pubdates) ? it.pubdates[0] : it.pubdate) || 
+          it.year || 
+          ""
+        ).trim();
+
+        // 匹配 YYYY-MM-DD
+        const m = raw.match(/\b(19\d{2}|20\d{2})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
+        if (m) {
+          const y = parseInt(m[1], 10);
+          const mm = m[2].padStart(2, '0');
+          const dd = m[3].padStart(2, '0');
+          const dStr = `${y}-${mm}-${dd}`;
+          const t = new Date(`${dStr}T00:00:00Z`).getTime();
+          return { ts: isNaN(t) ? 0 : t, dateStr: dStr, year: y };
+        }
+        // 匹配 YYYY-MM
+        const ym = raw.match(/\b(19\d{2}|20\d{2})[-/.年](\d{1,2})/);
+        if (ym) {
+          const y = parseInt(ym[1], 10);
+          const mm = ym[2].padStart(2, '0');
+          const dStr = `${y}-${mm}-01`;
+          const t = new Date(`${dStr}T00:00:00Z`).getTime();
+          return { ts: isNaN(t) ? 0 : t, dateStr: dStr, year: y };
+        }
+        // 匹配纯年份
+        const y = raw.match(/\b(19\d{2}|20\d{2})\b/);
+        if (y) {
+          const yr = parseInt(y[0], 10);
+          const dStr = `${yr}-01-01`;
+          const t = new Date(`${dStr}T00:00:00Z`).getTime();
+          return { ts: isNaN(t) ? 0 : t, dateStr: dStr, year: yr };
+        }
+        return { ts: 0, dateStr: "0000-00-00", year: 0 };
+      };
+
+      // 🌟 4. 【大小王鉴别逻辑】：只有比你置顶第一部更新、且绝非几年前老片的，才有资格置前！
+      const currentYear = new Date().getFullYear();
+      const topBenchmarkDate = updatedExistingItems.length > 0 
+        ? parseExactDate(updatedExistingItems[0]) 
+        : { ts: 0, dateStr: "0000-00-00", year: 0 };
+
+      const frontBrandNewItems = [];
+      const backfillBrandNewItems = [];
+
+      for (const item of brandNewItems) {
+        const itemDate = parseExactDate(item);
+
+        // 门槛 1：必须是非陈旧年份（年份不能是几年前的老片）
+        const isNotOldCatalog = itemDate.year >= (currentYear - 1);
+
+        // 门槛 2：日期必须严格比你当前置顶的第一部还要新（精确比对到月日时间戳）
+        const isStrictlyNewerThanTop = topBenchmarkDate.ts > 0 
+          ? (itemDate.ts > topBenchmarkDate.ts) 
+          : isNotOldCatalog;
+
+        if (isNotOldCatalog && isStrictlyNewerThanTop) {
+          frontBrandNewItems.push(item); // 👑 真·大王：当季最新上映/开播，有资格排在最前面
+        } else {
+          backfillBrandNewItems.push(item); // 几年前的老片或日期没置顶新的，统统丢到最后面
+        }
       }
+
+      // 新片按真实开播/上映日期（年月日）严格倒序排列
+      if (frontBrandNewItems.length > 0) {
+        frontBrandNewItems.sort((a, b) => {
+          const tA = parseExactDate(a).ts;
+          const tB = parseExactDate(b).ts;
+          if (tB !== tA) return tB - tA;
+          return (b.popularity || 0) - (a.popularity || 0);
+        });
+      }
+
+      // 组装最终结果：真新片在最前 -> 保持你手动排好的旧列表不变 -> 垫底的老片跟在最后
+      let combinedData = [...frontBrandNewItems, ...updatedExistingItems, ...backfillBrandNewItems];
 
       // 🌟🌟🌟【核心排毒拦截】：不管新抓的还是 R2 里残留的旧数据，在此做最终强力清洗！
       if (category === "trakt_shows") {
