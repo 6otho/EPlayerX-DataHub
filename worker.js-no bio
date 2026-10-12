@@ -892,10 +892,19 @@ const FRONTEND_HTML_P1 = `
                 daysArr.sort((a, b) => a - b);
                 let badges = daysArr.map(d => '<span class="bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 text-[10px] md:text-xs px-2 py-1 rounded font-black shrink-0">' + weekdays[d] + '</span>').join('');
 
+                let displayTitle = k;
+                let idBadge = "";
+                if (k.includes('#')) {
+                    const parts = k.split('#');
+                    idBadge = '<span class="text-[10px] text-purple-500 font-mono font-bold bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 ml-1">ID:' + escapeTgHtml(parts[0]) + '</span>';
+                    displayTitle = parts[1];
+                }
+
                 container.innerHTML += '<div class="flex justify-between items-center bg-white dark:bg-zinc-900 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-zinc-700 hover:border-purple-300 transition-colors group">' +
                     '<div class="flex items-center gap-2 flex-wrap">' +
                         badges +
-                        '<span class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 truncate ml-1">' + escapeTgHtml(k) + '</span>' +
+                        '<span class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 truncate ml-1">' + escapeTgHtml(displayTitle) + '</span>' +
+                        idBadge +
                     '</div>' +
                     '<button onclick="removeOverride(\\'' + k.replace(/'/g, "\\\\'") + '\\')" class="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-md transition-colors shrink-0 opacity-50 group-hover:opacity-100" title="删除规则">' +
                         '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>' +
@@ -941,95 +950,171 @@ const FRONTEND_HTML_P1 = `
 
         function executeBulkImport() {
             try {
-                const text = document.getElementById('bulk-textarea').value;
-                if(!text.trim()) return showToast("请输入需要识别的内容", true);
-                
+                const rawInput = document.getElementById('bulk-textarea').value;
+                if (!rawInput || !rawInput.trim()) return showToast("请输入需要识别的内容", true);
+                const text = rawInput.trim();
+
                 let addedCount = 0;
-                let dupCount = 0; 
-                const lines = text.trim().split('\\n');
-                const dayToNum = { '一':1, '1':1, '二':2, '2':2, '3':3, '3':3, '四':4, '4':4, '五':5, '5':5, '六':6, '6':6, '日':7, '天':7, '7':7 };
+                let dupCount = 0;
+                let skippedEndedCount = 0;
+                let isJsonParsed = false;
 
-                let isGridFormat = false;
-                let headerRowIdx = -1;
-                let colToDay = {};
-                
-                for (let i = 0; i < Math.min(lines.length, 10); i++) {
-                    const rowDays = [...lines[i].matchAll(/(?:周|星期)([一二三四五六日天1234567])/g)];
-                    if (rowDays.length >= 2) {
-                        headerRowIdx = i;
-                        isGridFormat = true;
-                        const headers = lines[i].split(/\\t/);
-                        const cellsHeader = headers.length > 1 ? headers : lines[i].split(/\\s+/);
-                        cellsHeader.forEach((h, idx) => {
-                            const match = h.match(/(?:周|星期)([一二三四五六日天1234567])/);
-                            if (match) colToDay[idx] = dayToNum[match[1]];
-                        });
-                        break;
-                    }
-                }
+                const dayMap = {
+                    '周一': 1, '星期一': 1, '礼拜一': 1, '1': 1,
+                    '周二': 2, '星期二': 2, '礼拜二': 2, '2': 2,
+                    '周三': 3, '星期三': 3, '礼拜三': 3, '3': 3,
+                    '周四': 4, '星期四': 4, '礼拜四': 4, '4': 4,
+                    '周五': 5, '星期五': 5, '礼拜五': 5, '5': 5,
+                    '周六': 6, '星期六': 6, '礼拜六': 6, '6': 6,
+                    '周日': 7, '星期日': 7, '礼拜日': 7, '周天': 7, '星期天': 7, '7': 7
+                };
 
-                if (isGridFormat) {
-                    for (let i = headerRowIdx + 1; i < lines.length; i++) {
-                        const cols = lines[i].split(/\\t/);
-                        const cells = cols.length > 1 ? cols : lines[i].split(/\\s{2,}/);
-                        cells.forEach((cell, idx) => {
-                            const title = cell.trim();
-                            if (title && colToDay[idx] && !title.match(/(?:周|星期)[一二三四五六日天1234567]/)) {
-                                if (typeof sysOverrides[title] === 'undefined') sysOverrides[title] = [];
-                                else if (!Array.isArray(sysOverrides[title])) sysOverrides[title] = [sysOverrides[title]];
-                                
-                                if (!sysOverrides[title].includes(colToDay[idx])) {
-                                    sysOverrides[title].push(colToDay[idx]);
+                // 使用 \\x60 彻底避免反引号破坏最外层的模板字符串
+                let cleanText = text.replace(/^[\\x60]{3}(?:json)?\\s*/i, '').replace(/\\s*[\\x60]{3}$/, '').trim();
+
+                // 1. 尝试以 JSON 格式结构化解析
+                try {
+                    const parsedObj = JSON.parse(cleanText);
+                    if (parsedObj && typeof parsedObj === 'object' && !Array.isArray(parsedObj)) {
+                        isJsonParsed = true;
+
+                        for (const [key, val] of Object.entries(parsedObj)) {
+                            const trimmedKey = String(key).trim();
+
+                            // 遇到“完结”归档自动过滤
+                            if (trimmedKey.includes("完结") || trimmedKey.includes("已完结")) {
+                                if (Array.isArray(val)) skippedEndedCount += val.length;
+                                continue;
+                            }
+
+                            const dayNum = dayMap[trimmedKey];
+                            if (!dayNum || !Array.isArray(val)) continue;
+
+                            val.forEach(item => {
+                                let title = "";
+                                let tmdbId = null;
+
+                                if (typeof item === 'string') {
+                                    title = item.trim();
+                                } else if (item && typeof item === 'object') {
+                                    title = String(item.title || item.name || "").trim();
+                                    tmdbId = item.tmdb_id || item.tmdbId || item.id || null;
+                                }
+
+                                if (!title && !tmdbId) return;
+
+                                let entryKey = "";
+                                if (tmdbId && title) entryKey = tmdbId + "#" + title;
+                                else if (tmdbId) entryKey = String(tmdbId);
+                                else entryKey = title;
+
+                                if (typeof sysOverrides[entryKey] === 'undefined') sysOverrides[entryKey] = [];
+                                else if (!Array.isArray(sysOverrides[entryKey])) sysOverrides[entryKey] = [sysOverrides[entryKey]];
+
+                                if (!sysOverrides[entryKey].includes(dayNum)) {
+                                    sysOverrides[entryKey].push(dayNum);
                                     addedCount++;
                                 } else {
                                     dupCount++;
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
-                } else {
-                    lines.forEach(line => {
-                        const cleanedLine = line.trim();
-                        if(!cleanedLine) return;
-                        const matchDay = cleanedLine.match(/(?:周|星期)([一二三四五六日天1234567])/);
-                        
-                        if (matchDay) {
-                            const day = dayToNum[matchDay[1]];
-                            const allBookTitles = [...cleanedLine.matchAll(/《([^》]+)》/g)].map(m => m[1].trim()).filter(Boolean);
+                } catch (e) {
+                    isJsonParsed = false;
+                }
 
-                            if (allBookTitles.length > 0) {
-                                allBookTitles.forEach(title => {
+                // 2. 不是 JSON 时，回退为文本和表格正则解析
+                if (!isJsonParsed) {
+                    const lines = text.split('\\n');
+                    const dayToNum = { '一':1, '1':1, '二':2, '2':2, '3':3, '3':3, '四':4, '4':4, '五':5, '5':5, '六':6, '6':6, '日':7, '天':7, '7':7 };
+
+                    let isGridFormat = false;
+                    let headerRowIdx = -1;
+                    let colToDay = {};
+                    
+                    for (let i = 0; i < Math.min(lines.length, 10); i++) {
+                        const rowDays = [...lines[i].matchAll(/(?:周|星期)([一二三四五六日天1234567])/g)];
+                        if (rowDays.length >= 2) {
+                            headerRowIdx = i;
+                            isGridFormat = true;
+                            const headers = lines[i].split('\\t');
+                            const cellsHeader = headers.length > 1 ? headers : lines[i].split(/\\s+/);
+                            cellsHeader.forEach((h, idx) => {
+                                const match = h.match(/(?:周|星期)([一二三四五六日天1234567])/);
+                                if (match) colToDay[idx] = dayToNum[match[1]];
+                            });
+                            break;
+                        }
+                    }
+
+                    if (isGridFormat) {
+                        for (let i = headerRowIdx + 1; i < lines.length; i++) {
+                            const cols = lines[i].split('\\t');
+                            const cells = cols.length > 1 ? cols : lines[i].split(/\\s{2,}/);
+                            cells.forEach((cell, idx) => {
+                                const title = cell.trim();
+                                if (title && colToDay[idx] && !title.match(/(?:周|星期)[一二三四五六日天1234567]/)) {
                                     if (typeof sysOverrides[title] === 'undefined') sysOverrides[title] = [];
                                     else if (!Array.isArray(sysOverrides[title])) sysOverrides[title] = [sysOverrides[title]];
                                     
-                                    if (!sysOverrides[title].includes(day)) { sysOverrides[title].push(day); addedCount++; } 
-                                    else { dupCount++; }
-                                });
-                            } else {
-                                const parts = cleanedLine.split(/(?:周|星期)[一二三四五六日天1234567][:：\\s]*/);
-                                const remainder = parts.length > 1 ? parts[1] : cleanedLine;
-                                const items = remainder.split(/[、，,；;\\t\\s]+/);
-                                items.forEach(item => {
-                                    const title = item.trim();
-                                    if (title && !title.match(/^[0-9/\\-]+$/) && !title.match(/剧|综艺|晚会|节目|动画|动漫/) && !title.match(/腾讯|爱奇艺|优酷|芒果|CCTV|卫视|平台/i)) {
+                                    if (!sysOverrides[title].includes(colToDay[idx])) {
+                                        sysOverrides[title].push(colToDay[idx]);
+                                        addedCount++;
+                                    } else {
+                                        dupCount++;
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        lines.forEach(line => {
+                            const cleanedLine = line.trim();
+                            if(!cleanedLine) return;
+                            const matchDay = cleanedLine.match(/(?:周|星期)([一二三四五六日天1234567])/);
+                            
+                            if (matchDay) {
+                                const day = dayToNum[matchDay[1]];
+                                const allBookTitles = [...cleanedLine.matchAll(/《([^》]+)》/g)].map(m => m[1].trim()).filter(Boolean);
+
+                                if (allBookTitles.length > 0) {
+                                    allBookTitles.forEach(title => {
                                         if (typeof sysOverrides[title] === 'undefined') sysOverrides[title] = [];
                                         else if (!Array.isArray(sysOverrides[title])) sysOverrides[title] = [sysOverrides[title]];
                                         
                                         if (!sysOverrides[title].includes(day)) { sysOverrides[title].push(day); addedCount++; } 
                                         else { dupCount++; }
-                                    }
-                                });
+                                    });
+                                } else {
+                                    const parts = cleanedLine.split(/(?:周|星期)[一二三四五六日天1234567][:：\\s]*/);
+                                    const remainder = parts.length > 1 ? parts[1] : cleanedLine;
+                                    const items = remainder.split(/[、，,；;\\t\\s]+/);
+                                    items.forEach(item => {
+                                        const title = item.trim();
+                                        if (title && !title.match(/^[0-9/\\-]+$/) && !title.match(/剧|综艺|晚会|节目|动画|动漫/) && !title.match(/腾讯|爱奇艺|优酷|芒果|CCTV|卫视|平台/i)) {
+                                            if (typeof sysOverrides[title] === 'undefined') sysOverrides[title] = [];
+                                            else if (!Array.isArray(sysOverrides[title])) sysOverrides[title] = [sysOverrides[title]];
+                                            
+                                            if (!sysOverrides[title].includes(day)) { sysOverrides[title].push(day); addedCount++; } 
+                                            else { dupCount++; }
+                                        }
+                                    });
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
-                
+
+                // 3. 统计结果提示
                 if (addedCount > 0 || dupCount > 0) {
-                    showToast("🎉 解析完毕！新增待注 " + addedCount + " 条，已自动拦截 " + dupCount + " 条重复项。");
+                    let tip = "🎉 解析成功！新增入队 " + addedCount + " 条";
+                    if (dupCount > 0) tip += "，自动去重 " + dupCount + " 条";
+                    if (skippedEndedCount > 0) tip += "，已自动跳过'完结' " + skippedEndedCount + " 部";
+                    showToast(tip);
                     closeBulkImport();
                     renderOverrideList();
                 } else {
-                    showToast("⚠️ 未能识别出排期，请检查格式是否带有“周一/星期一”等字眼", true);
+                    showToast("⚠️ 未能识别出排期内容，请检查是否包含有效的星期分类", true);
                 }
             } catch (err) {
                 showToast("❌ 解析引擎发生错误: " + err.message, true);
@@ -2865,13 +2950,31 @@ function deduplicateByTmdbId(items) {
   return result;
 }
 
+// 🌟 辅助：深度清理标题（抹平书名号、空格、第X季、年番，实现精准去重）
+function normalizeTitleForDedupe(t) {
+    if (!t) return "";
+    return String(t)
+        .replace(/[《》【】\[\]（）()·\s\-_:：]/g, "")
+        .replace(/第[一二三四五六七八九十\d]+[季部期]/g, "")
+        .replace(/(特别篇|完结篇|剧场版|国语版|粤语版|重制版|真人版|电影版|年番)/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+// 🌟 修复版：双维度双向去重，同时比对 tmdbId 与清洗后的 title，彻底解决新旧数据错位问题
 function deduplicateRawList(items) {
-    const seen = new Set();
+    const seenIds = new Set();
+    const seenTitles = new Set();
     const result = [];
     for (const item of items) {
-        const key = item.tmdbId ? `id_${item.tmdbId}` : `title_${item.title}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
+        const sId = item.tmdbId ? String(item.tmdbId) : null;
+        const sTitle = normalizeTitleForDedupe(item.title || item.name);
+        
+        if (sId && seenIds.has(sId)) continue;
+        if (sTitle && seenTitles.has(sTitle)) continue;
+        
+        if (sId) seenIds.add(sId);
+        if (sTitle) seenTitles.add(sTitle);
         result.push(item);
     }
     return result;
@@ -3352,360 +3455,462 @@ async function executeSyncTask(categoryInput, env, limit = 100, quiet = false, r
       }
   } catch (e) {}
 
+  // =========================================================================
+  // 🌟 通用周历执行管道：手动数据最高权限锁定 + 全周历史重复自动排毒引擎
+  // =========================================================================
+  async function runWeeklyCollectionEngine({
+      colCatId,
+      colType = "tv",
+      platformName = "tmdb",
+      isMultiDay = false, // 只有国产剧允许为 true
+      fetchCandidatesFn,
+      extraProcessOpts = {}
+  }) {
+      // 1. 读取周一至周日全周现存所有旧数据
+      const daysData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+      const originalCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+      for (let d = 1; d <= 7; d++) {
+          try {
+              const oldObj = await env.R2_BUCKET.get(`${colCatId}-${d}.json`);
+              if (oldObj) {
+                  const oldJson = await oldObj.json();
+                  if (oldJson && Array.isArray(oldJson.data)) {
+                      daysData[d] = oldJson.data;
+                      originalCounts[d] = oldJson.data.length;
+                  }
+              }
+          } catch (e) {}
+      }
+
+      const getCleanTitle = (it) => normalizeTitleForDedupe(it?.title || it?.name || "");
+      const getTmdbIdStr = (it) => (it?.tmdbId ? String(it.tmdbId) : "");
+
+      // 判定是否属于手动编辑过的核心资产（最高权限保护）
+      const isManualItem = (it) => {
+          if (!it) return false;
+          return it.poster_source === 'manual' ||
+                 it.no_logo_poster_source === 'manual' ||
+                 it.thumb_source === 'manual' ||
+                 it.logo_source === 'manual' ||
+                 it.backdrop_source === 'manual';
+      };
+
+      // 提取手动强制排期天数
+      const getShowOverrideDays = (it) => {
+          if (!overrides || typeof overrides !== 'object') return [];
+          const t = (it.title || it.name || "").trim();
+          const cleanT = getCleanTitle(it);
+          const id = getTmdbIdStr(it);
+
+          const checkVal = (v) => {
+              if (v === undefined || v === null) return [];
+              return Array.isArray(v) ? v.map(Number) : [Number(v)];
+          };
+
+          if (id && overrides[id] !== undefined) return checkVal(overrides[id]);
+          if (t && overrides[t] !== undefined) return checkVal(overrides[t]);
+
+          for (const [k, v] of Object.entries(overrides)) {
+              const cleanK = normalizeTitleForDedupe(k);
+              if (cleanK && (cleanT.includes(cleanK) || cleanK.includes(cleanT))) {
+                  return checkVal(v);
+              }
+          }
+          return [];
+      };
+
+      // 2. 单日内重复自我净化（同一天内重复出现的完全清洗）
+      for (let d = 1; d <= 7; d++) {
+          const seenInDayIds = new Set();
+          const seenInDayTitles = new Set();
+          const cleanList = [];
+
+          for (const item of daysData[d]) {
+              const id = getTmdbIdStr(item);
+              const title = getCleanTitle(item);
+
+              const isDup = (id && seenInDayIds.has(id)) || (title && seenInDayTitles.has(title));
+              if (isDup) {
+                  const existing = cleanList.find(x => (id && getTmdbIdStr(x) === id) || (title && getCleanTitle(x) === title));
+                  if (existing && isManualItem(item) && !isManualItem(existing)) {
+                      Object.assign(existing, item);
+                  }
+                  continue;
+              }
+
+              if (id) seenInDayIds.add(id);
+              if (title) seenInDayTitles.add(title);
+              cleanList.push(item);
+          }
+          daysData[d] = cleanList;
+      }
+
+      // 3. 全周跨天历史重复仲裁（除国产剧外，整周 7 天一部片只能呆在唯一的一天）
+      if (!isMultiDay) {
+          const bestAssignment = new Map();
+          const keyToCanonical = new Map();
+
+          const getCanonicalKey = (it) => {
+              const id = getTmdbIdStr(it);
+              const title = getCleanTitle(it);
+              if (id && keyToCanonical.has(`id_${id}`)) return keyToCanonical.get(`id_${id}`);
+              if (title && keyToCanonical.has(`title_${title}`)) return keyToCanonical.get(`title_${title}`);
+              const newKey = id ? `id_${id}` : `title_${title}`;
+              if (id) keyToCanonical.set(`id_${id}`, newKey);
+              if (title) keyToCanonical.set(`title_${title}`, newKey);
+              return newKey;
+          };
+
+          // 扫描 1~7 天计算每个剧目的“归属权分数”
+          for (let d = 1; d <= 7; d++) {
+              for (let idx = 0; idx < daysData[d].length; idx++) {
+                  const item = daysData[d][idx];
+                  const cKey = getCanonicalKey(item);
+                  if (!cKey) continue;
+
+                  const overrideDays = getShowOverrideDays(item);
+                  const isManual = isManualItem(item);
+                  const detDay = determineDay(item, bgmCalendar, null, {});
+
+                  // 权重体系：
+                  // 1. 手动添加排期/干预 = 百万级绝对优先级 (1000000)
+                  // 2. 手动换过海报/Logo = 五万级高优先级 (50000)
+                  // 3. 自然开播日匹配 = 万级优先级 (10000)
+                  // 4. 其余情况按排位保序
+                  let score = 0;
+                  if (overrideDays.length > 0) {
+                      score = overrideDays.includes(d) ? 1000000 : -1000000;
+                  } else if (isManual) {
+                      score = 50000 - idx;
+                  } else if (detDay === d) {
+                      score = 10000 - idx;
+                  } else {
+                      score = 1000 - (d * 100) - idx;
+                  }
+
+                  if (!bestAssignment.has(cKey)) {
+                      bestAssignment.set(cKey, { bestDay: d, bestItem: item, bestScore: score });
+                  } else {
+                      const currentBest = bestAssignment.get(cKey);
+                      if (score > currentBest.bestScore) {
+                          // 胜出：继承旧条目可能存在的手动素材
+                          if (isManualItem(currentBest.bestItem) && !isManualItem(item)) {
+                              item.poster_path = currentBest.bestItem.poster_path || item.poster_path;
+                              item.poster_source = currentBest.bestItem.poster_source || item.poster_source;
+                              item.logo = currentBest.bestItem.logo || item.logo;
+                              item.logo_source = currentBest.bestItem.logo_source || item.logo_source;
+                              item.thumb = currentBest.bestItem.thumb || item.thumb;
+                              item.thumb_source = currentBest.bestItem.thumb_source || item.thumb_source;
+                          }
+                          bestAssignment.set(cKey, { bestDay: d, bestItem: item, bestScore: score });
+                      } else {
+                          // 维持原胜出者，但吸纳当前项的手动素材
+                          if (isManual && !isManualItem(currentBest.bestItem)) {
+                              currentBest.bestItem.poster_path = item.poster_path || currentBest.bestItem.poster_path;
+                              currentBest.bestItem.poster_source = item.poster_source || currentBest.bestItem.poster_source;
+                              currentBest.bestItem.logo = item.logo || currentBest.bestItem.logo;
+                              currentBest.bestItem.logo_source = item.logo_source || currentBest.bestItem.logo_source;
+                              currentBest.bestItem.thumb = item.thumb || currentBest.bestItem.thumb;
+                              currentBest.bestItem.thumb_source = item.thumb_source || currentBest.bestItem.thumb_source;
+                          }
+                      }
+                  }
+              }
+          }
+
+          // 核心排毒：只在胜出的星期保留该片，其余星期的残留重复项全数抹除！
+          for (let d = 1; d <= 7; d++) {
+              daysData[d] = daysData[d].filter(it => {
+                  const cKey = getCanonicalKey(it);
+                  const assigned = bestAssignment.get(cKey);
+                  return assigned && assigned.bestDay === d;
+              });
+          }
+      }
+
+      // 4. 抓取新鲜候选新片
+      const freshCandidates = await fetchCandidatesFn();
+
+      // 构建全周现存清单索引
+      const weekAssignedIds = new Set();
+      const weekAssignedTitles = new Set();
+      for (let d = 1; d <= 7; d++) {
+          daysData[d].forEach(it => {
+              const id = getTmdbIdStr(it);
+              const title = getCleanTitle(it);
+              if (id) weekAssignedIds.add(id);
+              if (title) weekAssignedTitles.add(title);
+          });
+      }
+
+      let totalCount = 0;
+      let allDayItems = [];
+
+      // 5. 组装新片并同步写入
+      for (let day = 1; day <= 7; day++) {
+          const isCurrentTarget = (targetDay === null || day === targetDay);
+
+          if (isCurrentTarget) {
+              const brandNewForDay = [];
+              for (const raw of freshCandidates) {
+                  const overrideDays = getShowOverrideDays(raw);
+                  let assignedDay = 0;
+                  if (overrideDays.length > 0) {
+                      assignedDay = overrideDays.includes(day) ? day : 0;
+                  } else {
+                      assignedDay = determineDay(raw, bgmCalendar, null, overrides);
+                  }
+                  if (assignedDay !== day) continue;
+
+                  const rId = raw.tmdbId ? String(raw.tmdbId) : null;
+                  const rTitle = normalizeTitleForDedupe(raw.title || raw.name);
+
+                  // 全周查重：非国产剧绝不允许任何跨天新重复
+                  if (!isMultiDay) {
+                      if ((rId && weekAssignedIds.has(rId)) || (rTitle && weekAssignedTitles.has(rTitle))) continue;
+                  } else {
+                      const dayIds = new Set(daysData[day].map(getTmdbIdStr).filter(Boolean));
+                      const dayTitles = new Set(daysData[day].map(getCleanTitle).filter(Boolean));
+                      if ((rId && dayIds.has(rId)) || (rTitle && dayTitles.has(rTitle))) continue;
+                  }
+
+                  if (isItemBlacklisted(raw, blacklist, colCatId)) continue;
+
+                  brandNewForDay.push(raw);
+                  if (!isMultiDay) {
+                      if (rId) weekAssignedIds.add(rId);
+                      if (rTitle) weekAssignedTitles.add(rTitle);
+                  }
+              }
+
+              let processedBrandNew = [];
+              if (brandNewForDay.length > 0) {
+                  processedBrandNew = await processItemsWithTMDB(
+                      brandNewForDay,
+                      colType,
+                      env,
+                      limit,
+                      processOpts(extraProcessOpts),
+                      reqCtx
+                  );
+              }
+
+              // 🌟 手动旧数据绝对置顶保序，新片补在后面
+              let finalDayData = [...daysData[day], ...processedBrandNew];
+              finalDayData = deduplicateByTmdbId(finalDayData).slice(0, limit);
+              daysData[day] = finalDayData;
+          }
+
+          totalCount += daysData[day].length;
+          allDayItems.push(...daysData[day]);
+
+          // 只要是目标同步天，或者这一天被排毒清除了重复项（数量有变），立刻刷新写入 R2！
+          const dayNeedsFlush = isCurrentTarget || (daysData[day].length !== originalCounts[day]);
+          if (dayNeedsFlush) {
+              const dayJson = {
+                  platform: platformName,
+                  type: colType === "movie" ? "movie" : "animation",
+                  count: daysData[day].length,
+                  lastUpdated: new Date().toISOString(),
+                  data: daysData[day]
+              };
+              await env.R2_BUCKET.put(`${colCatId}-${day}.json`, JSON.stringify(dayJson, null, 2), {
+                  httpMetadata: { contentType: "application/json" }
+              });
+          }
+      }
+
+      // 6. 更新合集根配置
+      if (targetDay === null) {
+          const colJson = {
+              id: colCatId,
+              preset: "collection-list",
+              groupMode: "weekday",
+              children: [1, 2, 3, 4, 5, 6, 7].map(d => ({
+                  id: `${colCatId}-${d}`,
+                  label: `周${["一", "二", "三", "四", "五", "六", "日"][d - 1]}`,
+                  weekday: d,
+                  title: `周${["一", "二", "三", "四", "五", "六", "日"][d - 1]}`,
+                  mediaType: colType,
+                  preset: "poster-list",
+                  source: { path: `${originUrl}/blocks/public/${colCatId}-${d}.json`, itemEnvelope: "data" }
+              }))
+          };
+          await env.R2_BUCKET.put(`${colCatId}.json`, JSON.stringify(colJson, null, 2), {
+              httpMetadata: { contentType: "application/json" }
+          });
+      }
+
+      return { count: totalCount, stats: computeAssetStats(allDayItems), newLogos: [] };
+  }
+
   // ========================================================
-  // 1. 巴哈新番周更表 (日漫新番实时周历，新番置顶)
+  // 1. 巴哈新番周更表 (日漫全周唯一去重，手排顺序与手动资产 100% 锁定)
   // ========================================================
   if (category === "weekly_anime_collection") {
-      const bgmRes = await safeFetch('https://api.bgm.tv/calendar', { headers: { 'User-Agent': 'EPlayerX/1.0' } }, reqCtx);
-      const bgmData = bgmRes.ok ? await bgmRes.json() : [];
-      let processedCount = 0;
-      let allDayItems = [];
-
-      for (let day = 1; day <= 7; day++) {
-          if (targetDay !== null && day !== targetDay) continue; 
-          let existingItems = [];
-          try {
-              const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
-              if (oldObj) {
-                  const oldJson = await oldObj.json();
-                  if (oldJson && oldJson.data) existingItems = oldJson.data;
-              }
-          } catch(e) {}
-
-          const dayData = bgmData.find(d => d.weekday.id === day);
-          const rawItems = dayData ? dayData.items : [];
-          let freshItems = [];
-          for (const anime of rawItems) {
-              const name = anime.name || "";
-              const nameCn = anime.name_cn || "";
-              if (/(仙逆|吞噬星空|完美世界|斗罗大陆|斗破苍穹|神印王座|武神主宰|师兄|修仙|百炼|大主宰|凡人修仙|遮天|沧元图|剑来|斩神)/.test(name + nameCn)) continue; 
-              const checkItem = { title: nameCn || name };
-              if (isItemBlacklisted(checkItem, blacklist, category)) continue;
-              freshItems.push({ title: nameCn || name, searchQuery: name || nameCn, score: anime.rating?.score || 0 });
+      return await runWeeklyCollectionEngine({
+          colCatId: category,
+          colType: "tv",
+          platformName: "bangumi",
+          isMultiDay: false, // 🌟 日漫严禁跨天重复
+          extraProcessOpts: { isJapaneseAnimeOnly: true },
+          fetchCandidatesFn: async () => {
+              const bgmRes = await safeFetch('https://api.bgm.tv/calendar', { headers: { 'User-Agent': 'EPlayerX/1.0' } }, reqCtx);
+              if (!bgmRes.ok) return [];
+              const bgmData = await bgmRes.json();
+              let list = [];
+              bgmData.forEach(d => {
+                  (d.items || []).forEach(anime => {
+                      const name = anime.name || "";
+                      const nameCn = anime.name_cn || "";
+                      if (!/(仙逆|吞噬星空|完美世界|斗罗大陆|斗破苍穹|神印王座|武神主宰|师兄|修仙|百炼|大主宰|凡人修仙|遮天|沧元图|剑来|斩神)/.test(name + nameCn)) {
+                          list.push({ title: nameCn || name, searchQuery: name || nameCn, last_episode_air_date: anime.air_date });
+                      }
+                  });
+              });
+              return list;
           }
-
-          // 🌟 修正：新番排在前面，旧数据垫后
-          let combinedItems = deduplicateRawList([...freshItems, ...existingItems]);
-          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-          if (combinedItems.length === 0) continue;
-
-          let processedDayData = await processItemsWithTMDB(combinedItems, "tv", env, 100, processOpts({ isJapaneseAnimeOnly: true }), reqCtx);
-          processedDayData = processedDayData.filter(item => !isItemBlacklisted(item, blacklist, category));
-          processedCount += processedDayData.length;
-          allDayItems.push(...processedDayData);
-          
-          const dayJson = { platform: "bangumi", type: "animation", count: processedDayData.length, lastUpdated: new Date().toISOString(), data: processedDayData };
-          await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-
-      if (targetDay === null) {
-          const colJson = {
-              id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
-          };
-          await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
+      });
   }
 
   // ========================================================
-  // 2. 国产追剧周更表 (当季国产剧雷达 + 豆瓣热播双源)
+  // 2. 国产追剧周更表 (🌟 唯一允许跨天排期；手排顺序与手动资产 100% 锁定)
   // ========================================================
   else if (category === "weekly_drama_collection") {
-      const now = new Date();
-      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
-      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
-
-      const tmdbLiveCn = await fetchTMDBDiscoverList('tv', {
-          with_original_language: 'zh',
-          with_origin_country: 'CN',
-          without_genres: '16,10764,10767,10763,99',
-          'air_date.gte': past60,
-          'air_date.lte': future30,
-          sort_by: 'popularity.desc'
-      }, env, 80, reqCtx).catch(() => []);
-
-      let doubanHotCn = await fetchDoubanSubjectCollection("tv_domestic", 40, reqCtx).catch(() => []);
-      doubanHotCn = doubanHotCn.filter(item => {
-          const t = item.title || "";
-          return !/(动画|动漫|真人秀|脱口秀|演唱会|晚会|纪录片|特别节目|第[一二三四五六七八九十\d]+期|季|年番)/.test(t);
-      });
-
-      const freshSeasonDramas = deduplicateRawList([...tmdbLiveCn, ...doubanHotCn]);
-      let processedCount = 0;
-      let allDayItems = [];
-
-      for (let day = 1; day <= 7; day++) {
-          if (targetDay !== null && day !== targetDay) continue; 
-          let existingItems = [];
-          try {
-              const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
-              if (oldObj) {
-                  const oldJson = await oldObj.json();
-                  if (oldJson && oldJson.data) existingItems = oldJson.data;
-              }
-          } catch(e) {}
-
-          let freshForDay = freshSeasonDramas.filter(item => determineDay(item, null, null, overrides) === day);
-          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
-          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-          
-          if (combinedItems.length === 0) {
-              await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify({ platform: "tmdb", type: "tv_series", count: 0, lastUpdated: new Date().toISOString(), data: [] }, null, 2), { httpMetadata: { contentType: "application/json" } });
-              continue; 
+      return await runWeeklyCollectionEngine({
+          colCatId: category,
+          colType: "tv",
+          platformName: "tmdb",
+          isMultiDay: true, // 🌟 唯一允许一部剧周一到周四多天播出的合集
+          extraProcessOpts: { isDomesticDramaOnly: true },
+          fetchCandidatesFn: async () => {
+              const now = new Date();
+              const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
+              const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+              const tmdbLiveCn = await fetchTMDBDiscoverList('tv', {
+                  with_original_language: 'zh',
+                  with_origin_country: 'CN',
+                  without_genres: '16,10764,10767,10763,99',
+                  'air_date.gte': past60,
+                  'air_date.lte': future30,
+                  sort_by: 'popularity.desc'
+              }, env, 80, reqCtx).catch(() => []);
+              let doubanHotCn = await fetchDoubanSubjectCollection("tv_domestic", 40, reqCtx).catch(() => []);
+              doubanHotCn = doubanHotCn.filter(item => !/(动画|动漫|真人秀|脱口秀|演唱会|晚会|特别节目)/.test(item.title || ""));
+              return deduplicateRawList([...tmdbLiveCn, ...doubanHotCn]);
           }
-
-          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts({ isDomesticDramaOnly: true }), reqCtx);
-          processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
-          processedCount += processed.length;
-          allDayItems.push(...processed);
-          
-          const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
-          await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-
-      if (targetDay === null) {
-          const colJson = {
-              id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
-          };
-          await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
+      });
   }
 
   // ========================================================
-  // 3. 国漫追番周历表 (🌟 彻底激活国漫当季新番爬虫，新番排在最前)
+  // 3. 国漫追番周历表 (🌟 核心修复：全周绝对唯一，手排置顶顺序雷打不动！)
   // ========================================================
   else if (category === "weekly_guoman_collection") {
-      const now = new Date();
-      const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
-      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
-
-      // 1. 抓取近期有单集更新的国产动画（覆盖当季热播与年番）
-      const rawLiveGuoman = await fetchTMDBDiscoverList('tv', {
-          with_original_language: 'zh',
-          with_origin_country: 'CN',
-          with_genres: '16',
-          'air_date.gte': past90,
-          'air_date.lte': future30,
-          sort_by: 'popularity.desc'
-      }, env, 80, reqCtx).catch(() => []);
-
-      // 2. 补充高热度当年/前一年国产动画，防漏热门年番
-      const hotGuomanYear = await fetchTieredYearList('tv', {
-          with_original_language: 'zh',
-          with_origin_country: 'CN',
-          with_genres: '16'
-      }, env, 50, reqCtx).catch(() => []);
-
-      const freshGuoman = deduplicateRawList([...rawLiveGuoman, ...hotGuomanYear]);
-      let processedCount = 0;
-      let allDayItems = [];
-
-      for (let day = 1; day <= 7; day++) {
-          if (targetDay !== null && day !== targetDay) continue; 
-          let existingItems = [];
-          try {
-              const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
-              if (oldObj) {
-                  const oldJson = await oldObj.json();
-                  if (oldJson && oldJson.data) existingItems = oldJson.data;
-              }
-          } catch(e) {}
-
-          let freshForDay = freshGuoman.filter(item => determineDay(item, null, null, overrides) === day);
-          // 🌟 修正：当季新国漫置前！
-          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
-          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-          
-          if (combinedItems.length === 0) {
-              await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify({ platform: "tmdb", type: "animation", count: 0, lastUpdated: new Date().toISOString(), data: [] }, null, 2), { httpMetadata: { contentType: "application/json" } });
-              continue;
+      return await runWeeklyCollectionEngine({
+          colCatId: category,
+          colType: "tv",
+          platformName: "tmdb",
+          isMultiDay: false, // 🌟 国漫严禁跨天重复！
+          extraProcessOpts: {},
+          fetchCandidatesFn: async () => {
+              const now = new Date();
+              const past90 = new Date(now.getTime() - 90 * 86400000).toISOString().substring(0, 10);
+              const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+              const rawLiveGuoman = await fetchTMDBDiscoverList('tv', {
+                  with_original_language: 'zh',
+                  with_origin_country: 'CN',
+                  with_genres: '16',
+                  'air_date.gte': past90,
+                  'air_date.lte': future30,
+                  sort_by: 'popularity.desc'
+              }, env, 80, reqCtx).catch(() => []);
+              const hotGuomanYear = await fetchTieredYearList('tv', {
+                  with_original_language: 'zh',
+                  with_origin_country: 'CN',
+                  with_genres: '16'
+              }, env, 50, reqCtx).catch(() => []);
+              return deduplicateRawList([...rawLiveGuoman, ...hotGuomanYear]);
           }
-
-          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
-          processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
-          processedCount += processed.length;
-          allDayItems.push(...processed);
-          
-          const dayJson = { platform: "tmdb", type: "animation", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
-          await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-
-      if (targetDay === null) {
-          const colJson = {
-              id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
-          };
-          await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
+      });
   }
 
   // ========================================================
-  // 4. 韩剧追剧周更表 (🌟 豆瓣热门韩剧 + TMDB当季在播双源，新剧在前)
+  // 4. 韩剧追剧周更表 (全周去重，手排顺序与资产绝对保护)
   // ========================================================
   else if (category === "weekly_korean_drama_collection") {
-      const now = new Date();
-      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
-      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
-
-      // 1. TMDB 正在开播与即将开播的当季韩剧
-      const tmdbLiveKr = await fetchTMDBDiscoverList('tv', { 
-          with_original_language: 'ko', 
-          without_genres: '16,10767,10763', 
-          'air_date.gte': past60,
-          'air_date.lte': future30,
-          sort_by: 'popularity.desc' 
-      }, env, 80, reqCtx).catch(() => []);
-
-      // 2. 豆瓣热门韩剧榜（高口碑与全网热度）
-      let doubanKr = await fetchDoubanSubjectCollection("tv_korean", 40, reqCtx).catch(() => []);
-      doubanKr = doubanKr.filter(item => !/(综艺|真人秀|脱口秀)/.test(item.title || ""));
-
-      const freshKorean = deduplicateRawList([...tmdbLiveKr, ...doubanKr]);
-      let processedCount = 0;
-      let allDayItems = [];
-
-      for (let day = 1; day <= 7; day++) {
-          if (targetDay !== null && day !== targetDay) continue;
-          let existingItems = [];
-          try {
-              const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
-              if (oldObj) { const oldJson = await oldObj.json(); if (oldJson && oldJson.data) existingItems = oldJson.data; }
-          } catch(e) {}
-
-          let freshForDay = freshKorean.filter(item => determineDay(item, null, null, overrides) === day);
-          // 🌟 修正：新抓取的当季韩剧置前！
-          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
-          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-          if (combinedItems.length === 0) continue;
-
-          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
-          processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
-          processedCount += processed.length;
-          allDayItems.push(...processed);
-          const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
-          await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-
-      if (targetDay === null) {
-          const colJson = {
-              id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
-          };
-          await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
+      return await runWeeklyCollectionEngine({
+          colCatId: category,
+          colType: "tv",
+          platformName: "tmdb",
+          isMultiDay: false, // 🌟 严禁跨天重复
+          extraProcessOpts: {},
+          fetchCandidatesFn: async () => {
+              const now = new Date();
+              const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
+              const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+              const tmdbLiveKr = await fetchTMDBDiscoverList('tv', {
+                  with_original_language: 'ko',
+                  without_genres: '16,10767,10763',
+                  'air_date.gte': past60,
+                  'air_date.lte': future30,
+                  sort_by: 'popularity.desc'
+              }, env, 80, reqCtx).catch(() => []);
+              let doubanKr = await fetchDoubanSubjectCollection("tv_korean", 40, reqCtx).catch(() => []);
+              return deduplicateRawList([...tmdbLiveKr, ...doubanKr]);
+          }
+      });
   }
 
   // ========================================================
-  // 5. 日剧追剧周更表 (🌟 豆瓣热门日剧 + TMDB当季在播双源，新剧在前)
+  // 5. 日剧追剧周更表 (全周去重，手排顺序与资产绝对保护)
   // ========================================================
   else if (category === "weekly_japanese_drama_collection") {
-      const now = new Date();
-      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
-      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
-
-      // 1. TMDB 正在开播与即将开播的日剧
-      const tmdbLiveJa = await fetchTMDBDiscoverList('tv', { 
-          with_original_language: 'ja', 
-          without_genres: '16,10767,10763', 
-          'air_date.gte': past60,
-          'air_date.lte': future30,
-          sort_by: 'popularity.desc' 
-      }, env, 80, reqCtx).catch(() => []);
-
-      // 2. 豆瓣热门日剧补充
-      let doubanJa = await fetchDoubanSubjectCollection("tv_japanese", 40, reqCtx).catch(() => []);
-      doubanJa = doubanJa.filter(item => !/(综艺|动画|特摄)/.test(item.title || ""));
-
-      const freshJapanese = deduplicateRawList([...tmdbLiveJa, ...doubanJa]);
-      let processedCount = 0;
-      let allDayItems = [];
-
-      for (let day = 1; day <= 7; day++) {
-          if (targetDay !== null && day !== targetDay) continue;
-          let existingItems = [];
-          try {
-              const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
-              if (oldObj) { const oldJson = await oldObj.json(); if (oldJson && oldJson.data) existingItems = oldJson.data; }
-          } catch(e) {}
-
-          let freshForDay = freshJapanese.filter(item => determineDay(item, null, null, overrides) === day);
-          // 🌟 修正：当季日剧置前！
-          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
-          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-          if (combinedItems.length === 0) continue;
-
-          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
-          processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
-          processedCount += processed.length;
-          allDayItems.push(...processed);
-          const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
-          await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-
-      if (targetDay === null) {
-          const colJson = {
-              id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
-          };
-          await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
+      return await runWeeklyCollectionEngine({
+          colCatId: category,
+          colType: "tv",
+          platformName: "tmdb",
+          isMultiDay: false, // 🌟 严禁跨天重复
+          extraProcessOpts: {},
+          fetchCandidatesFn: async () => {
+              const now = new Date();
+              const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
+              const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+              const tmdbLiveJa = await fetchTMDBDiscoverList('tv', {
+                  with_original_language: 'ja',
+                  without_genres: '16,10767,10763',
+                  'air_date.gte': past60,
+                  'air_date.lte': future30,
+                  sort_by: 'popularity.desc'
+              }, env, 80, reqCtx).catch(() => []);
+              let doubanJa = await fetchDoubanSubjectCollection("tv_japanese", 40, reqCtx).catch(() => []);
+              return deduplicateRawList([...tmdbLiveJa, ...doubanJa]);
+          }
+      });
   }
 
   // ========================================================
-  // 6. 东南亚剧周更表 (🌟 泰剧/越剧/菲剧当季热播置前)
+  // 6. 东南亚剧周更表 (全周去重，手排顺序与资产绝对保护)
   // ========================================================
   else if (category === "weekly_sea_drama_collection") {
-      const now = new Date();
-      const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
-      const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
-
-      const rawSea = await fetchTMDBDiscoverList('tv', { 
-          with_original_language: 'th|vi|id|tl', 
-          without_genres: '16,10767,10763', 
-          'air_date.gte': past60,
-          'air_date.lte': future30,
-          sort_by: 'popularity.desc' 
-      }, env, 80, reqCtx).catch(() => []);
-
-      let processedCount = 0;
-      let allDayItems = [];
-
-      for (let day = 1; day <= 7; day++) {
-          if (targetDay !== null && day !== targetDay) continue;
-          let existingItems = [];
-          try {
-              const oldObj = await env.R2_BUCKET.get(`${category}-${day}.json`);
-              if (oldObj) { const oldJson = await oldObj.json(); if (oldJson && oldJson.data) existingItems = oldJson.data; }
-          } catch(e) {}
-
-          let freshForDay = rawSea.filter(item => determineDay(item, null, null, overrides) === day);
-          // 🌟 修正：新剧置前！
-          let combinedItems = deduplicateRawList([...freshForDay, ...existingItems]);
-          combinedItems = combinedItems.filter(item => !isItemBlacklisted(item, blacklist, category));
-          if (combinedItems.length === 0) continue;
-
-          let processed = await processItemsWithTMDB(combinedItems, "tv", env, limit, processOpts(), reqCtx);
-          processed = processed.filter(item => !isItemBlacklisted(item, blacklist, category));
-          processedCount += processed.length;
-          allDayItems.push(...processed);
-          const dayJson = { platform: "tmdb", type: "tv_series", count: processed.length, lastUpdated: new Date().toISOString(), data: processed };
-          await env.R2_BUCKET.put(`${category}-${day}.json`, JSON.stringify(dayJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-
-      if (targetDay === null) {
-          const colJson = {
-              id: category, preset: "collection-list", groupMode: "weekday",
-              children: [1,2,3,4,5,6,7].map(d => ({ id: `${category}-${d}`, label: `周${["一","二","三","四","五","六","日"][d-1]}`, weekday: d, title: `周${["一","二","三","四","五","六","日"][d-1]}`, mediaType: "tv", preset: "poster-list", source: { path: `${originUrl}/blocks/public/${category}-${d}.json`, itemEnvelope: "data" } }))
-          };
-          await env.R2_BUCKET.put(`${category}.json`, JSON.stringify(colJson, null, 2), { httpMetadata: { contentType: "application/json" } });
-      }
-      return { count: processedCount, stats: computeAssetStats(allDayItems), newLogos: [] };
+      return await runWeeklyCollectionEngine({
+          colCatId: category,
+          colType: "tv",
+          platformName: "tmdb",
+          isMultiDay: false, // 🌟 严禁跨天重复
+          extraProcessOpts: {},
+          fetchCandidatesFn: async () => {
+              const now = new Date();
+              const past60 = new Date(now.getTime() - 60 * 86400000).toISOString().substring(0, 10);
+              const future30 = new Date(now.getTime() + 30 * 86400000).toISOString().substring(0, 10);
+              return await fetchTMDBDiscoverList('tv', {
+                  with_original_language: 'th|vi|id|tl',
+                  without_genres: '16,10767,10763',
+                  'air_date.gte': past60,
+                  'air_date.lte': future30,
+                  sort_by: 'popularity.desc'
+              }, env, 80, reqCtx).catch(() => []);
+          }
+      });
   }
 
   // 🌟 今日热门电视剧（当年新播首选，再递推补充）
@@ -4677,8 +4882,14 @@ export default {
                 days.forEach(d => {
                     const dayInt = parseInt(d, 10);
                     if (dayInt >= 1 && dayInt <= 7) {
-                        if (/^\d+$/.test(key)) daysMap[dayInt].push({ tmdbId: parseInt(key, 10), title: "ID:" + key });
-                        else daysMap[dayInt].push({ title: key });
+                        if (/^(\d+)#(.+)$/.test(key)) {
+                            const m = key.match(/^(\d+)#(.+)$/);
+                            daysMap[dayInt].push({ tmdbId: parseInt(m[1], 10), title: m[2] });
+                        } else if (/^\d+$/.test(key)) {
+                            daysMap[dayInt].push({ tmdbId: parseInt(key, 10), title: "ID:" + key });
+                        } else {
+                            daysMap[dayInt].push({ title: key });
+                        }
                     }
                 });
             }
@@ -4723,7 +4934,7 @@ export default {
             return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: antiCacheHeaders });
         }
     }
-
+    // 🌟 核心：大盘数据读取接口（支持年份与热度动态排序）
     if (action === "api" && request.method === "GET") {
       if (!env.R2_BUCKET) return new Response(JSON.stringify({ error: "R2未绑定" }), { status: 500, headers: antiCacheHeaders });
       if (!category || category === 'login') return new Response("Not Found", { status: 404, headers: antiCacheHeaders });
