@@ -233,7 +233,7 @@ const FRONTEND_HTML_P1 = `
     <div id="poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="poster-select-title">选择备用【正标带字】竖海报</h3>
-            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">✨ 系统已自动优先列出<span class="text-pink-600 dark:text-pink-400 font-bold">【官方带字海报】</span>，专供小竖屏列表卡片展示！</p>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium" id="poster-select-desc">✨ 系统已自动优先列出<span class="text-pink-600 dark:text-pink-400 font-bold">【官方带字海报】</span>，专供小竖屏列表卡片展示！</p>
             <div class="flex items-center gap-2 mb-4 shrink-0">
                 <input type="text" id="custom-poster-url" placeholder="或者直接输入您自定义竖海报的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-pink-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
                 <button onclick="applyCustomPoster()" class="px-5 py-2.5 bg-pink-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-pink-700 transition-colors shrink-0">直接应用</button>
@@ -248,7 +248,7 @@ const FRONTEND_HTML_P1 = `
     <div id="clean-poster-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="clean-poster-select-title">选择备用【纯净无字】轮播竖海报</h3>
-            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">✨ 此处选择的海报将专门用于<span class="text-cyan-600 dark:text-cyan-400 font-bold">【大轮播图 / Hero 大卡片】</span>叠加透明 Logo 显示，绝不与小列表带字海报冲突！</p>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium" id="clean-poster-select-desc">✨ 此处选择的海报将专门用于<span class="text-cyan-600 dark:text-cyan-400 font-bold">【大轮播图 / Hero 大卡片】</span>叠加透明 Logo 显示，绝不与小列表带字海报冲突！</p>
             <div class="flex items-center gap-2 mb-4 shrink-0">
                 <input type="text" id="custom-clean-poster-url" placeholder="或者直接输入您自定义纯净无字竖海报的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-cyan-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
                 <button onclick="applyCustomCleanPoster()" class="px-5 py-2.5 bg-cyan-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-cyan-700 transition-colors shrink-0">直接应用</button>
@@ -263,7 +263,7 @@ const FRONTEND_HTML_P1 = `
     <div id="logo-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="logo-select-title">选择备用 Logo</h3>
-            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">右上角带有勾选的图即为您目前正在使用的图片。</p>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium" id="logo-select-desc">右上角带有勾选的图即为您目前正在使用的图片。</p>
             <div class="flex items-center gap-2 mb-4 shrink-0">
                 <input type="text" id="custom-logo-url" placeholder="或者直接输入您自定义透明图的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-purple-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
                 <button onclick="applyCustomLogo()" class="px-5 py-2.5 bg-purple-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-purple-700 transition-colors shrink-0">直接应用</button>
@@ -279,7 +279,7 @@ const FRONTEND_HTML_P1 = `
     <div id="thumb-select-modal" class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black/60 backdrop-blur-md transition-opacity">
         <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-5 md:p-8 w-11/12 max-w-5xl shadow-2xl border border-white/20 fade-in flex flex-col max-h-[90vh]">
             <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2" id="thumb-select-title">选择备用剧照 / 背景</h3>
-            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">带有特定语言标签的说明它是带字剧照。右上角带有勾选的图即为您目前正在使用的剧照。</p>
+            <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium" id="thumb-select-desc">带有特定语言标签的说明它是带字剧照。右上角带有勾选的图即为您目前正在使用的剧照。</p>
             <div class="flex items-center gap-2 mb-4 shrink-0">
                 <input type="text" id="custom-thumb-url" placeholder="或者直接输入您自定义横向图片的 URL" class="flex-1 bg-gray-100 dark:bg-zinc-800 border-2 border-transparent focus:border-blue-500 rounded-xl px-4 py-2.5 outline-none text-xs md:text-sm text-gray-900 dark:text-white font-bold transition-colors shadow-inner">
                 <button onclick="applyCustomThumb()" class="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs md:text-sm rounded-xl shadow-md hover:bg-blue-700 transition-colors shrink-0">直接应用</button>
@@ -1430,6 +1430,8 @@ const FRONTEND_HTML_P1 = `
         async function openPosterSelector(e, tmdbId, title, currentPoster, source, mType) {
             e.stopPropagation(); activePosterSelectTmdbId = tmdbId; activePosterSelectTitle = title; activePosterCurrent = currentPoster; activePosterSource = source || 'auto';
             document.getElementById('poster-select-title').innerText = "为《" + title + "》选择备用【正标带字】竖海报";
+            const descEl = document.getElementById('poster-select-desc');
+            if (descEl) descEl.innerHTML = '✨ 系统已自动优先列出<span class="text-pink-600 dark:text-pink-400 font-bold">【官方带字海报】</span>，专供小竖屏列表卡片展示！';
             document.getElementById('poster-select-grid').innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-pink-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描海报...</span></div>';
             document.getElementById('custom-poster-url').value = ''; document.getElementById('poster-select-modal').classList.remove('hidden');
             const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
@@ -1437,7 +1439,12 @@ const FRONTEND_HTML_P1 = `
                 const res = await fetch(ACTION_BASE + '/list_posters', { method: 'POST', headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId, type: mediaType }) });
                 const data = await res.json();
                 const grid = document.getElementById('poster-select-grid');
-                if (!data.success || !data.posters || data.posters.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何海报资源</div>'; return; }
+                if (!data.success || !data.posters || data.posters.length === 0) { 
+                    if (descEl) descEl.innerHTML += ' <span class="text-gray-400 font-bold">(共 0 张海报)</span>';
+                    grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何海报资源</div>'; 
+                    return; 
+                }
+                if (descEl) descEl.innerHTML += ' <span class="text-pink-600 dark:text-pink-400 font-black ml-1.5">(共 ' + data.posters.length + ' 张海报)</span>';
                 grid.innerHTML = '';
                 data.posters.forEach(obj => {
                     let isCurrent = activePosterCurrent && activePosterCurrent.includes(obj.file_path); let tickColor = activePosterSource === 'manual' ? 'bg-emerald-500' : 'bg-pink-500';
@@ -1467,6 +1474,8 @@ const FRONTEND_HTML_P1 = `
         async function openCleanPosterSelector(e, tmdbId, title, currentCleanPoster, source, mType) {
             e.stopPropagation(); activeCleanPosterSelectTmdbId = tmdbId; activeCleanPosterSelectTitle = title; activeCleanPosterCurrent = currentCleanPoster; activeCleanPosterSource = source || 'auto';
             document.getElementById('clean-poster-select-title').innerText = "为《" + title + "》选择备用【纯净无字】轮播海报";
+            const descEl = document.getElementById('clean-poster-select-desc');
+            if (descEl) descEl.innerHTML = '✨ 此处选择的海报将专门用于<span class="text-cyan-600 dark:text-cyan-400 font-bold">【大轮播图 / Hero 大卡片】</span>叠加透明 Logo 显示，绝不与小列表带字海报冲突！';
             document.getElementById('clean-poster-select-grid').innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-cyan-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描纯净无字海报...</span></div>';
             document.getElementById('custom-clean-poster-url').value = ''; document.getElementById('clean-poster-select-modal').classList.remove('hidden');
             const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
@@ -1474,7 +1483,12 @@ const FRONTEND_HTML_P1 = `
                 const res = await fetch(ACTION_BASE + '/list_posters', { method: 'POST', headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId, type: mediaType }) });
                 const data = await res.json();
                 const grid = document.getElementById('clean-poster-select-grid');
-                if (!data.success || !data.posters || data.posters.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何海报资源</div>'; return; }
+                if (!data.success || !data.posters || data.posters.length === 0) { 
+                    if (descEl) descEl.innerHTML += ' <span class="text-gray-400 font-bold">(共 0 张候选)</span>';
+                    grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何海报资源</div>'; 
+                    return; 
+                }
+                if (descEl) descEl.innerHTML += ' <span class="text-cyan-600 dark:text-cyan-400 font-black ml-1.5">(共 ' + data.posters.length + ' 张候选)</span>';
                 grid.innerHTML = '';
                 data.posters.forEach(obj => {
                     let isCurrent = activeCleanPosterCurrent && activeCleanPosterCurrent.includes(obj.file_path); let tickColor = activeCleanPosterSource === 'manual' ? 'bg-emerald-500' : 'bg-cyan-500';
@@ -1503,6 +1517,8 @@ const FRONTEND_HTML_P1 = `
         async function openLogoSelector(e, tmdbId, title, currentLogo, source, mType) {
             e.stopPropagation(); activeLogoSelectTmdbId = tmdbId; activeLogoSelectTitle = title; activeLogoCurrent = currentLogo; activeLogoSource = source || 'auto';
             document.getElementById('logo-select-title').innerText = "为《" + title + "》选择备用 Logo";
+            const descEl = document.getElementById('logo-select-desc');
+            if (descEl) descEl.innerHTML = '右上角带有勾选的图即为您目前正在使用的图片。';
             document.getElementById('logo-select-grid').innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-purple-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描所有候选图...</span></div>';
             document.getElementById('custom-logo-url').value = ''; document.getElementById('logo-select-modal').classList.remove('hidden');
             const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
@@ -1510,7 +1526,12 @@ const FRONTEND_HTML_P1 = `
                 const res = await fetch(ACTION_BASE + '/list_logos', { method: 'POST', headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId, type: mediaType }) });
                 const data = await res.json();
                 const grid = document.getElementById('logo-select-grid');
-                if (!data.success || !data.logos || data.logos.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何 Logo 资源</div>'; return; }
+                if (!data.success || !data.logos || data.logos.length === 0) { 
+                    if (descEl) descEl.innerHTML += ' <span class="text-gray-400 font-bold">(共 0 个 Logo)</span>';
+                    grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何 Logo 资源</div>'; 
+                    return; 
+                }
+                if (descEl) descEl.innerHTML += ' <span class="text-purple-600 dark:text-purple-400 font-black ml-1.5">(共 ' + data.logos.length + ' 个 Logo)</span>';
                 grid.innerHTML = '';
                 data.logos.forEach(obj => {
                     let isCurrent = activeLogoCurrent && activeLogoCurrent.includes(obj.file_path); let tickColor = activeLogoSource === 'manual' ? 'bg-emerald-500' : 'bg-purple-500';
@@ -1541,6 +1562,8 @@ const FRONTEND_HTML_P1 = `
         async function openThumbSelector(e, tmdbId, title, currentThumb, source, mType) {
             e.stopPropagation(); activeThumbSelectTmdbId = tmdbId; activeThumbSelectTitle = title; activeThumbCurrent = currentThumb; activeThumbSource = source || 'auto';
             document.getElementById('thumb-select-title').innerText = "为《" + title + "》选择备用剧照 / 背景";
+            const descEl = document.getElementById('thumb-select-desc');
+            if (descEl) descEl.innerHTML = '带有特定语言标签的说明它是带字剧照。右上角带有勾选的图即为您目前正在使用的剧照。';
             document.getElementById('thumb-select-grid').innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-12 text-gray-500"><div class="w-10 h-10 rounded-full border-4 border-gray-300 dark:border-zinc-700 border-t-blue-600 animate-spin mb-4"></div><span class="text-xs font-bold">正在全网扫描...</span></div>';
             document.getElementById('custom-thumb-url').value = ''; document.getElementById('thumb-select-modal').classList.remove('hidden');
             const catObj = CATEGORIES.find(c => c.id === currentCategory); const mediaType = mType || (catObj ? catObj.type : 'movie');
@@ -1548,7 +1571,12 @@ const FRONTEND_HTML_P1 = `
                 const res = await fetch(ACTION_BASE + '/list_thumbs', { method: 'POST', headers: { 'Authorization': 'Bearer ' + sysPwd, 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId, type: mediaType }) });
                 const data = await res.json();
                 const grid = document.getElementById('thumb-select-grid');
-                if (!data.success || !data.thumbs || data.thumbs.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何剧照资源</div>'; return; }
+                if (!data.success || !data.thumbs || data.thumbs.length === 0) { 
+                    if (descEl) descEl.innerHTML += ' <span class="text-gray-400 font-bold">(共 0 张剧照)</span>';
+                    grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 font-bold text-sm">暂无任何剧照资源</div>'; 
+                    return; 
+                }
+                if (descEl) descEl.innerHTML += ' <span class="text-blue-600 dark:text-blue-400 font-black ml-1.5">(共 ' + data.thumbs.length + ' 张剧照)</span>';
                 grid.innerHTML = '';
                 data.thumbs.forEach(obj => {
                     let isCurrent = activeThumbCurrent && activeThumbCurrent.includes(obj.file_path); let tickColor = activeThumbSource === 'manual' ? 'bg-emerald-500' : 'bg-purple-500';
